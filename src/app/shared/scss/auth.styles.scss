@@ -1,0 +1,348 @@
+// ═══════════════════════════════════════════════
+//   AUTH SHARED STYLES — Luxury Dark Theme
+// ═══════════════════════════════════════════════
+
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=DM+Sans:wght@300;400;500&display=swap');
+
+// ── Tokens ──────────────────────────────────────
+
+$auth-bg:           #0d0d0f;
+$auth-surface:      #131317;
+$auth-surface-2:    #1a1a21;
+
+$auth-border:       rgba(255, 255, 255, 0.07);
+$auth-border-hover: rgba(201, 163, 82, 0.4);
+
+$auth-gold:         #c9a352;
+$auth-gold-light:   #e8c67a;
+$auth-gold-dim:     rgba(201, 163, 82, 0.15);
+
+$auth-text:         #f0ede8;
+$auth-text-muted:   rgba(240, 237, 232, 0.45);
+$auth-text-placeholder: rgba(240, 237, 232, 0.2);
+
+$auth-error:        #e07070;
+$auth-success:      #6dbf8a;
+
+$auth-radius:       2px;
+
+$auth-font-display: 'Cormorant Garamond', serif;
+$auth-font-body:    'DM Sans', sans-serif;
+
+// CSS custom properties (kept for runtime theming / inline style overrides)
+:root {
+  --auth-bg:           #{$auth-bg};
+  --auth-surface:      #{$auth-surface};
+  --auth-surface-2:    #{$auth-surface-2};
+  --auth-border:       #{$auth-border};
+  --auth-border-hover: #{$auth-border-hover};
+  --auth-gold:         #{$auth-gold};
+  --auth-gold-light:   #{$auth-gold-light};
+  --auth-gold-dim:     #{$auth-gold-dim};
+  --auth-text:         #{$auth-text};
+  --auth-text-muted:   #{$auth-text-muted};
+  --auth-error:        #{$auth-error};
+  --auth-success:      #{$auth-success};
+  --auth-radius:       #{$auth-radius};
+  --auth-font-display: #{$auth-font-display};
+  --auth-font-body:    #{$auth-font-body};
+}
+
+// ── Mixins ───────────────────────────────────────
+
+@mixin display-font($size, $weight: 300) {
+  font-family: $auth-font-display;
+  font-size: $size;
+  font-weight: $weight;
+}
+
+@mixin body-font($size: 0.9rem, $weight: 400) {
+  font-family: $auth-font-body;
+  font-size: $size;
+  font-weight: $weight;
+}
+
+@mixin label-style {
+  display: block;
+  @include body-font(0.72rem, 500);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: $auth-text-muted;
+  margin-bottom: 0.5rem;
+}
+
+@mixin alert-banner($color) {
+  background: rgba($color, 0.08);
+  border: 1px solid rgba($color, 0.25);
+  border-left: 3px solid $color;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1.25rem;
+  @include body-font(0.82rem);
+  color: $color;
+  line-height: 1.5;
+}
+
+// ── Animations ───────────────────────────────────
+
+@keyframes cardReveal {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fieldSlide {
+  from { opacity: 0; transform: translateX(-10px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+// ── Layout ───────────────────────────────────────
+
+.auth-shell {
+  min-height: 100vh;
+  background-color: $auth-bg;
+  display: grid;
+  place-items: center;
+  padding: 2rem;
+  @include body-font;
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 60% 50% at 20% 10%, rgba($auth-gold, 0.06) 0%, transparent 60%),
+      radial-gradient(ellipse 40% 60% at 80% 90%, rgba($auth-gold, 0.04) 0%, transparent 60%);
+    pointer-events: none;
+  }
+}
+
+// ── Card ─────────────────────────────────────────
+
+.auth-card {
+  position: relative;
+  width: 100%;
+  max-width: 440px;
+  background: $auth-surface;
+  border: 1px solid $auth-border;
+  padding: 3rem 2.75rem;
+  animation: cardReveal 0.55s cubic-bezier(0.16, 1, 0.3, 1) both;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 2.75rem;
+    right: 2.75rem;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, $auth-gold, transparent);
+    opacity: 0.6;
+  }
+
+  // ── PrimeNG InputText ──
+  .p-inputtext {
+    width: 100%;
+    background: $auth-surface-2 !important;
+    border: 1px solid $auth-border !important;
+    border-radius: $auth-radius !important;
+    color: $auth-text !important;
+    @include body-font(0.9rem);
+    font-family: $auth-font-body !important;
+    padding: 0.75rem 1rem !important;
+    transition: border-color 0.2s, box-shadow 0.2s !important;
+    outline: none !important;
+
+    &::placeholder {
+      color: $auth-text-placeholder !important;
+    }
+
+    &:hover {
+      border-color: $auth-border-hover !important;
+    }
+
+    &:focus {
+      border-color: $auth-gold !important;
+      box-shadow: 0 0 0 3px $auth-gold-dim !important;
+    }
+  }
+
+  // ── PrimeNG Password ──
+  .p-password {
+    width: 100%;
+
+    .p-inputtext {
+      width: 100%;
+    }
+  }
+
+  .p-password-toggle-mask-icon,
+  .p-password-unmask-icon {
+    color: $auth-text-muted !important;
+  }
+
+  // ── PrimeNG Button ──
+  .p-button.auth-btn-primary {
+    background: $auth-gold !important;
+    border: none !important;
+    border-radius: $auth-radius !important;
+    color: $auth-bg !important;
+    font-family: $auth-font-body !important;
+    font-size: 0.8rem !important;
+    font-weight: 500 !important;
+    letter-spacing: 0.12em !important;
+    text-transform: uppercase !important;
+    padding: 0.85rem 1.5rem !important;
+    width: 100% !important;
+    transition: background 0.2s, box-shadow 0.2s !important;
+    justify-content: center !important;
+
+    &:hover:not(:disabled) {
+      background: $auth-gold-light !important;
+      box-shadow: 0 4px 24px rgba($auth-gold, 0.25) !important;
+    }
+
+    &:disabled {
+      opacity: 0.45 !important;
+      cursor: not-allowed !important;
+    }
+  }
+}
+
+// ── Logo ─────────────────────────────────────────
+
+.auth-logo {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 2.5rem;
+
+  &-mark {
+    width: 28px;
+    height: 28px;
+    border: 1.5px solid $auth-gold;
+    display: grid;
+    place-items: center;
+
+    span {
+      @include display-font(1rem, 500);
+      color: $auth-gold;
+      line-height: 1;
+    }
+  }
+
+  &-text {
+    @include display-font(1.1rem, 400);
+    letter-spacing: 0.12em;
+    color: $auth-text;
+    text-transform: uppercase;
+  }
+}
+
+// ── Typography ───────────────────────────────────
+
+.auth-heading {
+  @include display-font(2.1rem, 300);
+  color: $auth-text;
+  line-height: 1.1;
+  margin-bottom: 0.5rem;
+  letter-spacing: -0.01em;
+}
+
+.auth-subheading {
+  @include body-font(0.82rem);
+  color: $auth-text-muted;
+  letter-spacing: 0.02em;
+  margin-bottom: 2.25rem;
+  line-height: 1.5;
+}
+
+// ── Fields ───────────────────────────────────────
+
+.auth-field {
+  margin-bottom: 1.25rem;
+  animation: fieldSlide 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+
+  @for $i from 1 through 3 {
+    &:nth-child(#{$i}) {
+      animation-delay: #{$i * 0.05}s;
+    }
+  }
+}
+
+.auth-label {
+  @include label-style;
+}
+
+.auth-field-error {
+  @include body-font(0.75rem);
+  color: $auth-error;
+  margin-top: 0.35rem;
+  letter-spacing: 0.01em;
+}
+
+// ── Messages ─────────────────────────────────────
+
+.auth-error-banner   { @include alert-banner($auth-error); }
+.auth-success-banner { @include alert-banner($auth-success); }
+
+.auth-error-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+
+  li::before {
+    content: '— ';
+  }
+}
+
+// ── Divider / Links ──────────────────────────────
+
+.auth-btn {
+  width: 100%;
+  margin-top: 0.5rem;
+}
+
+.auth-divider {
+  height: 1px;
+  background: $auth-border;
+  margin: 1.75rem 0;
+}
+
+.auth-footer {
+  text-align: center;
+  @include body-font(0.8rem);
+  color: $auth-text-muted;
+}
+
+.auth-link {
+  color: $auth-gold;
+  text-decoration: none;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+  transition: color 0.15s;
+  background: none;
+  border: none;
+  font-family: $auth-font-body;
+  font-size: inherit;
+  padding: 0;
+
+  &:hover {
+    color: $auth-gold-light;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+}
+
+// ── PrimeNG Password panel (global) ─────────────
+
+.p-password-panel {
+  background: $auth-surface-2 !important;
+  border: 1px solid $auth-border !important;
+  border-radius: $auth-radius !important;
+
+  .p-password-meter-label {
+    color: $auth-text-muted !important;
+    font-family: $auth-font-body !important;
+    font-size: 0.75rem !important;
+  }
+}

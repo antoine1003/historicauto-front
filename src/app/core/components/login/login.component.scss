@@ -1,0 +1,52 @@
+@use "../../../shared/scss/auth.styles.scss";
+
+/* Label row with inline link */
+.auth-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+  .auth-label {
+    margin-bottom: 0;
+  }
+}
+
+.auth-link--sm {
+  font-size: 0.75rem;
+  letter-spacing: 0.01em;
+}
+
+/* Remember me */
+.auth-remember {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 1.5rem;
+  margin-top: -0.25rem;
+}
+
+.auth-remember-label {
+  font-size: 0.8rem;
+  color: var(--auth-text-muted);
+  cursor: pointer;
+  user-select: none;
+}
+
+/* PrimeNG Checkbox override */
+.auth-card .p-checkbox .p-checkbox-box {
+  background: var(--auth-surface-2) !important;
+  border: 1px solid var(--auth-border) !important;
+  border-radius: var(--auth-radius) !important;
+  width: 16px !important;
+  height: 16px !important;
+}
+
+.auth-card .p-checkbox.p-checkbox-checked .p-checkbox-box {
+  background: var(--auth-gold) !important;
+  border-color: var(--auth-gold) !important;
+}
+
+.auth-card .p-checkbox.p-checkbox-checked .p-checkbox-box .p-checkbox-icon {
+  color: #0d0d0f !important;
+  font-size: 0.65rem !important;
+}

@@ -1,0 +1,87 @@
+<div class="auth-shell">
+  <div class="auth-card">
+
+    <!-- Logo -->
+    <div class="auth-logo">
+      <div class="auth-logo-mark"><span>A</span></div>
+      <span class="auth-logo-text">Acme</span>
+    </div>
+
+    <h2 class="auth-heading">Bon<br>retour.</h2>
+    <p class="auth-subheading">Connectez-vous pour accéder à votre espace.</p>
+
+    <!-- API error -->
+    @if (apiError()) {
+      <div class="auth-error-banner">{{ apiError() }}</div>
+    }
+
+    <!-- Email -->
+    <div class="auth-field">
+      <label class="auth-label" for="login-email">Adresse email</label>
+      <input
+        pInputText
+        id="login-email"
+        type="email"
+        placeholder="vous@exemple.com"
+        autocomplete="email"
+        [ngModel]="email()"
+        (ngModelChange)="email.set($event)"
+        (blur)="emailTouched.set(true)"
+        [class.p-invalid]="emailError()"
+      />
+      @if (emailError()) {
+        <p class="auth-field-error">{{ emailError() }}</p>
+      }
+    </div>
+
+    <!-- Password -->
+    <div class="auth-field">
+      <div class="auth-label-row">
+        <label class="auth-label" for="login-password">Mot de passe</label>
+        <a routerLink="/forgot-password" class="auth-link auth-link--sm">Mot de passe oublié ?</a>
+      </div>
+      <p-password
+        inputId="login-password"
+        placeholder="Votre mot de passe"
+        [toggleMask]="true"
+        [feedback]="false"
+        [ngModel]="password()"
+        (ngModelChange)="password.set($event)"
+        (blur)="passTouched.set(true)"
+        [inputStyleClass]="passError() ? 'p-invalid' : ''"
+        autocomplete="current-password"
+      />
+      @if (passError()) {
+        <p class="auth-field-error">{{ passError() }}</p>
+      }
+    </div>
+
+    <!-- Remember me -->
+    <div class="auth-remember">
+      <p-checkbox
+        inputId="remember-me"
+        [binary]="true"
+        [ngModel]="rememberMe()"
+        (ngModelChange)="rememberMe.set($event)"
+      />
+      <label for="remember-me" class="auth-remember-label">Se souvenir de moi</label>
+    </div>
+
+    <!-- Submit -->
+    <p-button
+      label="Se connecter"
+      styleClass="auth-btn-primary"
+      [loading]="loading()"
+      [disabled]="loading()"
+      (onClick)="onSubmit()"
+    />
+
+    <div class="auth-divider"></div>
+
+    <p class="auth-footer">
+      Pas encore de compte ?&nbsp;
+      <a routerLink="/register" class="auth-link">S'inscrire</a>
+    </p>
+
+  </div>
+</div>
