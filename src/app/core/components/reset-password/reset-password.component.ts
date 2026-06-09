@@ -1,7 +1,7 @@
-import { Component, inject, signal, computed, OnInit } from '@angular/core';
+import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router, RouterLink, ActivatedRoute } from '@angular/router';
-import { HttpClient } from '@angular/common/http';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 
 // PrimeNG
@@ -9,6 +9,8 @@ import { InputTextModule } from 'primeng/inputtext';
 import { PasswordModule } from 'primeng/password';
 import { ButtonModule } from 'primeng/button';
 import { environment } from '../../../../environments/environment';
+import { finalize } from 'rxjs';
+import { LoaderComponent } from '@app/shared/components/loader/loader.component';
 
 /**
  * Handles two flows:
@@ -25,9 +27,9 @@ import { environment } from '../../../../environments/environment';
     InputTextModule,
     PasswordModule,
     ButtonModule,
+    LoaderComponent,
   ],
   templateUrl: './reset-password.component.html',
-  styleUrls: ['./reset-password.component.scss'],
 })
 export class ResetPasswordComponent implements OnInit {
   private http  = inject(HttpClient);
@@ -41,12 +43,14 @@ export class ResetPasswordComponent implements OnInit {
   ngOnInit(): void {
     const t = this.route.snapshot.paramMap.get('token');
     this.token.set(t);
+    if (t) {
+      this.checkToken();
+    }
   }
 
   // ── Forgot password state ─────────────────────────
   email        = signal('');
   emailTouched = signal(false);
-
   emailError = computed(() => {
     if (!this.emailTouched()) return null;
     const v = this.email().trim();
@@ -74,6 +78,7 @@ export class ResetPasswordComponent implements OnInit {
   });
 
   // ── Shared UI state ───────────────────────────────
+  checking  = signal(false);
   loading  = signal(false);
   success  = signal(false);
   apiError = signal<string | null>(null);
@@ -123,6 +128,26 @@ export class ResetPasswordComponent implements OnInit {
         },
         error: (err) => {
           this.loading.set(false);
+          if (err.status === 400) {
+            this.apiError.set('Ce lien est invalide ou a expiré. Veuillez faire une nouvelle demande.');
+          } else {
+            this.apiError.set('Une erreur est survenue. Veuillez réessayer.');
+          }
+        },
+      });
+  }
+
+  checkToken(): void {
+    this.checking.set(true);
+    this.apiError.set(null);
+
+    this.http
+      .post<void>(`${environment.apiUrl}/reset-password/${this.token()}/check`, null)
+      .pipe(
+        finalize(() => this.checking.set(false))
+      )
+      .subscribe({
+        error: (err: HttpErrorResponse) => {
           if (err.status === 400) {
             this.apiError.set('Ce lien est invalide ou a expiré. Veuillez faire une nouvelle demande.');
           } else {

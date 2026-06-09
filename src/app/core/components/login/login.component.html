@@ -2,11 +2,27 @@
 
   <!-- Logo -->
   <div class="auth-logo">
-    <div class="auth-logo-mark"><span>A</span></div>
-    <span class="auth-logo-text">Acme Classic</span>
+    <div class="auth-logo-mark"><span>HA</span></div>
+    <span class="auth-logo-text">Historic Auto</span>
   </div>
 
-  <h2 class="auth-heading">Bon<br>retour.</h2>
+  <!-- Bandeau confirmation email -->
+  @if (statusSuccess()) {
+    <div class="auth-success-banner">
+      <i class="pi pi-check-circle" aria-hidden="true"></i>
+      {{ statusSuccess() }}
+    </div>
+  }
+
+  <!-- Bandeau token invalide -->
+  @if (statusError()) {
+    <div class="auth-error-banner">
+      <i class="pi pi-exclamation-circle" aria-hidden="true"></i>
+      {{ statusError() }}
+    </div>
+  }
+
+  <h2 class="auth-heading">{{ title() }},</h2>
   <p class="auth-subheading">Connectez-vous pour accéder à votre espace.</p>
 
   @if (apiError()) {
@@ -59,6 +75,20 @@
     }
   </div>
 
+  <!-- Remember me -->
+  <div class="flex items-center gap-2.5 mb-5">
+    <p-checkbox
+      inputId="remember-me"
+      [binary]="true"
+      [ngModel]="rememberMe()"
+      (ngModelChange)="rememberMe.set($event)"
+    />
+    <label for="remember-me"
+           class="text-[0.92rem] cursor-pointer text-[#1A1714]">
+      Se souvenir de moi
+    </label>
+  </div>
+
   <p-button
     label="Se connecter"
     styleClass="auth-btn-primary"
@@ -68,7 +98,6 @@
   />
 
   <div class="auth-divider"></div>
-
   <p class="auth-footer">
     Pas encore de compte ?&nbsp;
     <a routerLink="/register" class="auth-link">S'inscrire</a>
