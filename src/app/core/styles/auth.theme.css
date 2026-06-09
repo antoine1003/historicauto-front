@@ -1,0 +1,118 @@
+/* src/app/core/styles/auth.theme.css */
+@reference "tailwindcss";
+
+.auth-shell {
+  @apply relative min-h-screen flex items-center justify-center p-6
+  bg-[#F7F5F0] transition-colors duration-300;
+}
+
+.auth-card {
+  @apply w-full max-w-sm
+  bg-white
+  border border-[#D4C9A8]
+  border-l-4 border-l-[#B8860B]
+  px-7 py-8;
+}
+
+.auth-logo {
+  @apply flex items-center gap-3 mb-6;
+}
+
+.auth-logo-mark {
+  @apply w-9 h-9 rounded-full flex items-center justify-center
+  bg-[#B8860B]/10 border border-[#B8860B]
+  font-serif font-semibold text-lg text-[#B8860B];
+}
+
+.auth-logo-text {
+  @apply font-serif font-semibold text-[17px] tracking-widest text-[#1A1714];
+}
+
+.auth-heading {
+  @apply font-serif font-semibold text-[2.2rem] leading-tight text-[#1A1714] mb-1;
+}
+
+.auth-subheading {
+  @apply text-[0.95rem] leading-relaxed mb-6 text-[#6B6560];
+}
+
+.auth-field {
+  @apply mb-4;
+}
+
+.auth-label {
+  @apply block text-sm font-semibold mb-1.5 text-[#1A1714];
+}
+
+.auth-label-row {
+  @apply flex justify-between items-baseline mb-1.5;
+}
+
+.auth-input {
+  @apply w-full h-[52px] px-4 text-base
+  border-[1.5px] border-[#D4C9A8]
+  bg-[#FAFAF7] text-[#1A1714]
+  placeholder-[#B5AEA4]
+  focus:outline-none focus:border-[#B8860B] focus:bg-white
+  rounded-sm transition-colors;
+}
+
+.auth-input--error {
+  @apply border-red-500;
+}
+
+.auth-field-error {
+  @apply text-red-600 text-sm mt-1;
+}
+
+.auth-error-banner {
+  @apply bg-red-50 border border-red-200 text-red-700
+  rounded-sm px-4 py-3 text-sm mb-4;
+}
+
+.auth-error-list {
+  @apply list-disc list-inside space-y-0.5 m-0 p-0;
+}
+
+.auth-success-state {
+  @apply flex flex-col items-center text-center py-4;
+}
+
+.auth-success-icon {
+  @apply mb-5;
+}
+
+.auth-btn-primary {
+  @apply w-full h-[54px] bg-[#B8860B] hover:bg-[#9A7009]
+  text-white font-semibold text-base tracking-wide
+  rounded-sm border-none transition-colors cursor-pointer;
+}
+
+.auth-link {
+  @apply text-[#B8860B] font-semibold hover:underline;
+}
+
+.auth-link--sm {
+  @apply text-[0.82rem];
+}
+
+.auth-divider {
+  @apply border-t border-[#D4C9A8] my-5;
+}
+
+.auth-footer {
+  @apply text-center text-[0.9rem] text-[#6B6560];
+}
+
+.auth-theme-toggle {
+  @apply fixed top-4 right-4
+  w-10 h-10 rounded-full
+  flex items-center justify-center
+  bg-white border border-[#D4C9A8]
+  text-[#B8860B] cursor-pointer transition-colors
+  hover:bg-[#F7F5F0];
+
+  .pi {
+    @apply text-lg;
+  }
+}

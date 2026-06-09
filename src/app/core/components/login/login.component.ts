@@ -1,8 +1,8 @@
 import { Component, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
-import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
+import { AuthService } from '../../services/auth.service';
 
 // PrimeNG
 import { InputTextModule } from 'primeng/inputtext';
@@ -26,7 +26,7 @@ import { CheckboxModule } from 'primeng/checkbox';
   styleUrls: ['./login.component.scss'],
 })
 export class LoginComponent {
-  private http   = inject(HttpClient);
+  private authService = inject(AuthService);
   private router = inject(Router);
 
   // ── Form state ────────────────────────────────────
@@ -35,7 +35,7 @@ export class LoginComponent {
   rememberMe  = signal(false);
 
   // ── UI state ──────────────────────────────────────
-  loading   = signal(false);
+  loading   = this.authService.isLoading;
   apiError  = signal<string | null>(null);
 
   // ── Inline validation ─────────────────────────────
@@ -69,24 +69,18 @@ export class LoginComponent {
 
     if (!this.isFormValid()) return;
 
-    this.loading.set(true);
     this.apiError.set(null);
 
-    this.http
-      .post<{ token: string }>('/api/login_check', {
-        username: this.email().trim(),
+    this.authService
+      .login({
+        email: this.email().trim(),
         password: this.password(),
-      })
+      }, this.rememberMe())
       .subscribe({
-        next: (res) => {
-          this.loading.set(false);
-          // Store JWT — adapt to your auth strategy
-          const storage = this.rememberMe() ? localStorage : sessionStorage;
-          storage.setItem('jwt_token', res.token);
+        next: () => {
           this.router.navigate(['/dashboard']);
         },
         error: (err) => {
-          this.loading.set(false);
           if (err.status === 401) {
             this.apiError.set('Email ou mot de passe incorrect.');
           } else {

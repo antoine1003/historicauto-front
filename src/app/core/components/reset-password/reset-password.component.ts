@@ -8,6 +8,7 @@ import { FormsModule } from '@angular/forms';
 import { InputTextModule } from 'primeng/inputtext';
 import { PasswordModule } from 'primeng/password';
 import { ButtonModule } from 'primeng/button';
+import { environment } from '../../../../environments/environment';
 
 /**
  * Handles two flows:
@@ -86,7 +87,7 @@ export class ResetPasswordComponent implements OnInit {
     this.apiError.set(null);
 
     this.http
-      .post<{ message: string }>('/api/forgot-password', { email: this.email().trim() })
+      .post<{ message: string }>(`${environment.apiUrl}/forgot-password`, { email: this.email().trim() })
       .subscribe({
         next: () => {
           this.loading.set(false);
@@ -112,7 +113,7 @@ export class ResetPasswordComponent implements OnInit {
     this.apiError.set(null);
 
     this.http
-      .post<{ message: string }>(`/api/reset-password/${this.token()}`, {
+      .post<{ message: string }>(`${environment.apiUrl}/reset-password/${this.token()}`, {
         password: this.newPassword(),
       })
       .subscribe({
@@ -132,6 +133,6 @@ export class ResetPasswordComponent implements OnInit {
   }
 
   goToLogin(): void {
-    this.router.navigate(['/login']);
+    void this.router.navigate(['/login']);
   }
 }

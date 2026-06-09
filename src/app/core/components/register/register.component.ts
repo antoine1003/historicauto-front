@@ -1,18 +1,13 @@
 import { Component, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router, RouterLink } from '@angular/router';
-import { HttpClient } from '@angular/common/http';
+import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { AuthService } from '../../services/auth.service';
 
 // PrimeNG
 import { InputTextModule } from 'primeng/inputtext';
 import { PasswordModule } from 'primeng/password';
 import { ButtonModule } from 'primeng/button';
-
-interface RegisterPayload {
-  email: string;
-  password: string;
-}
 
 @Component({
   selector: 'app-register',
@@ -29,8 +24,7 @@ interface RegisterPayload {
   styleUrls: ['./register.component.scss'],
 })
 export class RegisterComponent {
-  private http   = inject(HttpClient);
-  private router = inject(Router);
+  private authService = inject(AuthService);
 
   // ── Form state (Signals) ──────────────────────────
   email           = signal('');
@@ -38,7 +32,7 @@ export class RegisterComponent {
   passwordConfirm = signal('');
 
   // ── UI state ──────────────────────────────────────
-  loading  = signal(false);
+  loading  = this.authService.isLoading;
   success  = signal(false);
   apiErrors = signal<string[]>([]);
 
@@ -85,21 +79,17 @@ export class RegisterComponent {
 
     if (!this.isFormValid()) return;
 
-    this.loading.set(true);
     this.apiErrors.set([]);
 
-    const payload: RegisterPayload = {
+    this.authService.register({
       email: this.email().trim(),
       password: this.password(),
-    };
-
-    this.http.post<{ message: string; errors?: string[] }>('/api/register', payload).subscribe({
+      firstName: '', // Added to match RegisterRequest interface
+    }).subscribe({
       next: () => {
-        this.loading.set(false);
         this.success.set(true);
       },
       error: (err) => {
-        this.loading.set(false);
         const body = err.error;
         if (body?.errors) {
           this.apiErrors.set(body.errors);
