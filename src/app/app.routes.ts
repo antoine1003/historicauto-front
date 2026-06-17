@@ -1,12 +1,8 @@
 import { Routes } from '@angular/router';
 import { AUTH_ROUTES } from '@app/core/core.route';
-import { authGuard } from './core/guards/auth.guard';
+import { DASHBOARD_ROUTES } from '@app/dashboard/dashboard.routes';
 
 export const routes: Routes = [
   ...AUTH_ROUTES,
-  {
-    path: 'dashboard',
-    loadComponent: () => import('./app').then(m => m.App), // Placeholder
-    canActivate: [authGuard],
-  }
+  ...DASHBOARD_ROUTES
 ];
