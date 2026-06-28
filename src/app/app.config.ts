@@ -5,6 +5,7 @@ import { providePrimeNG } from 'primeng/config';
 import Aura from '@primeuix/themes/aura';
 import { routes } from './app.routes';
 import { authInterceptor } from './core/interceptors/auth.interceptor';
+import { HistoricAutoPreset } from '@app/core/styles/historic-auto.preset';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -15,13 +16,9 @@ export const appConfig: ApplicationConfig = {
     ),
     providePrimeNG({
       theme: {
-        preset: Aura,
+        preset: HistoricAutoPreset,
         options: {
-          darkModeSelector: '.dark', // ← classe sur <html> au lieu de @media
-          cssLayer: {
-            name: 'primeng',
-            order: 'tailwind-base, primeng, tailwind-utilities',
-          },
+          darkModeSelector: false, // ← classe sur <html> au lieu de @media
         },
       }
     })

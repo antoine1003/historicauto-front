@@ -1,19 +1,20 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import { RegistrationSummary } from '@app/core/models/registration.model';
 import { environment } from '../../../environments/environment';
+import { ApiResponse } from '@app/core/models/api.models';
+import { Edition } from '@app/shared/models/edition.interface';
 
 @Injectable({ providedIn: 'root' })
-export class RegistrationService {
+export class EditionService {
   private readonly http = inject(HttpClient);
-  private readonly baseUrl = 'registrations';
+  private readonly baseUrl = 'editions';
 
   /**
    * Retourne l'inscription liée à l'édition active (s'il y en a une déjà
    * démarrée) et l'historique des éditions passées de l'exposant connecté.
    */
-  getMine(): Observable<RegistrationSummary[]> {
-    return this.http.get<RegistrationSummary[]>(`${environment.apiUrl}/${this.baseUrl}/mine`);
+  getActive(): Observable<ApiResponse<Edition>> {
+    return this.http.get<ApiResponse<Edition>>(`${environment.apiUrl}/${this.baseUrl}/active`);
   }
 }

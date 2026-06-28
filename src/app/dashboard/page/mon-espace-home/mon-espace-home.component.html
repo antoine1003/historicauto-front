@@ -1,0 +1,59 @@
+<div class="auth-shell !min-h-100! p-0 items-start justify-start">
+  <div class="w-full max-w-3xl mx-auto px-4 py-8 sm:py-10">
+
+    <header class="flex items-center justify-between mb-8">
+      <h1 class="font-serif font-semibold text-2xl sm:text-[2.2rem] text-[#1A1714]">
+        Mon Espace
+      </h1>
+      <p-button
+        label="Nous contacter"
+        severity="primary"
+        icon="pi pi-envelope"
+        text
+        size="small"
+        (onClick)="contact()"
+      />
+    </header>
+
+    @if (loading()) {
+      <p class="text-[#6B6560]">Chargement de vos éditions…</p>
+    } @else {
+
+      <!-- Historique : éditions passées où l'exposant a une Registration -->
+      @for (reg of pastRegistrations(); track reg.id) {
+      <p-card>
+        @if (reg) {
+          <p class="auth-subheading">
+            Statut de votre demande :
+            <strong>{{ statusLabel(reg!.status) }}</strong>
+          </p>
+
+          @if (reg!.status === 'refused' && reg!.refusalComment) {
+            <div class="auth-error-banner">
+              {{ reg!.refusalComment }}
+            </div>
+          }
+        }
+      </p-card>
+      <p-button (click)="goToHistory(reg)">
+        Édition {{ reg.edition.year }}
+      </p-button>
+      }
+
+      @if (activeEdition() && showRegistrationLink() && !currentRegistration()) {
+        <p-card
+          [header]="'Formulaire d\'inscription exposant ' + activeEdition()!.year"
+        >
+          <p-button
+            label="Accéder au formulaire"
+            [size]="'small'"
+            styleClass="mt-2"
+            severity="primary"
+            (onClick)="goToWizard()"
+          />
+        </p-card>
+      }
+
+    }
+  </div>
+</div>
