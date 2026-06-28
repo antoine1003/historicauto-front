@@ -1,0 +1,102 @@
+/* src/app/features/exhibitor-space/edition-form/edition-form.theme.css */
+@reference "tailwindcss";
+
+.ef-shell {
+  @apply min-h-screen bg-[#F7F5F0];
+}
+
+.ef-header {
+  @apply bg-white border-b border-[#D4C9A8] px-4 py-5 sm:px-8;
+}
+
+.ef-header-edition-link {
+  @apply text-sm text-[#B8860B] font-semibold hover:underline;
+}
+
+.ef-header-title {
+  @apply font-serif font-semibold text-[1.6rem] sm:text-[1.9rem] text-[#1A1714] mt-1;
+}
+
+.ef-readonly-banner {
+  @apply flex items-center gap-2 bg-[#FAF6EC] border border-[#D4C9A8]
+  text-[#6B6560] text-sm rounded-sm px-4 py-3 mt-4;
+}
+
+.ef-content {
+  @apply max-w-5xl mx-auto px-4 py-6 sm:px-8 sm:py-10;
+}
+
+.ef-stepper-wrapper {
+  @apply mb-8;
+}
+
+.ef-panel {
+  @apply bg-white border border-[#D4C9A8] border-l-4 border-l-[#B8860B]
+  rounded-sm p-5 sm:p-7;
+}
+
+.ef-section-title {
+  @apply font-serif font-semibold text-lg sm:text-xl text-[#1A1714] mb-4;
+}
+
+.ef-field {
+  @apply mb-4;
+}
+
+.ef-label {
+  @apply block text-sm font-semibold mb-1.5 text-[#1A1714];
+}
+
+.ef-help-text {
+  @apply text-[0.82rem] text-[#6B6560] mt-1;
+}
+
+.ef-muted {
+  @apply text-[#6B6560];
+}
+
+.ef-grid-2 {
+  @apply grid grid-cols-1 gap-4 md:grid-cols-2;
+}
+
+.ef-category-block {
+  @apply border-b border-[#EDE7D8] last:border-b-0 py-4;
+}
+
+.ef-option-row {
+  @apply flex flex-col gap-2 py-2 sm:flex-row sm:items-center sm:justify-between;
+}
+
+.ef-option-label {
+  @apply text-sm text-[#1A1714];
+}
+
+.ef-option-price {
+  @apply text-sm font-semibold text-[#1A1714] whitespace-nowrap;
+}
+
+.ef-summary-card {
+  @apply bg-[#FAF6EC] border border-[#D4C9A8] rounded-sm p-5 mt-6;
+}
+
+.ef-summary-row {
+  @apply flex justify-between items-baseline py-1 text-sm;
+}
+
+.ef-summary-row--total {
+  @apply flex justify-between items-baseline pt-3 mt-2
+  border-t border-[#D4C9A8] font-semibold text-base text-[#1A1714];
+}
+
+.ef-actions-row {
+  @apply flex flex-col-reverse gap-3 mt-6 sm:flex-row sm:justify-between;
+}
+
+.ef-manager-card {
+  @apply flex flex-col gap-3 border border-[#D4C9A8] rounded-sm p-4 sm:flex-row sm:items-end;
+}
+
+.ef-document-row {
+  @apply flex flex-col gap-2 py-3 border-b border-[#EDE7D8] last:border-b-0
+  sm:flex-row sm:items-center sm:justify-between;
+}

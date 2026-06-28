@@ -1,0 +1,77 @@
+<div class="ef-shell">
+  @if (notFound) {
+    <div class="ef-content">
+      <p class="ef-muted">Aucune inscription trouvée pour cette édition.</p>
+    </div>
+  } @else if (formState.registration(); as registration) {
+    <header class="ef-header">
+      <p class="ef-muted text-sm">Mon espace exposant</p>
+      <h1 class="ef-header-title">Formulaire d'inscription {{ registration.editionYear }}</h1>
+
+      @if (registration.readOnly) {
+        <div class="ef-readonly-banner">
+          <i class="pi pi-lock"></i>
+          <span>
+            Édition passée — ce formulaire est affiché à titre d'historique et n'est plus modifiable.
+          </span>
+        </div>
+      }
+    </header>
+
+    <div class="ef-content">
+      <div class="ef-stepper-wrapper">
+        <p-stepper [value]="formState.activeStep()" (valueChange)="onStepChange($event)">
+          <p-step-list>
+            <p-step [value]="RegistrationStep.ENTITY" [disabled]="!formState.isStepUnlocked()(RegistrationStep.ENTITY)">
+              Entité
+            </p-step>
+            <p-step [value]="RegistrationStep.STAND" [disabled]="!formState.isStepUnlocked()(RegistrationStep.STAND)">
+              Stand
+            </p-step>
+            <p-step [value]="RegistrationStep.CONFIRMATION" [disabled]="!formState.isStepUnlocked()(RegistrationStep.CONFIRMATION)">
+              Confirmation
+            </p-step>
+            <p-step [value]="RegistrationStep.DOCUMENTS" [disabled]="!formState.isStepUnlocked()(RegistrationStep.DOCUMENTS)">
+              Documents
+            </p-step>
+            <p-step [value]="RegistrationStep.PAYMENT" [disabled]="!formState.isStepUnlocked()(RegistrationStep.PAYMENT)">
+              Paiement
+            </p-step>
+          </p-step-list>
+
+          <p-step-panels>
+            <p-step-panel [value]="RegistrationStep.ENTITY">
+              <ng-template #content>
+                <app-step-entity />
+              </ng-template>
+            </p-step-panel>
+
+            <p-step-panel [value]="RegistrationStep.STAND">
+              <ng-template #content>
+                <app-step-stand />
+              </ng-template>
+            </p-step-panel>
+
+            <p-step-panel [value]="RegistrationStep.CONFIRMATION">
+              <ng-template #content>
+                <app-step-confirmation />
+              </ng-template>
+            </p-step-panel>
+
+            <p-step-panel [value]="RegistrationStep.DOCUMENTS">
+              <ng-template #content>
+                <app-step-documents />
+              </ng-template>
+            </p-step-panel>
+
+            <p-step-panel [value]="RegistrationStep.PAYMENT">
+              <ng-template #content>
+                <app-step-payment />
+              </ng-template>
+            </p-step-panel>
+          </p-step-panels>
+        </p-stepper>
+      </div>
+    </div>
+  }
+</div>

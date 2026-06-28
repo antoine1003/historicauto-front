@@ -1,0 +1,57 @@
+@if (formState.registration(); as registration) {
+  <div class="ef-panel">
+    <h2 class="ef-section-title">Vos documents</h2>
+
+    @if (visibleDocuments().length === 0) {
+      <p class="ef-muted text-sm">Aucun document n'est encore disponible pour cette édition.</p>
+    }
+
+    @for (doc of visibleDocuments(); track doc.id) {
+      <div class="ef-document-row">
+        <div class="flex items-center gap-3">
+          <i [class]="iconFor(doc)" class="text-[#B8860B]"></i>
+          <div>
+            <p class="text-sm font-semibold text-[#1A1714]">{{ doc.label }}</p>
+            @if (doc.uploadedAt) {
+              <p class="ef-help-text">Mis en ligne le {{ doc.uploadedAt | date: 'dd/MM/yyyy' }}</p>
+            }
+          </div>
+          @if (doc.kind === 'quote' && doc.signed) {
+            <p-tag severity="success" value="Signé" />
+          }
+        </div>
+
+        <div class="flex items-center gap-2">
+          @if (doc.kind === 'quote' && !doc.signed && !formState.isReadOnly()) {
+            <p-button label="Signer votre devis" icon="pi pi-pen-to-square" (onClick)="signQuote(doc)" />
+          } @else {
+            <p-button
+              label="Télécharger"
+              icon="pi pi-download"
+              [text]="true"
+              [disabled]="!doc.fileUrl"
+            />
+          }
+        </div>
+      </div>
+    }
+  </div>
+
+  @if (!formState.isReadOnly()) {
+    <div class="ef-panel mt-6">
+      <h2 class="ef-section-title">Assurance RC</h2>
+      <p class="ef-help-text mb-3">
+        Vous pouvez téléverser une nouvelle assurance à tout moment ; seule la dernière version
+        téléversée est conservée et téléchargeable.
+      </p>
+      <p-fileupload
+        mode="basic"
+        chooseLabel="Téléverser votre assurance RC"
+        accept="application/pdf"
+        [auto]="true"
+        [customUpload]="true"
+        (uploadHandler)="onInsuranceUpload($event)"
+      />
+    </div>
+  }
+}

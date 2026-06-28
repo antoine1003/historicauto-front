@@ -1,0 +1,81 @@
+@if (formState.registration(); as registration) {
+  <div class="ef-panel">
+    <h2 class="ef-section-title">Surface de stand</h2>
+    <p class="ef-help-text mb-4">
+      La commande d'un pack génère la mise à disposition d'une surface nue, des badges
+      exposants associés et d'un sticker pare-brise donnant accès au parking exposants.
+    </p>
+
+    <div class="flex flex-col gap-1">
+      @for (option of surfaceOptions; track option.id) {
+        <div class="ef-option-row">
+          <div class="flex items-center gap-2">
+            <p-radiobutton
+              [inputId]="option.id"
+              name="surfaceOption"
+              [value]="option.id"
+              [ngModel]="registration.stand.selectedSurfaceOptionId"
+              (ngModelChange)="formState.selectSurfaceOption($event)"
+              [disabled]="formState.isReadOnly()"
+            />
+            <label [for]="option.id" class="ef-option-label">{{ option.label }}</label>
+          </div>
+          <span class="ef-option-price">{{ option.mockPriceTtc | number: '1.0-2' }} € TTC</span>
+        </div>
+      }
+    </div>
+  </div>
+
+  <div class="ef-panel mt-6">
+    <h2 class="ef-section-title">Options complémentaires</h2>
+
+    <p-accordion [multiple]="true">
+      @for (category of addonCategories; track category) {
+        <p-accordion-panel [value]="category">
+          <p-accordion-header>{{ categoryLabel(category) }}</p-accordion-header>
+          <p-accordion-content>
+            @for (option of optionsForCategory(category); track option.id) {
+              <div class="ef-option-row">
+                <span class="ef-option-label">
+                  {{ option.label }}
+                  @if (option.unit) {
+                    <span class="ef-muted">({{ option.unit }})</span>
+                  }
+                </span>
+                <div class="flex items-center gap-3">
+                  <span class="ef-option-price">{{ option.mockPriceTtc | number: '1.0-2' }} € TTC / unité</span>
+                  <p-inputnumber
+                    [ngModel]="quantityFor(option.id)"
+                    (ngModelChange)="formState.setOptionQuantity(option.id, $event ?? 0)"
+                    [min]="0"
+                    [showButtons]="true"
+                    [disabled]="formState.isReadOnly()"
+                    inputStyleClass="w-16 text-center"
+                  />
+                </div>
+              </div>
+            }
+          </p-accordion-content>
+        </p-accordion-panel>
+      }
+    </p-accordion>
+
+    @if (!formState.isReadOnly()) {
+      <div class="mt-5">
+        <p-button
+          label="Faire une commande complémentaire"
+          icon="pi pi-envelope"
+          [outlined]="true"
+          (onClick)="requestAdditionalOrder()"
+        />
+      </div>
+    }
+
+    <div class="ef-summary-card">
+      <div class="ef-summary-row ef-summary-row--total">
+        <span>Total du stand</span>
+        <span>{{ formState.standTotalTtc() | number: '1.0-2' }} € TTC</span>
+      </div>
+    </div>
+  </div>
+}

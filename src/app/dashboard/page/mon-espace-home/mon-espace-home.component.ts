@@ -7,13 +7,12 @@ import { RegistrationSummary } from '@app/core/models/registration.model';
 import { EditionService } from '@app/shared/services/edition.service';
 import { finalize, forkJoin } from 'rxjs';
 import { Edition } from '@app/shared/models/edition.interface';
-import { JsonPipe } from '@angular/common';
 import { Card } from 'primeng/card';
 
 @Component({
   selector: 'app-mon-espace-home',
   standalone: true,
-  imports: [ButtonModule, JsonPipe, Card],
+  imports: [ButtonModule, Card],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './mon-espace-home.component.html',
 })
@@ -71,7 +70,7 @@ export class MonEspaceHomeComponent {
   }
 
   goToWizard(): void {
-    void this.router.navigate(['/mon-espace/inscription']);
+    void this.router.navigate(['/edition/' + this.activeEdition()!.year]);
   }
 
   contact(): void {

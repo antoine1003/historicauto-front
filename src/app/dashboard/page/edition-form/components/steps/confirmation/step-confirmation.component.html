@@ -1,0 +1,70 @@
+@if (formState.registration(); as registration) {
+  <div class="ef-panel">
+    <h2 class="ef-section-title">Confirmer votre participation</h2>
+
+    <p-message
+      severity="info"
+      text="Si vous souhaitez modifier vos options avant de confirmer définitivement votre participation, contactez-nous directement."
+      styleClass="w-full mb-5"
+    />
+
+    <div class="flex flex-col gap-3">
+      @for (item of checklistItems; track item.key) {
+        <div class="flex items-start gap-2">
+          <p-checkbox
+            [inputId]="item.key"
+            [binary]="true"
+            [ngModel]="registration.confirmation.checklist[item.key]"
+            (ngModelChange)="toggleItem(item.key, $event)"
+            [disabled]="formState.isReadOnly()"
+          />
+          <label [for]="item.key" class="text-sm text-[#1A1714]">{{ item.text }}</label>
+        </div>
+      }
+    </div>
+
+    <div class="ef-grid-2 mt-6">
+      <div class="ef-field">
+        <label class="ef-label" for="signatoryName">Nom du signataire</label>
+        <input
+          pInputText
+          id="signatoryName"
+          class="w-full"
+          [ngModel]="registration.confirmation.signatoryName"
+          (ngModelChange)="updateSignatoryName($event)"
+          [disabled]="formState.isReadOnly()"
+        />
+      </div>
+
+      <div class="ef-field">
+        <label class="ef-label" for="signatoryRole">Fonction du signataire</label>
+        <input
+          pInputText
+          id="signatoryRole"
+          class="w-full"
+          [ngModel]="registration.confirmation.signatoryRole"
+          (ngModelChange)="updateSignatoryRole($event)"
+          [disabled]="formState.isReadOnly()"
+        />
+      </div>
+    </div>
+
+    <p class="ef-help-text">
+      Date : {{ (registration.confirmation.confirmedAt ?? today) | date: 'dd/MM/yyyy' }}
+    </p>
+
+    @if (!formState.isReadOnly()) {
+      <div class="ef-actions-row">
+        <span></span>
+        <p-button
+          label="Confirmer votre inscription"
+          icon="pi pi-check"
+          [disabled]="!canConfirm()"
+          (onClick)="confirm()"
+        />
+      </div>
+    } @else if (registration.confirmation.confirmedAt) {
+      <p-message severity="success" text="Inscription confirmée." styleClass="w-full mt-4" />
+    }
+  </div>
+}

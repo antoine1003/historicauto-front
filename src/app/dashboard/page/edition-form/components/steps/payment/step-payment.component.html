@@ -1,0 +1,90 @@
+@if (formState.registration(); as registration) {
+  <div class="ef-panel">
+    <h2 class="ef-section-title">Récapitulatif financier</h2>
+
+    <p-message
+      severity="warn"
+      text="Votre inscription ne sera définitive qu'après versement de l'acompte."
+      styleClass="w-full mb-5"
+    />
+
+    <div class="ef-summary-card">
+      <div class="ef-summary-row">
+        <span>Total du stand</span>
+        <span>{{ formState.standTotalTtc() | number: '1.0-2' }} € TTC</span>
+      </div>
+
+      @if (hasDiscount()) {
+        <div class="ef-summary-row">
+          <span>Remise</span>
+          <span>{{ registration.payment.discountPercent }} %</span>
+        </div>
+        <div class="ef-summary-row">
+          <span>Total du stand avec remise</span>
+          <span>{{ discountedTotalTtc() | number: '1.0-2' }} € TTC</span>
+        </div>
+      }
+
+      <div class="ef-summary-row">
+        <span>Frais de dossier</span>
+        <span>{{ registration.payment.fileFeeTtc | number: '1.0-2' }} € TTC</span>
+      </div>
+
+      <div class="ef-summary-row ef-summary-row--total">
+        <span>Total de la commande</span>
+        <span>{{ orderTotalTtc() | number: '1.0-2' }} € TTC</span>
+      </div>
+
+      <div class="ef-summary-row">
+        <span>Acompte {{ registration.payment.depositRatePercent }} % à payer</span>
+        <span>{{ depositDueTtc() | number: '1.0-2' }} € TTC</span>
+      </div>
+
+      <div class="ef-summary-row ef-summary-row--total">
+        <span>
+          Solde à payer
+          @if (registration.payment.balanceDueDate) {
+            (avant le {{ registration.payment.balanceDueDate | date: 'dd/MM/yyyy' }})
+          }
+        </span>
+        <span>{{ formState.balanceDueTtc() | number: '1.0-2' }} € TTC</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="ef-panel mt-6">
+    <h2 class="ef-section-title">Paiements enregistrés</h2>
+
+    @if (registration.payment.payments.length === 0) {
+      <p class="ef-muted text-sm">Aucun paiement n'a encore été enregistré par l'organisation.</p>
+    } @else {
+      <p-table [value]="registration.payment.payments">
+        <ng-template #header>
+          <tr>
+            <th>Date</th>
+            <th>Moyen de paiement</th>
+            <th class="text-right">Montant TTC</th>
+          </tr>
+        </ng-template>
+        <ng-template #body let-payment>
+          <tr>
+            <td>{{ payment.paidAt | date: 'dd/MM/yyyy' }}</td>
+            <td>{{ payment.method }}</td>
+            <td class="text-right">{{ payment.amountTtc | number: '1.0-2' }} €</td>
+          </tr>
+        </ng-template>
+      </p-table>
+    }
+  </div>
+
+  @if (!formState.isReadOnly() && formState.balanceDueTtc() > 0) {
+    <div class="ef-panel mt-6">
+      <h2 class="ef-section-title">Régler en ligne</h2>
+      <p-button label="Payer par carte bancaire" icon="pi pi-credit-card" (onClick)="payByCard()" />
+      <p class="ef-help-text mt-3">
+        Virement : IBAN FR76 1380 7001 9732 0211 8536 804 — SWIFT (BIC) CCBPFRPPNAN.
+        Pour tout autre moyen de paiement, contactez-nous.
+      </p>
+    </div>
+  }
+}
