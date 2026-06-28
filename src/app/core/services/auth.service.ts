@@ -1,9 +1,10 @@
 import { Injectable, signal, computed, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
-import { Observable, tap, catchError, of } from 'rxjs';
+import { Observable, tap, catchError, of, switchMap, map } from 'rxjs';
 import { AuthUser, JwtResponse, LoginRequest, RegisterRequest } from '../models/auth.model';
 import { environment } from '../../../environments/environment';
+import { TokenStorageService } from '@app/core/services/token-storage.service';
 
 @Injectable({
   providedIn: 'root'
@@ -11,19 +12,23 @@ import { environment } from '../../../environments/environment';
 export class AuthService {
   private readonly http = inject(HttpClient);
   private readonly router = inject(Router);
+  private readonly tokenStorage = inject(TokenStorageService);
   private readonly TOKEN_KEY = 'jwt_token';
 
   // -- State --
   private readonly _currentUser = signal<AuthUser | null>(null);
+  private readonly _isInitialized = signal(false);
+
   readonly currentUser = this._currentUser.asReadonly();
   readonly isAuthenticated = computed(() => !!this._currentUser());
+  readonly isInitialized = this._isInitialized.asReadonly();
   readonly isLoading = signal(false);
 
   constructor() {
     this.checkInitialAuth();
   }
 
-  login(credentials: LoginRequest, rememberMe: boolean = false): Observable<JwtResponse> {
+  login(credentials: LoginRequest, rememberMe: boolean = false): Observable<AuthUser | null> {
     this.isLoading.set(true);
     return this.http.post<JwtResponse>(`${environment.apiUrl}/login_check`, {
       username: credentials.email,
@@ -31,11 +36,19 @@ export class AuthService {
     }).pipe(
       tap(response => {
         this.setToken(response.token, rememberMe);
-        this.fetchCurrentUser().subscribe();
+        this._isInitialized.set(false); // Reset initialization so guards wait for profile
       }),
-      tap(() => this.isLoading.set(false)),
+      switchMap(() => this.fetchCurrentUser()),
+      tap(user => {
+        this.isLoading.set(false);
+        this._isInitialized.set(true);
+        if (!user) {
+          throw new Error('Impossible de récupérer les informations utilisateur');
+        }
+      }),
       catchError(error => {
         this.isLoading.set(false);
+        this._isInitialized.set(true);
         throw error;
       })
     );
@@ -53,36 +66,53 @@ export class AuthService {
   }
 
   logout(): void {
-    localStorage.removeItem(this.TOKEN_KEY);
-    sessionStorage.removeItem(this.TOKEN_KEY);
+    this.tokenStorage.clearToken();
     this._currentUser.set(null);
-    this.router.navigate(['/login']);
+    this._isInitialized.set(true);
+    void this.router.navigate(['/login']);
   }
 
   private checkInitialAuth(): void {
     const token = this.getToken();
+    console.log('Token in checkInitialAuth: ', token)
     if (token) {
-      this.fetchCurrentUser().subscribe();
+      this.isLoading.set(true);
+      this.fetchCurrentUser().subscribe({
+        next: () => {
+          this.isLoading.set(false);
+          this._isInitialized.set(true);
+        },
+        error: () => {
+          this.isLoading.set(false);
+          this._isInitialized.set(true);
+          this.logout();
+        }
+      });
+    } else {
+      this._isInitialized.set(true);
     }
   }
 
   private fetchCurrentUser(): Observable<AuthUser | null> {
     // Assuming there's an endpoint to get the current user profile
     return this.http.get<AuthUser>(`${environment.apiUrl}/me`).pipe(
-      tap(user => this._currentUser.set(user)),
-      catchError(() => {
-        this.logout();
+      tap(user => {
+        if (user) {
+          this._currentUser.set(user);
+        }
+      }),
+      catchError((err, caught) => {
+        console.error('Error fetching current user:', err);
         return of(null);
       })
     );
   }
 
   private setToken(token: string, rememberMe: boolean): void {
-    const storage = rememberMe ? localStorage : sessionStorage;
-    storage.setItem(this.TOKEN_KEY, token);
+    this.tokenStorage.setToken(token, rememberMe);
   }
 
   getToken(): string | null {
-    return localStorage.getItem(this.TOKEN_KEY) || sessionStorage.getItem(this.TOKEN_KEY);
+    return this.tokenStorage.getToken();
   }
 }
