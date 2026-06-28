@@ -6,6 +6,7 @@ import { SelectModule } from 'primeng/select';
 import { FileUploadModule } from 'primeng/fileupload';
 import { ClubType, ExhibitorType, StandManagerForm } from '@app/dashboard/models/edition-form.models';
 import { EditionFormStateService } from '@app/dashboard/services/edition-form-state.service';
+import { InputMaskDirective } from 'primeng/inputmask';
 
 interface ClubTypeOption {
   label: string;
@@ -15,7 +16,7 @@ interface ClubTypeOption {
 @Component({
   selector: 'app-step-entity',
   standalone: true,
-  imports: [FormsModule, ButtonModule, InputTextModule, SelectModule, FileUploadModule],
+  imports: [FormsModule, ButtonModule, InputTextModule, SelectModule, FileUploadModule, InputMaskDirective],
   templateUrl: './step-entity.component.html',
 })
 export class StepEntityComponent {

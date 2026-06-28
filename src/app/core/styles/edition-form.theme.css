@@ -100,3 +100,11 @@
   @apply flex flex-col gap-2 py-3 border-b border-[#EDE7D8] last:border-b-0
   sm:flex-row sm:items-center sm:justify-between;
 }
+
+.ef-manager-form {
+  @apply border border-[#D4C9A8] rounded-sm p-4;
+}
+
+.ef-manager-form-grid {
+  @apply grid gap-3 grid-cols-[repeat(auto-fill,minmax(200px,1fr))];
+}

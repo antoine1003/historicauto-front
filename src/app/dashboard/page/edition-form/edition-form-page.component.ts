@@ -15,7 +15,6 @@ import { RegistrationStep } from '@app/dashboard/models/edition-form.models';
 
 @Component({
   selector: 'app-edition-form-page',
-  standalone: true,
   imports: [
     StepperModule,
     StepEntityComponent,
@@ -24,8 +23,9 @@ import { RegistrationStep } from '@app/dashboard/models/edition-form.models';
     StepDocumentsComponent,
     StepPaymentComponent,
   ],
-  styleUrl: './edition-form.theme.css',
+  styleUrl: '../../../core/styles/edition-form.theme.css',
   templateUrl: './edition-form-page.component.html',
+  standalone: true
 })
 export class EditionFormPageComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);

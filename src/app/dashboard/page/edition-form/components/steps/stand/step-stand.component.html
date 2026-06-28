@@ -10,7 +10,7 @@
       @for (option of surfaceOptions; track option.id) {
         <div class="ef-option-row">
           <div class="flex items-center gap-2">
-            <p-radiobutton
+            <p-radio-button
               [inputId]="option.id"
               name="surfaceOption"
               [value]="option.id"
@@ -44,7 +44,7 @@
                 </span>
                 <div class="flex items-center gap-3">
                   <span class="ef-option-price">{{ option.mockPriceTtc | number: '1.0-2' }} € TTC / unité</span>
-                  <p-inputnumber
+                  <p-input-number
                     [ngModel]="quantityFor(option.id)"
                     (ngModelChange)="formState.setOptionQuantity(option.id, $event ?? 0)"
                     [min]="0"
