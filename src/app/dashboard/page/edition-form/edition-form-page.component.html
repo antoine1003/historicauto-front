@@ -5,8 +5,34 @@
     </div>
   } @else if (formState.registration(); as registration) {
     <header class="ef-header">
-      <p class="ef-muted text-sm">Mon espace exposant</p>
-      <h1 class="ef-header-title">Formulaire d'inscription {{ registration.editionYear }}</h1>
+      <div class="flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <p class="ef-muted text-sm">Mon espace exposant</p>
+          <h1 class="ef-header-title">Formulaire d'inscription {{ registration.editionYear }}</h1>
+        </div>
+
+        @if (!registration.readOnly) {
+          <div
+            class="ef-autosave-indicator"
+            [class.ef-autosave-indicator--error]="formState.autosaveStatus() === 'error'"
+          >
+            @switch (formState.autosaveStatus()) {
+              @case ('saving') {
+                <i class="pi pi-spin pi-spinner"></i>
+                <span>Enregistrement...</span>
+              }
+              @case ('saved') {
+                <i class="pi pi-check"></i>
+                <span>Enregistré</span>
+              }
+              @case ('error') {
+                <i class="pi pi-exclamation-triangle"></i>
+                <span>Échec de la sauvegarde</span>
+              }
+            }
+          </div>
+        }
+      </div>
 
       @if (registration.readOnly) {
         <div class="ef-readonly-banner">
@@ -71,6 +97,29 @@
             </p-step-panel>
           </p-step-panels>
         </p-stepper>
+      </div>
+
+      <div class="ef-actions-row">
+        @if (!formState.isFirstStep()) {
+          <p-button
+            label="Précédent"
+            icon="pi pi-arrow-left"
+            severity="secondary"
+            [outlined]="true"
+            (onClick)="formState.goToPreviousStep()"
+          />
+        } @else {
+          <span></span>
+        }
+
+        @if (!formState.isLastStep()) {
+          <p-button
+            label="Suivant"
+            icon="pi pi-arrow-right"
+            iconPos="right"
+            (onClick)="goToNextStep()"
+          />
+        }
       </div>
     </div>
   }

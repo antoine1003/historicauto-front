@@ -1,30 +1,33 @@
 @if (formState.registration(); as registration) {
-  <div class="ef-panel">
-    <h2 class="ef-section-title">Surface de stand</h2>
-    <p class="ef-help-text mb-4">
-      La commande d'un pack génère la mise à disposition d'une surface nue, des badges
-      exposants associés et d'un sticker pare-brise donnant accès au parking exposants.
-    </p>
+  <form [formGroup]="form">
+    <div class="ef-panel">
+      <h2 class="ef-section-title">Surface de stand</h2>
+      <p class="ef-help-text mb-4">
+        La commande d'un pack génère la mise à disposition d'une surface nue, des badges
+        exposants associés et d'un sticker pare-brise donnant accès au parking exposants.
+      </p>
 
-    <div class="flex flex-col gap-1">
-      @for (option of surfaceOptions; track option.id) {
-        <div class="ef-option-row">
-          <div class="flex items-center gap-2">
-            <p-radio-button
-              [inputId]="option.id"
-              name="surfaceOption"
-              [value]="option.id"
-              [ngModel]="registration.stand.selectedSurfaceOptionId"
-              (ngModelChange)="formState.selectSurfaceOption($event)"
-              [disabled]="formState.isReadOnly()"
-            />
-            <label [for]="option.id" class="ef-option-label">{{ option.label }}</label>
+      <div class="flex flex-col gap-1">
+        @for (option of surfaceOptions; track option.id) {
+          <div class="ef-option-row">
+            <div class="flex items-center gap-2">
+              <p-radio-button
+                [inputId]="option.id"
+                formControlName="selectedSurfaceOptionId"
+                [value]="option.id"
+              />
+              <label [for]="option.id" class="ef-option-label">{{ option.label }}</label>
+            </div>
+            <span class="ef-option-price">{{ option.mockPriceTtc | number: '1.0-2' }} € TTC</span>
           </div>
-          <span class="ef-option-price">{{ option.mockPriceTtc | number: '1.0-2' }} € TTC</span>
-        </div>
+        }
+      </div>
+
+      @if (form.controls.selectedSurfaceOptionId.touched && form.controls.selectedSurfaceOptionId.invalid) {
+        <p class="ef-field-error mt-2">Sélectionnez une surface de stand pour continuer.</p>
       }
     </div>
-  </div>
+  </form>
 
   <div class="ef-panel mt-6">
     <h2 class="ef-section-title">Options complémentaires</h2>
@@ -46,6 +49,7 @@
                   <span class="ef-option-price">{{ option.mockPriceTtc | number: '1.0-2' }} € TTC / unité</span>
                   <p-input-number
                     [ngModel]="quantityFor(option.id)"
+                    [ngModelOptions]="{ standalone: true }"
                     (ngModelChange)="formState.setOptionQuantity(option.id, $event ?? 0)"
                     [min]="0"
                     [showButtons]="true"
@@ -77,5 +81,14 @@
         <span>{{ formState.standTotalTtc() | number: '1.0-2' }} € TTC</span>
       </div>
     </div>
+
+    @if (!formState.isReadOnly()) {
+      <div class="mt-5 flex flex-col items-start gap-2">
+        <p-button label="Envoyer ma demande" icon="pi pi-send" [disabled]="form.invalid" (onClick)="submit()" />
+        @if (submitted()) {
+          <p class="ef-field-success">Votre demande a bien été envoyée à l'organisation.</p>
+        }
+      </div>
+    }
   </div>
 }

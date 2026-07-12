@@ -1,6 +1,6 @@
 import { Injectable, computed, signal } from '@angular/core';
 import {
-  DocumentItem,
+  AutosaveStatus,
   EditionRegistrationState,
   OptionCategory,
   RegistrationStatus,
@@ -9,6 +9,9 @@ import {
 } from '../models/edition-form.models';
 import { getOptionById, OPTIONS_CATALOG } from '@app/dashboard/services/options-catalog';
 import { loadMockRegistration } from '@app/dashboard/services/mock-registrations';
+
+/** Délai avant déclenchement de la sauvegarde auto après la dernière modification (ms). */
+const AUTOSAVE_DEBOUNCE_MS = 800;
 
 /**
  * État central du formulaire d'inscription, partagé par les 5 étapes.
@@ -21,12 +24,24 @@ import { loadMockRegistration } from '@app/dashboard/services/mock-registrations
 export class EditionFormStateService {
   private readonly state = signal<EditionRegistrationState | null>(null);
   private readonly activeStepSignal = signal<RegistrationStep>(RegistrationStep.ENTITY);
+  private readonly autosaveStatusSignal = signal<AutosaveStatus>('idle');
+  private autosaveTimer: ReturnType<typeof setTimeout> | null = null;
 
   readonly registration = this.state.asReadonly();
   readonly activeStep = this.activeStepSignal.asReadonly();
+  readonly autosaveStatus = this.autosaveStatusSignal.asReadonly();
 
   readonly isReadOnly = computed(() => this.state()?.readOnly ?? false);
   readonly editionYear = computed(() => this.state()?.editionYear ?? null);
+
+  /** Ordre linéaire du stepper pour les boutons Suivant/Précédent. */
+  private readonly stepOrder: RegistrationStep[] = [
+    RegistrationStep.ENTITY,
+    RegistrationStep.STAND,
+    RegistrationStep.CONFIRMATION,
+    RegistrationStep.DOCUMENTS,
+    RegistrationStep.PAYMENT,
+  ];
 
   /**
    * Règle de navigation du stepper : tant qu'on est en lecture seule (historique), tout est
@@ -107,6 +122,7 @@ export class EditionFormStateService {
     const registration = loadMockRegistration(year);
     this.state.set(registration);
     this.activeStepSignal.set(RegistrationStep.ENTITY);
+    this.autosaveStatusSignal.set('idle');
 
     return registration !== null;
   }
@@ -116,6 +132,32 @@ export class EditionFormStateService {
       this.activeStepSignal.set(step);
     }
   }
+
+  /**
+   * Navigation séquentielle "Suivant". La garde métier réelle (empêcher d'avancer avec un
+   * formulaire invalide) est portée par `[disabled]="!formGroup.valid"` côté composant d'étape,
+   * cette méthode ne fait que déplacer le curseur une fois que le bouton a été activé.
+   */
+  goToNextStep(): void {
+    const currentIndex = this.stepOrder.indexOf(this.activeStepSignal());
+    const next = this.stepOrder[currentIndex + 1];
+    if (next !== undefined) {
+      this.goToStep(next);
+    }
+  }
+
+  goToPreviousStep(): void {
+    const currentIndex = this.stepOrder.indexOf(this.activeStepSignal());
+    const previous = this.stepOrder[currentIndex - 1];
+    if (previous !== undefined) {
+      this.goToStep(previous);
+    }
+  }
+
+  readonly isFirstStep = computed(() => this.stepOrder.indexOf(this.activeStepSignal()) === 0);
+  readonly isLastStep = computed(
+    () => this.stepOrder.indexOf(this.activeStepSignal()) === this.stepOrder.length - 1,
+  );
 
   updateEntity(patch: Partial<EditionRegistrationState['entity']>): void {
     this.patchState((reg) => ({ entity: { ...reg.entity, ...patch } }));
@@ -160,15 +202,26 @@ export class EditionFormStateService {
   // ---------------------------------------------------------------------------------------------
 
   /**
-   * TODO intégration : autosave de l'étape Entité/Stand.
-   * Recommandation : déclencher via un `effect()` sur les signals concernés, avec un `debounceTime`
-   * (rxjs `Subject` alimenté par l'effect, ou `toObservable` + `debounce`) d'environ 800ms, plutôt
-   * qu'un appel à chaque frappe. Endpoint cible : PATCH /api/registrations/{id} (DTO partiel),
-   * en réutilisant le pattern d'AbstractRestService côté back. Prévoir un indicateur visuel
-   * "Enregistrement..." / "Enregistré" plutôt qu'un appel bloquant.
+   * Autosave debounced. Front-only pour cette itération : simule le cycle 'saving' → 'saved'
+   * via un timer, sans appel réseau. Chaque mutation via `patchState` la redéclenche.
+   *
+   * TODO intégration : remplacer le corps du `setTimeout` par l'appel réel
+   * `PATCH /api/registrations/{id}` (DTO partiel, cf. AbstractRestService côté back), en gardant
+   * la même mécanique de debounce et les mêmes transitions de `autosaveStatusSignal` ('saving'
+   * avant l'appel, 'saved' sur succès, 'error' sur échec réseau/validation serveur).
    */
-  saveDraft(): void {
-    // no-op (front only)
+  private scheduleAutosave(): void {
+    if (this.isReadOnly()) {
+      return;
+    }
+    if (this.autosaveTimer) {
+      clearTimeout(this.autosaveTimer);
+    }
+    this.autosaveStatusSignal.set('saving');
+    this.autosaveTimer = setTimeout(() => {
+      this.autosaveStatusSignal.set('saved');
+      this.autosaveTimer = null;
+    }, AUTOSAVE_DEBOUNCE_MS);
   }
 
   /**
@@ -177,9 +230,17 @@ export class EditionFormStateService {
    * allowedTransitions) et l'ActivityLogAction::REGISTRATION_SUBMITTED. Gérer les erreurs de
    * validation serveur (ex: champs PRO/CLUB requis manquants) en les remontant aux composants
    * via une exception typée plutôt qu'un message générique.
+   *
+   * Retourne un booléen (front-only) pour permettre au composant Stand d'afficher une
+   * confirmation ; à remplacer par la réponse effective de l'appel HTTP.
    */
-  submitRegistrationOptions(): void {
-    // no-op (front only)
+  submitRegistrationOptions(): boolean {
+    const reg = this.state();
+    if (!reg || !reg.stand.selectedSurfaceOptionId) {
+      return false;
+    }
+    // no-op réseau (front only) — le back positionnera reg.status à SUBMITTED en réponse.
+    return true;
   }
 
   /**
@@ -223,5 +284,6 @@ export class EditionFormStateService {
       return;
     }
     this.state.update((reg) => (reg ? { ...reg, ...producer(reg) } : reg));
+    this.scheduleAutosave();
   }
 }

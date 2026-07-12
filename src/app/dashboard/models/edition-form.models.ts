@@ -160,3 +160,4 @@ export interface EditionRegistrationState {
   payment: PaymentSummary;
 }
 
+export type AutosaveStatus = 'idle' | 'saving' | 'saved' | 'error';

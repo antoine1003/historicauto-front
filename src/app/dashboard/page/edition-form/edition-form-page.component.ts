@@ -1,6 +1,7 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, ViewChild } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { StepperModule } from 'primeng/stepper';
+import { ButtonModule } from 'primeng/button';
 import {
   StepConfirmationComponent
 } from '@app/dashboard/page/edition-form/components/steps/confirmation/step-confirmation.component';
@@ -12,11 +13,13 @@ import {
 import { StepPaymentComponent } from '@app/dashboard/page/edition-form/components/steps/payment/step-payment.component';
 import { EditionFormStateService } from '@app/dashboard/services/edition-form-state.service';
 import { RegistrationStep } from '@app/dashboard/models/edition-form.models';
+import { ValidatableFormStep } from '@app/dashboard/models/validatable-form-step';
 
 @Component({
   selector: 'app-edition-form-page',
   imports: [
     StepperModule,
+    ButtonModule,
     StepEntityComponent,
     StepStandComponent,
     StepConfirmationComponent,
@@ -30,6 +33,9 @@ import { RegistrationStep } from '@app/dashboard/models/edition-form.models';
 export class EditionFormPageComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   protected readonly formState = inject(EditionFormStateService);
+
+  @ViewChild(StepEntityComponent) private readonly entityStep?: StepEntityComponent;
+  @ViewChild(StepStandComponent) private readonly standStep?: StepStandComponent;
 
   protected readonly RegistrationStep = RegistrationStep;
   protected notFound = false;
@@ -46,5 +52,30 @@ export class EditionFormPageComponent implements OnInit {
       return;
     }
     this.formState.goToStep(value as RegistrationStep);
+  }
+
+  /**
+   * Le composant de l'étape courante (s'il porte une validation bloquante) n'est monté que
+   * lorsqu'elle est active dans le `p-stepper` — seule une des deux `@ViewChild` est donc
+   * définie à un instant donné. Les étapes Confirmation/Documents/Paiement n'ont pas de garde
+   * de progression ici, elles gèrent leurs propres règles (checklist, statut backend).
+   */
+  private currentValidatableStep(): ValidatableFormStep | undefined {
+    switch (this.formState.activeStep()) {
+      case RegistrationStep.ENTITY:
+        return this.entityStep;
+      case RegistrationStep.STAND:
+        return this.standStep;
+      default:
+        return undefined;
+    }
+  }
+
+  protected goToNextStep(): void {
+    const currentStep = this.currentValidatableStep();
+    if (currentStep && !currentStep.validateAndTouch()) {
+      return;
+    }
+    this.formState.goToNextStep();
   }
 }

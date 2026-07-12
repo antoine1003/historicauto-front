@@ -1,95 +1,89 @@
 @if (formState.registration(); as registration) {
-  <div class="ef-panel">
-    <h2 class="ef-section-title">Votre entité</h2>
+  <form [formGroup]="form">
+    <div class="ef-panel">
+      <h2 class="ef-section-title">Votre entité</h2>
 
-    <div class="ef-grid-2">
-      <div class="ef-field">
-        <label class="ef-label" for="exhibitorType">Vous êtes ?</label>
-        <p-select
-          inputId="exhibitorType"
-          [options]="[{ label: 'Professionnel', value: ExhibitorType.PRO }, { label: 'Club', value: ExhibitorType.CLUB }]"
-          optionLabel="label"
-          optionValue="value"
-          [ngModel]="registration.entity.exhibitorType"
-          (ngModelChange)="formState.updateEntity({ exhibitorType: $event })"
-          [disabled]="formState.isReadOnly()"
-          styleClass="w-full"
-        />
-      </div>
-
-      <div class="ef-field">
-        <label class="ef-label" for="companyName">Raison sociale / Nom du club</label>
-        <input
-          pInputText
-          id="companyName"
-          class="w-full"
-          [ngModel]="registration.entity.companyName"
-          (ngModelChange)="formState.updateEntity({ companyName: $event })"
-          [disabled]="formState.isReadOnly()"
-        />
-      </div>
-    </div>
-
-    @if (registration.entity.exhibitorType === ExhibitorType.PRO) {
       <div class="ef-grid-2">
         <div class="ef-field">
-          <label class="ef-label" for="siret">N° SIRET</label>
-          <input
-            pInputText
-            pInputMask="999 999 999 9999"
-            id="siret"
-            class="w-full"
-            [ngModel]="registration.entity.siret"
-            (ngModelChange)="formState.updateEntity({ siret: $event })"
-            [disabled]="formState.isReadOnly()"
+          <label class="ef-label" for="exhibitorType">Vous êtes ?</label>
+          <p-select
+            inputId="exhibitorType"
+            formControlName="exhibitorType"
+            [options]="[{ label: 'Professionnel', value: ExhibitorType.PRO }, { label: 'Club', value: ExhibitorType.CLUB }]"
+            optionLabel="label"
+            optionValue="value"
+            styleClass="w-full"
           />
         </div>
 
         <div class="ef-field">
-          <label class="ef-label" for="activityDomain">Domaine d'activité</label>
-          <input
-            pInputText
-            id="activityDomain"
-            class="w-full"
-            [ngModel]="registration.entity.activityDomain"
-            (ngModelChange)="formState.updateEntity({ activityDomain: $event })"
-            [disabled]="formState.isReadOnly()"
-          />
+          <label class="ef-label" for="companyName">Raison sociale / Nom du club *</label>
+          <input pInputText id="companyName" class="w-full" formControlName="companyName" />
+          @if (form.controls.companyName.touched && form.controls.companyName.invalid) {
+            <p class="ef-field-error">La raison sociale ou le nom du club est obligatoire.</p>
+          }
         </div>
       </div>
-    } @else {
-      <div class="ef-field md:w-1/2">
-        <label class="ef-label" for="clubType">Type de club</label>
-        <p-select
-          inputId="clubType"
-          [options]="clubTypeOptions"
-          optionLabel="label"
-          optionValue="value"
-          [ngModel]="registration.entity.clubType"
-          (ngModelChange)="formState.updateEntity({ clubType: $event })"
-          [disabled]="formState.isReadOnly()"
-          styleClass="w-full"
-        />
-      </div>
-    }
 
-    <div class="ef-field">
-      <label class="ef-label">Visuel à faire figurer dans la liste des exposants</label>
-      @if (registration.entity.visualFileName) {
-        <p class="ef-help-text">Fichier actuel : {{ registration.entity.visualFileName }}</p>
+      @if (form.controls.exhibitorType.value === ExhibitorType.PRO) {
+        <div class="ef-grid-2">
+          <div class="ef-field">
+            <label class="ef-label" for="siret">N° SIRET *</label>
+            <input
+              pInputText
+              pInputMask="999 999 999 9999"
+              id="siret"
+              class="w-full"
+              formControlName="siret"
+            />
+            @if (form.controls.siret.touched && form.controls.siret.invalid) {
+              <p class="ef-field-error">Le numéro SIRET est obligatoire pour un exposant professionnel.</p>
+            }
+          </div>
+
+          <div class="ef-field">
+            <label class="ef-label" for="activityDomain">Domaine d'activité *</label>
+            <input pInputText id="activityDomain" class="w-full" formControlName="activityDomain" />
+            @if (form.controls.activityDomain.touched && form.controls.activityDomain.invalid) {
+              <p class="ef-field-error">Le domaine d'activité est obligatoire pour un exposant professionnel.</p>
+            }
+          </div>
+        </div>
+      } @else {
+        <div class="ef-field md:w-1/2">
+          <label class="ef-label" for="clubType">Type de club *</label>
+          <p-select
+            inputId="clubType"
+            formControlName="clubType"
+            [options]="clubTypeOptions"
+            optionLabel="label"
+            optionValue="value"
+            styleClass="w-full"
+          />
+          @if (form.controls.clubType.touched && form.controls.clubType.invalid) {
+            <p class="ef-field-error">Le type de club est obligatoire.</p>
+          }
+        </div>
       }
-      @if (!formState.isReadOnly()) {
-        <p-fileupload
-          mode="basic"
-          chooseLabel="Téléverser un visuel (logo, photo...)"
-          accept="image/*"
-          [auto]="true"
-          [customUpload]="true"
-          (uploadHandler)="onVisualSelected($event)"
-        />
-      }
+
+      <div class="ef-field">
+        <label class="ef-label">Visuel à faire figurer dans la liste des exposants</label>
+        @if (registration.entity.visualFileName) {
+          <p class="ef-help-text">Fichier actuel : {{ registration.entity.visualFileName }}</p>
+        }
+        @if (!formState.isReadOnly()) {
+          <p-fileupload
+            mode="basic"
+            chooseLabel="Téléverser un visuel (logo, photo...)"
+            accept="image/*"
+            [auto]="true"
+            [customUpload]="true"
+            (uploadHandler)="onVisualSelected($event)"
+          />
+        }
+      </div>
     </div>
-  </div>
+  </form>
 
   <div class="ef-panel mt-6">
     <h2 class="ef-section-title">Responsables de stand</h2>
@@ -117,10 +111,10 @@
     @if (!formState.isReadOnly()) {
       <div class="ef-manager-card mt-4">
         <div class="ef-grid-2 flex-1 !mb-0">
-          <input pInputText placeholder="Prénom" class="w-full" [(ngModel)]="newManager.firstName" />
-          <input pInputText placeholder="Nom" class="w-full" [(ngModel)]="newManager.lastName" />
-          <input pInputText placeholder="Téléphone" class="w-full" [(ngModel)]="newManager.phone" />
-          <input pInputText placeholder="Email" class="w-full" [(ngModel)]="newManager.email" />
+          <input pInputText placeholder="Prénom" class="w-full" [(ngModel)]="newManager.firstName" [ngModelOptions]="{ standalone: true }" />
+          <input pInputText placeholder="Nom" class="w-full" [(ngModel)]="newManager.lastName" [ngModelOptions]="{ standalone: true }" />
+          <input pInputText placeholder="Téléphone" class="w-full" [(ngModel)]="newManager.phone" [ngModelOptions]="{ standalone: true }" />
+          <input pInputText placeholder="Email" class="w-full" [(ngModel)]="newManager.email" [ngModelOptions]="{ standalone: true }" />
         </div>
         <p-button label="Ajouter un responsable" icon="pi pi-plus" (onClick)="addManager()" />
       </div>
