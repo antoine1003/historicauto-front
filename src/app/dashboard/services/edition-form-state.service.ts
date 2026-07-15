@@ -1,9 +1,11 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { catchError, of } from 'rxjs';
+import { MessageService } from 'primeng/api';
 import {
   AutosaveStatus,
   EditionRegistrationState,
+  EntityStepPayload,
   EntityStepState,
   OptionCategory,
   OptionDefinition,
@@ -32,17 +34,18 @@ const AUTOSAVE_DEBOUNCE_MS = 800;
 @Injectable()
 export class EditionFormStateService {
   private readonly registrationService = inject(RegistrationService);
+  private readonly messageService = inject(MessageService);
 
   private readonly state = signal<EditionRegistrationState | null>(null);
   private readonly activeStepSignal = signal<RegistrationStep>(RegistrationStep.ENTITY);
-  private readonly autosaveStatusSignal = signal<AutosaveStatus>('idle');
+  private readonly entityAutosaveStatusSignal = signal<AutosaveStatus>('idle');
   private readonly loadingSignal = signal(false);
   private readonly loadErrorSignal = signal<'not_found' | 'closed' | null>(null);
-  private autosaveTimer: ReturnType<typeof setTimeout> | null = null;
+  private entityAutosaveTimer: ReturnType<typeof setTimeout> | null = null;
 
   readonly registration = this.state.asReadonly();
   readonly activeStep = this.activeStepSignal.asReadonly();
-  readonly autosaveStatus = this.autosaveStatusSignal.asReadonly();
+  readonly entityAutosaveStatus = this.entityAutosaveStatusSignal.asReadonly();
   readonly loading = this.loadingSignal.asReadonly();
   readonly loadError = this.loadErrorSignal.asReadonly();
 
@@ -129,7 +132,7 @@ export class EditionFormStateService {
     this.loadErrorSignal.set(null);
     this.state.set(null);
     this.activeStepSignal.set(RegistrationStep.ENTITY);
-    this.autosaveStatusSignal.set('idle');
+    this.entityAutosaveStatusSignal.set('idle');
 
     this.registrationService
       .getByEditionYear(year)
@@ -182,6 +185,7 @@ export class EditionFormStateService {
 
   updateEntity(patch: Partial<EditionRegistrationState['entity']>): void {
     this.patchLocalState((reg) => ({ entity: { ...reg.entity, ...patch } }));
+    this.scheduleEntityAutosave();
   }
 
   addManager(manager: StandManagerForm): void {
@@ -242,6 +246,46 @@ export class EditionFormStateService {
 
   uploadInsuranceDocument(file: File): void {
     void file; // no-op (front only, étape 4 hors périmètre)
+  }
+
+  private scheduleEntityAutosave(): void {
+    if (this.isReadOnly()) {
+      return;
+    }
+    if (this.entityAutosaveTimer) {
+      clearTimeout(this.entityAutosaveTimer);
+    }
+    this.entityAutosaveStatusSignal.set('saving');
+    this.entityAutosaveTimer = setTimeout(() => {
+      const reg = this.state();
+      if (!reg) {
+        return;
+      }
+      const payload: EntityStepPayload = {
+        exhibitorType: reg.entity.exhibitorType,
+        companyName: reg.entity.companyName,
+        siret: reg.entity.siret,
+        activityDomainId: reg.entity.activityDomainId,
+        clubType: reg.entity.clubType,
+      };
+      this.registrationService.patchEntity(reg.id, payload).subscribe({
+        next: (response) => {
+          this.state.update((current) =>
+            current ? { ...current, entity: this.toEntityStepState(response.data) } : current,
+          );
+          this.entityAutosaveStatusSignal.set('saved');
+        },
+        error: () => {
+          this.entityAutosaveStatusSignal.set('error');
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Échec de la sauvegarde',
+            detail: "Vos informations d'entité n'ont pas pu être enregistrées. Nouvel essai à la prochaine modification.",
+          });
+        },
+      });
+      this.entityAutosaveTimer = null;
+    }, AUTOSAVE_DEBOUNCE_MS);
   }
 
   // ---------------------------------------------------------------------------------------------
