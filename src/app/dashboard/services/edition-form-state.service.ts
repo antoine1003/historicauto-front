@@ -336,10 +336,6 @@ export class EditionFormStateService {
     this.patchLocalState((reg) => ({ confirmation: { ...reg.confirmation, signatoryName: name, signatoryRole: role } }));
   }
 
-  // ---------------------------------------------------------------------------------------------
-  // Méthodes volontairement non implémentées (front-only pour cette itération — Étapes 3-5).
-  // ---------------------------------------------------------------------------------------------
-
   submitRegistrationOptions(): void {
     const reg = this.state();
     if (!reg || !reg.stand.selectedSurfaceOptionId) {
@@ -363,6 +359,10 @@ export class EditionFormStateService {
       },
     });
   }
+
+  // ---------------------------------------------------------------------------------------------
+  // Méthodes volontairement non implémentées (front-only pour cette itération — Étapes 3-4).
+  // ---------------------------------------------------------------------------------------------
 
   confirmRegistration(): void {
     const allChecked = Object.values(this.state()?.confirmation.checklist ?? {}).every(Boolean);
