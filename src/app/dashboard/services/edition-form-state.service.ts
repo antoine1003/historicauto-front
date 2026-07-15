@@ -12,6 +12,7 @@ import {
   RegistrationStatus,
   RegistrationStep,
   StandManagerForm,
+  StandStepPayload,
   StandStepState,
 } from '../models/edition-form.models';
 import {
@@ -20,6 +21,7 @@ import {
   StandStepApiDto,
 } from '../models/registration-api.models';
 import { RegistrationService } from '@app/shared/services/registration.service';
+import { OptionsCatalogService } from '@app/dashboard/services/options-catalog.service';
 
 /** Délai avant déclenchement de la sauvegarde auto après la dernière modification (ms). */
 const AUTOSAVE_DEBOUNCE_MS = 800;
@@ -34,18 +36,23 @@ const AUTOSAVE_DEBOUNCE_MS = 800;
 @Injectable()
 export class EditionFormStateService {
   private readonly registrationService = inject(RegistrationService);
+  private readonly optionsCatalogService = inject(OptionsCatalogService);
   private readonly messageService = inject(MessageService);
 
   private readonly state = signal<EditionRegistrationState | null>(null);
   private readonly activeStepSignal = signal<RegistrationStep>(RegistrationStep.ENTITY);
+  private readonly optionsSignal = signal<OptionDefinition[]>([]);
   private readonly entityAutosaveStatusSignal = signal<AutosaveStatus>('idle');
+  private readonly standAutosaveStatusSignal = signal<AutosaveStatus>('idle');
   private readonly loadingSignal = signal(false);
   private readonly loadErrorSignal = signal<'not_found' | 'closed' | null>(null);
   private entityAutosaveTimer: ReturnType<typeof setTimeout> | null = null;
+  private standAutosaveTimer: ReturnType<typeof setTimeout> | null = null;
 
   readonly registration = this.state.asReadonly();
   readonly activeStep = this.activeStepSignal.asReadonly();
   readonly entityAutosaveStatus = this.entityAutosaveStatusSignal.asReadonly();
+  readonly standAutosaveStatus = this.standAutosaveStatusSignal.asReadonly();
   readonly loading = this.loadingSignal.asReadonly();
   readonly loadError = this.loadErrorSignal.asReadonly();
 
@@ -111,15 +118,12 @@ export class EditionFormStateService {
     return orderTotal - this.paymentsTotalTtc();
   });
 
-  /**
-   * Stub temporaire : renvoie toujours un tableau vide. Task 8 branche le vrai catalogue via
-   * `OptionsCatalogService` (l'ancien fichier statique `options-catalog.ts` a été supprimé au
-   * Task 2 en même temps que le renommage de `OptionDefinition`, il n'y a donc rien à lire ici
-   * avant que Task 8 introduise `optionsSignal`).
-   */
   getOptionsByCategory(category: OptionCategory): OptionDefinition[] {
-    void category;
-    return [];
+    return this.optionsSignal().filter((option) => option.category === category);
+  }
+
+  private getOptionById(id: string): OptionDefinition | undefined {
+    return this.optionsSignal().find((option) => option.id === id);
   }
 
   /**
@@ -133,6 +137,12 @@ export class EditionFormStateService {
     this.state.set(null);
     this.activeStepSignal.set(RegistrationStep.ENTITY);
     this.entityAutosaveStatusSignal.set('idle');
+    this.standAutosaveStatusSignal.set('idle');
+
+    this.optionsCatalogService.getForEdition(year).subscribe({
+      next: (options) => this.optionsSignal.set(options),
+      error: () => this.optionsSignal.set([]),
+    });
 
     this.registrationService
       .getByEditionYear(year)
@@ -200,6 +210,7 @@ export class EditionFormStateService {
 
   selectSurfaceOption(optionId: string | null): void {
     this.patchLocalState((reg) => ({ stand: { ...reg.stand, selectedSurfaceOptionId: optionId } }));
+    this.scheduleStandAutosave();
   }
 
   setOptionQuantity(optionId: string, quantity: number): void {
@@ -209,6 +220,7 @@ export class EditionFormStateService {
         quantitiesByOptionId: { ...reg.stand.quantitiesByOptionId, [optionId]: Math.max(0, quantity) },
       },
     }));
+    this.scheduleStandAutosave();
   }
 
   updateConfirmationChecklist(patch: Partial<EditionRegistrationState['confirmation']['checklist']>): void {
@@ -285,6 +297,43 @@ export class EditionFormStateService {
         },
       });
       this.entityAutosaveTimer = null;
+    }, AUTOSAVE_DEBOUNCE_MS);
+  }
+
+  private scheduleStandAutosave(): void {
+    if (this.isReadOnly()) {
+      return;
+    }
+    if (this.standAutosaveTimer) {
+      clearTimeout(this.standAutosaveTimer);
+    }
+    this.standAutosaveStatusSignal.set('saving');
+    this.standAutosaveTimer = setTimeout(() => {
+      const reg = this.state();
+      if (!reg) {
+        return;
+      }
+      const payload: StandStepPayload = {
+        selectedSurfaceOptionId: reg.stand.selectedSurfaceOptionId,
+        quantitiesByOptionId: reg.stand.quantitiesByOptionId,
+      };
+      this.registrationService.patchStand(reg.id, payload).subscribe({
+        next: (response) => {
+          this.state.update((current) =>
+            current ? { ...current, stand: this.toStandStepState(response.data) } : current,
+          );
+          this.standAutosaveStatusSignal.set('saved');
+        },
+        error: () => {
+          this.standAutosaveStatusSignal.set('error');
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Échec de la sauvegarde',
+            detail: "Vos options de stand n'ont pas pu être enregistrées. Nouvel essai à la prochaine modification.",
+          });
+        },
+      });
+      this.standAutosaveTimer = null;
     }, AUTOSAVE_DEBOUNCE_MS);
   }
 
