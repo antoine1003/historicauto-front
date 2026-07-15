@@ -282,6 +282,33 @@ export class EditionFormStateService {
     });
   }
 
+  uploadLogo(file: File): void {
+    const reg = this.state();
+    if (!reg || this.isReadOnly()) {
+      return;
+    }
+
+    this.registrationService.uploadLogo(reg.id, file).subscribe({
+      next: (response) => {
+        this.state.update((current) =>
+          current ? { ...current, entity: { ...current.entity, visualUrl: response.data.url } } : current,
+        );
+        this.messageService.add({
+          severity: 'success',
+          summary: 'Visuel téléversé',
+          detail: 'Votre visuel a bien été enregistré.',
+        });
+      },
+      error: () => {
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Échec',
+          detail: "Le visuel n'a pas pu être téléversé.",
+        });
+      },
+    });
+  }
+
   selectSurfaceOption(optionId: string | null): void {
     this.patchLocalState((reg) => ({ stand: { ...reg.stand, selectedSurfaceOptionId: optionId } }));
     this.scheduleStandAutosave();
