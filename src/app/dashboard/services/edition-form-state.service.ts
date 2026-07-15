@@ -7,6 +7,7 @@ import {
   EditionRegistrationState,
   EntityStepPayload,
   EntityStepState,
+  NewManagerPayload,
   OptionCategory,
   OptionDefinition,
   RegistrationStatus,
@@ -198,14 +199,87 @@ export class EditionFormStateService {
     this.scheduleEntityAutosave();
   }
 
-  addManager(manager: StandManagerForm): void {
-    this.patchLocalState((reg) => ({ entity: { ...reg.entity, managers: [...reg.entity.managers, manager] } }));
+  addManager(manager: Omit<StandManagerForm, 'id'>): void {
+    const reg = this.state();
+    if (!reg || this.isReadOnly()) {
+      return;
+    }
+    const optimisticId = `temp-${crypto.randomUUID()}`;
+    const optimisticManager: StandManagerForm = { id: optimisticId, ...manager };
+    this.state.update((current) =>
+      current
+        ? { ...current, entity: { ...current.entity, managers: [...current.entity.managers, optimisticManager] } }
+        : current,
+    );
+
+    const payload: NewManagerPayload = {
+      firstName: manager.firstName,
+      lastName: manager.lastName,
+      phone: manager.phone || null,
+      email: manager.email,
+    };
+
+    this.registrationService.addManager(reg.id, payload).subscribe({
+      next: (response) => {
+        this.state.update((current) =>
+          current
+            ? {
+                ...current,
+                entity: {
+                  ...current.entity,
+                  managers: current.entity.managers.map((m) =>
+                    m.id === optimisticId
+                      ? {
+                          id: response.data.id,
+                          firstName: response.data.firstName,
+                          lastName: response.data.lastName,
+                          phone: response.data.phone ?? '',
+                          email: response.data.email,
+                        }
+                      : m,
+                  ),
+                },
+              }
+            : current,
+        );
+      },
+      error: () => {
+        this.state.update((current) =>
+          current
+            ? { ...current, entity: { ...current.entity, managers: current.entity.managers.filter((m) => m.id !== optimisticId) } }
+            : current,
+        );
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Échec',
+          detail: "Le responsable de stand n'a pas pu être ajouté.",
+        });
+      },
+    });
   }
 
   removeManager(managerId: string): void {
-    this.patchLocalState((reg) => ({
-      entity: { ...reg.entity, managers: reg.entity.managers.filter((m) => m.id !== managerId) },
-    }));
+    const reg = this.state();
+    if (!reg || this.isReadOnly()) {
+      return;
+    }
+
+    this.registrationService.removeManager(reg.id, managerId).subscribe({
+      next: () => {
+        this.state.update((current) =>
+          current
+            ? { ...current, entity: { ...current.entity, managers: current.entity.managers.filter((m) => m.id !== managerId) } }
+            : current,
+        );
+      },
+      error: () => {
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Échec',
+          detail: "Le responsable de stand n'a pas pu être supprimé.",
+        });
+      },
+    });
   }
 
   selectSurfaceOption(optionId: string | null): void {
