@@ -47,6 +47,7 @@ export class EditionFormStateService {
   private readonly standAutosaveStatusSignal = signal<AutosaveStatus>('idle');
   private readonly loadingSignal = signal(false);
   private readonly loadErrorSignal = signal<'not_found' | 'closed' | null>(null);
+  private readonly submitStatusSignal = signal<'idle' | 'submitting' | 'submitted' | 'error'>('idle');
   private entityAutosaveTimer: ReturnType<typeof setTimeout> | null = null;
   private standAutosaveTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -56,6 +57,7 @@ export class EditionFormStateService {
   readonly standAutosaveStatus = this.standAutosaveStatusSignal.asReadonly();
   readonly loading = this.loadingSignal.asReadonly();
   readonly loadError = this.loadErrorSignal.asReadonly();
+  readonly submitStatus = this.submitStatusSignal.asReadonly();
 
   readonly isReadOnly = computed(() => this.state()?.readOnly ?? false);
   readonly editionYear = computed(() => this.state()?.editionYear ?? null);
@@ -338,12 +340,28 @@ export class EditionFormStateService {
   // Méthodes volontairement non implémentées (front-only pour cette itération — Étapes 3-5).
   // ---------------------------------------------------------------------------------------------
 
-  submitRegistrationOptions(): boolean {
+  submitRegistrationOptions(): void {
     const reg = this.state();
     if (!reg || !reg.stand.selectedSurfaceOptionId) {
-      return false;
+      return;
     }
-    return true;
+
+    this.submitStatusSignal.set('submitting');
+    this.registrationService.submit(reg.id).subscribe({
+      next: (response) => {
+        this.state.update((current) =>
+          current ? { ...current, status: response.data.status as RegistrationStatus } : current,
+        );
+        this.submitStatusSignal.set('submitted');
+      },
+      error: (err: HttpErrorResponse) => {
+        this.submitStatusSignal.set('error');
+        const errors = (err.error?.errors ?? {}) as Record<string, string[]>;
+        const detail =
+          Object.values(errors).flat().join(' ') || "Votre demande n'a pas pu être envoyée.";
+        this.messageService.add({ severity: 'error', summary: 'Formulaire incomplet', detail });
+      },
+    });
   }
 
   confirmRegistration(): void {
