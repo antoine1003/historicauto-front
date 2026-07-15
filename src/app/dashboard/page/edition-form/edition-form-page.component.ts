@@ -42,9 +42,11 @@ export class EditionFormPageComponent implements OnInit {
 
   ngOnInit(): void {
     const year = this.route.snapshot.paramMap.get('year');
-    if (!year || !this.formState.loadForEditionYear(year)) {
+    if (!year) {
       this.notFound = true;
+      return;
     }
+    this.formState.loadForEditionYear(year);
   }
 
   protected onStepChange(value: number | undefined): void {
