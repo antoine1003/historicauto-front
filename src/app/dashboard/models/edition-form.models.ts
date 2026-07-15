@@ -56,7 +56,7 @@ export enum RegistrationStep {
 }
 
 export interface StandManagerForm {
-  /** Id local généré côté front (crypto.randomUUID), remplacé par l'UUID serveur après sauvegarde. */
+  /** UUID serveur une fois créé côté back ; id temporaire `temp-<uuid>` pendant l'ajout optimiste. */
   id: string;
   firstName: string;
   lastName: string;
@@ -69,14 +69,15 @@ export interface EntityStepState {
   companyName: string;
   /** Uniquement pertinent si exhibitorType === PRO. */
   siret: string | null;
-  activityDomain: string | null;
+  /** Uniquement pertinent si exhibitorType === PRO. UUID d'ActivityDomain, résolu via ActivityDomainService. */
+  activityDomainId: string | null;
   /** Uniquement pertinent si exhibitorType === CLUB. */
   clubType: ClubType | null;
-  visualFileName: string | null;
+  visualUrl: string | null;
   managers: StandManagerForm[];
 }
 
-/** Définition catalogue d'une option, en dur côté front (cf. recommandation plus bas pour les prix). */
+/** Définition catalogue + tarif d'une option, source unique : GET /api/editions/{year}/option-prices. */
 export interface OptionDefinition {
   id: string;
   category: OptionCategory;
@@ -84,13 +85,10 @@ export interface OptionDefinition {
   unit: string | null;
   /** Renseigné uniquement pour les packs de la catégorie SURFACE. */
   includedBadges: number | null;
-  /**
-   * Prix TTC mocké. EN PRODUCTION : ne jamais coder le prix en dur.
-   * Il doit être résolu via GET /api/editions/{year}/option-prices (table OptionEditionPrice),
-   * le catalogue (id, label, catégorie, unité) restant lui en dur côté front comme demandé.
-   */
-  mockPriceTtc: number;
-  mockVatRate: number;
+  /** null = tarif commun Pro/Club (toutes catégories hors Surface). */
+  exhibitorType: ExhibitorType | null;
+  priceTtc: number;
+  vatRate: number;
 }
 
 export interface StandStepState {
@@ -98,6 +96,8 @@ export interface StandStepState {
   selectedSurfaceOptionId: string | null;
   /** Quantité par option pour toutes les catégories hors SURFACE (0 = non sélectionnée). */
   quantitiesByOptionId: Record<string, number>;
+  /** Calculé côté serveur, source de vérité (cf. Registration::computeOptionsTotal()). */
+  standTotalTtc: number;
 }
 
 export interface ConfirmationChecklistState {
@@ -149,6 +149,8 @@ export interface PaymentSummary {
 
 /** État complet d'un formulaire d'inscription pour une édition donnée. */
 export interface EditionRegistrationState {
+  /** UUID de la Registration côté back — requis par tous les endpoints de mutation. */
+  id: string;
   editionYear: string;
   status: RegistrationStatus;
   /** Une édition est verrouillée en lecture seule dès qu'elle n'est plus l'édition active d'inscription. */
@@ -161,3 +163,25 @@ export interface EditionRegistrationState {
 }
 
 export type AutosaveStatus = 'idle' | 'saving' | 'saved' | 'error';
+
+// ── Payloads envoyés à l'API ──
+
+export interface EntityStepPayload {
+  exhibitorType: ExhibitorType;
+  companyName: string;
+  siret: string | null;
+  activityDomainId: string | null;
+  clubType: ClubType | null;
+}
+
+export interface StandStepPayload {
+  selectedSurfaceOptionId: string | null;
+  quantitiesByOptionId: Record<string, number>;
+}
+
+export interface NewManagerPayload {
+  firstName: string;
+  lastName: string;
+  phone: string | null;
+  email: string;
+}
