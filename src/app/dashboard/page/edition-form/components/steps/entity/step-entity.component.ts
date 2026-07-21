@@ -9,6 +9,8 @@ import { InputMaskDirective } from 'primeng/inputmask';
 import { ClubType, ExhibitorType, StandManagerForm } from '@app/dashboard/models/edition-form.models';
 import { ValidatableFormStep } from '@app/dashboard/models/validatable-form-step';
 import { EditionFormStateService } from '@app/dashboard/services/edition-form-state.service';
+import { ActivityDomainService } from '@app/dashboard/services/activity-domain.service';
+import { ActivityDomainApiDto } from '@app/dashboard/models/registration-api.models';
 
 interface ClubTypeOption {
   label: string;
@@ -16,7 +18,7 @@ interface ClubTypeOption {
 }
 
 /**
- * Formulaire typé de l'étape Entité. `siret`/`activityDomain`/`clubType` sont nullable au niveau
+ * Formulaire typé de l'étape Entité. `siret`/`activityDomainId`/`clubType` sont nullable au niveau
  * du type car leur validator (`required`) n'est appliqué que conditionnellement selon
  * `exhibitorType` — cf. `applyExhibitorTypeValidators()`.
  */
@@ -24,7 +26,7 @@ interface EntityFormControls {
   exhibitorType: ExhibitorType;
   companyName: string;
   siret: string | null;
-  activityDomain: string | null;
+  activityDomainId: string | null;
   clubType: ClubType | null;
 }
 
@@ -44,6 +46,7 @@ interface EntityFormControls {
 })
 export class StepEntityComponent implements OnInit, ValidatableFormStep {
   protected readonly formState = inject(EditionFormStateService);
+  private readonly activityDomainService = inject(ActivityDomainService);
   private readonly fb = inject(FormBuilder);
   private readonly destroyRef = inject(DestroyRef);
 
@@ -54,11 +57,13 @@ export class StepEntityComponent implements OnInit, ValidatableFormStep {
     { label: 'Généraliste', value: ClubType.GENERALIST },
   ];
 
+  protected activityDomainOptions: ActivityDomainApiDto[] = [];
+
   protected readonly form = this.fb.group({
     exhibitorType: this.fb.nonNullable.control<ExhibitorType>(ExhibitorType.PRO),
     companyName: this.fb.nonNullable.control('', Validators.required),
     siret: this.fb.control<string | null>(null),
-    activityDomain: this.fb.control<string | null>(null),
+    activityDomainId: this.fb.control<string | null>(null),
     clubType: this.fb.control<ClubType | null>(null),
   });
 
@@ -70,6 +75,10 @@ export class StepEntityComponent implements OnInit, ValidatableFormStep {
   };
 
   ngOnInit(): void {
+    this.activityDomainService.getAll().subscribe((domains) => {
+      this.activityDomainOptions = domains;
+    });
+
     const entity = this.formState.registration()?.entity;
     if (entity) {
       this.form.patchValue(entity, { emitEvent: false });
@@ -90,28 +99,28 @@ export class StepEntityComponent implements OnInit, ValidatableFormStep {
   }
 
   /**
-   * `siret`/`activityDomain` ne sont requis que pour un exposant PRO, `clubType` que pour un
+   * `siret`/`activityDomainId` ne sont requis que pour un exposant PRO, `clubType` que pour un
    * CLUB. On efface aussi la valeur du champ qui devient non pertinent pour ne pas garder de
    * donnée fantôme envoyée au back (ex: SIRET conservé après bascule PRO → CLUB).
    */
   private applyExhibitorTypeValidators(type: ExhibitorType): void {
-    const { siret, activityDomain, clubType } = this.form.controls;
+    const { siret, activityDomainId, clubType } = this.form.controls;
 
     if (type === ExhibitorType.PRO) {
       siret.setValidators(Validators.required);
-      activityDomain.setValidators(Validators.required);
+      activityDomainId.setValidators(Validators.required);
       clubType.clearValidators();
       clubType.setValue(null, { emitEvent: false });
     } else {
       siret.clearValidators();
-      activityDomain.clearValidators();
+      activityDomainId.clearValidators();
       siret.setValue(null, { emitEvent: false });
-      activityDomain.setValue(null, { emitEvent: false });
+      activityDomainId.setValue(null, { emitEvent: false });
       clubType.setValidators(Validators.required);
     }
 
     siret.updateValueAndValidity({ emitEvent: false });
-    activityDomain.updateValueAndValidity({ emitEvent: false });
+    activityDomainId.updateValueAndValidity({ emitEvent: false });
     clubType.updateValueAndValidity({ emitEvent: false });
   }
 
@@ -130,7 +139,7 @@ export class StepEntityComponent implements OnInit, ValidatableFormStep {
       return;
     }
 
-    this.formState.addManager({ id: crypto.randomUUID(), ...this.newManager });
+    this.formState.addManager(this.newManager);
     this.newManager = { firstName: '', lastName: '', phone: '', email: '' };
   }
 
@@ -139,14 +148,12 @@ export class StepEntityComponent implements OnInit, ValidatableFormStep {
   }
 
   /**
-   * MOCK — le visuel n'est pas réellement téléversé ici. Brancher sur
-   * POST /api/registrations/{id}/exhibitor-visual (multipart) puis stocker l'URL retournée,
-   * pas le File lui-même, dans EntityStepState.visualFileName.
+   * Téléversement réel du visuel via POST /api/registrations/{id}/logo.
    */
   protected onVisualSelected(event: { files: File[] }): void {
     const file = event.files[0];
     if (file) {
-      this.formState.updateEntity({ visualFileName: file.name });
+      this.formState.uploadLogo(file);
     }
   }
 }
