@@ -2,6 +2,7 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { catchError, of } from 'rxjs';
 import { MessageService } from 'primeng/api';
+import { environment } from '../../../environments/environment';
 import {
   AutosaveStatus,
   EditionRegistrationState,
@@ -26,6 +27,13 @@ import { OptionsCatalogService } from '@app/dashboard/services/options-catalog.s
 
 /** Délai avant déclenchement de la sauvegarde auto après la dernière modification (ms). */
 const AUTOSAVE_DEBOUNCE_MS = 800;
+
+/** Origine du backend (sans /api), pour résoudre les URLs relatives renvoyées par l'API (ex: visuel exposant). */
+const API_ORIGIN = environment.apiUrl.replace(/\/api\/?$/, '');
+
+function toAbsoluteUrl(url: string): string {
+  return /^https?:\/\//i.test(url) ? url : `${API_ORIGIN}${url}`;
+}
 
 /**
  * État central du formulaire d'inscription, partagé par les 5 étapes.
@@ -128,10 +136,6 @@ export class EditionFormStateService {
         option.category === category &&
         (option.exhibitorType === null || option.exhibitorType === exhibitorType),
     );
-  }
-
-  private getOptionById(id: string): OptionDefinition | undefined {
-    return this.optionsSignal().find((option) => option.id === id);
   }
 
   /**
@@ -298,7 +302,9 @@ export class EditionFormStateService {
     this.registrationService.uploadLogo(reg.id, file).subscribe({
       next: (response) => {
         this.state.update((current) =>
-          current ? { ...current, entity: { ...current.entity, visualUrl: response.data.url } } : current,
+          current
+            ? { ...current, entity: { ...current.entity, visualUrl: toAbsoluteUrl(response.data.url) } }
+            : current,
         );
         this.messageService.add({
           severity: 'success',
@@ -498,7 +504,7 @@ export class EditionFormStateService {
       siret: dto.siret,
       activityDomainId: dto.activityDomainId,
       clubType: dto.clubType as EditionRegistrationState['entity']['clubType'],
-      visualUrl: dto.visualUrl,
+      visualUrl: dto.visualUrl ? toAbsoluteUrl(dto.visualUrl) : null,
       managers: dto.managers.map((m) => ({
         id: m.id,
         firstName: m.firstName,
