@@ -122,7 +122,12 @@ export class EditionFormStateService {
   });
 
   getOptionsByCategory(category: OptionCategory): OptionDefinition[] {
-    return this.optionsSignal().filter((option) => option.category === category);
+    const exhibitorType = this.state()?.entity.exhibitorType ?? null;
+    return this.optionsSignal().filter(
+      (option) =>
+        option.category === category &&
+        (option.exhibitorType === null || option.exhibitorType === exhibitorType),
+    );
   }
 
   private getOptionById(id: string): OptionDefinition | undefined {
