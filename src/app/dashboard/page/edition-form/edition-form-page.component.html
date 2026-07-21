@@ -1,7 +1,21 @@
 <div class="ef-shell">
-  @if (notFound) {
+  @if (missingYearParam) {
     <div class="ef-content">
-      <p class="ef-muted">Aucune inscription trouvée pour cette édition.</p>
+      <p class="ef-muted">Aucune édition spécifiée.</p>
+    </div>
+  } @else if (formState.loading()) {
+    <div class="ef-content">
+      <app-loader message="Chargement de votre inscription..." />
+    </div>
+  } @else if (formState.loadError(); as error) {
+    <div class="ef-content">
+      <p class="ef-muted">
+        @if (error === 'closed') {
+          Les inscriptions ne sont pas ouvertes pour cette édition.
+        } @else {
+          Aucune inscription trouvée pour cette édition.
+        }
+      </p>
     </div>
   } @else if (formState.registration(); as registration) {
     <header class="ef-header">
@@ -14,9 +28,9 @@
         @if (!registration.readOnly) {
           <div
             class="ef-autosave-indicator"
-            [class.ef-autosave-indicator--error]="formState.autosaveStatus() === 'error'"
+            [class.ef-autosave-indicator--error]="currentAutosaveStatus() === 'error'"
           >
-            @switch (formState.autosaveStatus()) {
+            @switch (currentAutosaveStatus()) {
               @case ('saving') {
                 <i class="pi pi-spin pi-spinner"></i>
                 <span>Enregistrement...</span>
