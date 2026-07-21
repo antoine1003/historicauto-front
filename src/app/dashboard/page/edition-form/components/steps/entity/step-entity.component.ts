@@ -1,6 +1,6 @@
 import { Component, DestroyRef, inject, OnInit } from '@angular/core';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { SelectModule } from 'primeng/select';
@@ -57,7 +57,9 @@ export class StepEntityComponent implements OnInit, ValidatableFormStep {
     { label: 'Généraliste', value: ClubType.GENERALIST },
   ];
 
-  protected activityDomainOptions: ActivityDomainApiDto[] = [];
+  protected readonly activityDomainOptions = toSignal(this.activityDomainService.getAll(), {
+    initialValue: [] as ActivityDomainApiDto[],
+  });
 
   protected readonly form = this.fb.group({
     exhibitorType: this.fb.nonNullable.control<ExhibitorType>(ExhibitorType.PRO),
@@ -75,10 +77,6 @@ export class StepEntityComponent implements OnInit, ValidatableFormStep {
   };
 
   ngOnInit(): void {
-    this.activityDomainService.getAll().subscribe((domains) => {
-      this.activityDomainOptions = domains;
-    });
-
     const entity = this.formState.registration()?.entity;
     if (entity) {
       this.form.patchValue(entity, { emitEvent: false });
