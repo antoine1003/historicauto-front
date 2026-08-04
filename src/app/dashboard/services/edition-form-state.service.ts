@@ -1,6 +1,8 @@
-import { Injectable, computed, signal } from '@angular/core';
+import { Injectable, computed, inject, signal } from '@angular/core';
 import {
   AutosaveStatus,
+  DocumentItem,
+  DocumentKind,
   EditionRegistrationState,
   OptionCategory,
   RegistrationStatus,
@@ -9,6 +11,9 @@ import {
 } from '../models/edition-form.models';
 import { getOptionById, OPTIONS_CATALOG } from '@app/dashboard/services/options-catalog';
 import { loadMockRegistration } from '@app/dashboard/services/mock-registrations';
+import { RegistrationService } from '@app/shared/services/registration.service';
+import { DocumentService } from '@app/shared/services/document.service';
+import { DocumentSummary } from '@app/core/models/document.model';
 
 /** Délai avant déclenchement de la sauvegarde auto après la dernière modification (ms). */
 const AUTOSAVE_DEBOUNCE_MS = 800;
@@ -26,6 +31,8 @@ export class EditionFormStateService {
   private readonly activeStepSignal = signal<RegistrationStep>(RegistrationStep.ENTITY);
   private readonly autosaveStatusSignal = signal<AutosaveStatus>('idle');
   private autosaveTimer: ReturnType<typeof setTimeout> | null = null;
+  private readonly registrationService = inject(RegistrationService);
+  private readonly documentService = inject(DocumentService);
 
   readonly registration = this.state.asReadonly();
   readonly activeStep = this.activeStepSignal.asReadonly();
@@ -124,7 +131,60 @@ export class EditionFormStateService {
     this.activeStepSignal.set(RegistrationStep.ENTITY);
     this.autosaveStatusSignal.set('idle');
 
+    if (registration) {
+      this.loadRealQuoteDocuments(year);
+    }
+
     return registration !== null;
+  }
+
+  /**
+   * Résout l'id réel de la Registration (via l'appel déjà réel RegistrationService.getMine()) puis
+   * remplace le(s) document(s) de type 'quote' du mock par les documents réels de l'exposant.
+   * Le reste de l'état (facture, assurance RC, liste fournisseurs...) reste mocké — cf. spec
+   * 2026-08-04-devis-docuseal-signature-design.md §7 : périmètre volontairement limité au devis.
+   */
+  private loadRealQuoteDocuments(year: string): void {
+    this.registrationService.getMine().subscribe({
+      next: (response) => {
+        const match = response.data.find((r) => r.edition.year === year);
+        if (!match) {
+          return;
+        }
+
+        this.state.update((reg) => (reg ? { ...reg, registrationId: match.id } : reg));
+
+        this.documentService.getDocuments(match.id).subscribe({
+          next: (docsResponse) => this.mergeRealQuoteDocuments(docsResponse.data),
+          error: () => void 0, // section Documents garde son état mock/vide en cas d'échec réseau
+        });
+      },
+      error: () => void 0,
+    });
+  }
+
+  private mergeRealQuoteDocuments(documents: DocumentSummary[]): void {
+    const quoteItems: DocumentItem[] = documents
+      .filter((doc) => doc.type === 'quote')
+      .map((doc) => ({
+        id: doc.id,
+        kind: 'quote' as DocumentKind,
+        label: doc.label,
+        visible: true,
+        fileUrl: doc.fileUrl,
+        signingUrl: doc.signingUrl,
+        signed: doc.isSigned,
+        uploadedAt: doc.notifiedAt ? new Date(doc.notifiedAt) : null,
+      }));
+
+    this.state.update((reg) => {
+      if (!reg) {
+        return reg;
+      }
+      const otherDocuments = reg.documents.filter((doc) => doc.kind !== 'quote');
+
+      return { ...reg, documents: [...otherDocuments, ...quoteItems] };
+    });
   }
 
   goToStep(step: RegistrationStep): void {
@@ -259,13 +319,14 @@ export class EditionFormStateService {
   }
 
   /**
-   * TODO intégration : ouverture du plugin de signature (Docuseal) pour le document `documentId`.
-   * Le retour de signature doit arriver via webhook côté back (qui met à jour `Document::signed`
-   * et journalise ActivityLogAction::QUOTE_SIGNED), pas via un callback front qu'on pourrait
-   * usurper. Le front se contente de rafraîchir l'état après une notification/poll.
+   * Ouvre le lien de signature Docuseal hébergé dans un nouvel onglet. Le retour de signature
+   * arrive via un mécanisme backend (hors périmètre actuel), pas via ce clic.
    */
   signQuote(documentId: string): void {
-    void documentId; // no-op (front only)
+    const doc = this.state()?.documents.find((d) => d.id === documentId);
+    if (doc?.signingUrl) {
+      window.open(doc.signingUrl, '_blank', 'noopener');
+    }
   }
 
   /**
