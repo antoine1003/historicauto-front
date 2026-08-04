@@ -73,6 +73,13 @@ export class EditionFormStateService {
         case RegistrationStep.CONFIRMATION:
           return this.standTotalTtc() > 0;
         case RegistrationStep.DOCUMENTS:
+          // Le devis (Task 4, cf. spec 2026-08-04-devis-docuseal-signature-design.md) devient
+          // visible dès l'acceptation, avant que l'exposant ait fini l'étape Confirmation.
+          return (
+            reg.status === RegistrationStatus.ACCEPTED ||
+            reg.status === RegistrationStatus.CONFIRMED ||
+            reg.status === RegistrationStatus.COMPLETED
+          );
         case RegistrationStep.PAYMENT:
           return reg.status === RegistrationStatus.CONFIRMED || reg.status === RegistrationStatus.COMPLETED;
         default:
