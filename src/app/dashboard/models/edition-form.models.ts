@@ -127,6 +127,8 @@ export interface DocumentItem {
   /** Un document n'est affiché à l'exposant que si HA l'a rendu visible dans le dashboard. */
   visible: boolean;
   fileUrl: string | null;
+  /** Lien de signature hébergé Docuseal, non nul uniquement pour un devis envoyé en signature. */
+  signingUrl: string | null;
   signed: boolean;
   uploadedAt: Date | null;
 }
@@ -150,6 +152,8 @@ export interface PaymentSummary {
 /** État complet d'un formulaire d'inscription pour une édition donnée. */
 export interface EditionRegistrationState {
   editionYear: string;
+  /** Id réel de la Registration côté back, résolu de façon asynchrone via RegistrationService.getMine(). */
+  registrationId: string | null;
   status: RegistrationStatus;
   /** Une édition est verrouillée en lecture seule dès qu'elle n'est plus l'édition active d'inscription. */
   readOnly: boolean;

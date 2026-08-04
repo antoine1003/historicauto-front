@@ -18,6 +18,7 @@ import {
 const MOCK_REGISTRATIONS: Record<string, EditionRegistrationState> = {
   '2016': {
     editionYear: '2030',
+    registrationId: null,
     status: RegistrationStatus.DRAFT,
     readOnly: false,
     entity: {
@@ -48,7 +49,7 @@ const MOCK_REGISTRATIONS: Record<string, EditionRegistrationState> = {
       confirmedAt: null,
     },
     documents: [
-      { id: 'doc-quote-1', kind: 'quote', label: 'Devis 2030', visible: true, fileUrl: '/mock/devis-2030.pdf', signed: false, uploadedAt: new Date('2029-11-04') },
+      { id: 'doc-quote-1', kind: 'quote', label: 'Devis 2030', visible: true, fileUrl: '/mock/devis-2030.pdf', signingUrl: null, signed: false, uploadedAt: new Date('2029-11-04') },
     ],
     payment: {
       standTotalTtc: 0,
@@ -61,6 +62,7 @@ const MOCK_REGISTRATIONS: Record<string, EditionRegistrationState> = {
   },
   '2028': {
     editionYear: '2028',
+    registrationId: null,
     status: RegistrationStatus.COMPLETED,
     readOnly: true,
     entity: {
@@ -96,10 +98,10 @@ const MOCK_REGISTRATIONS: Record<string, EditionRegistrationState> = {
       confirmedAt: new Date('2027-09-12'),
     },
     documents: [
-      { id: 'doc-quote-1', kind: 'quote', label: 'Devis 2028', visible: true, fileUrl: '/mock/devis-2028-signe.pdf', signed: true, uploadedAt: new Date('2027-09-01') },
-      { id: 'doc-invoice-1', kind: 'invoice', label: 'Facture 2028', visible: true, fileUrl: '/mock/facture-2028.pdf', signed: false, uploadedAt: new Date('2027-09-15') },
-      { id: 'doc-insurance-1', kind: 'insurance', label: 'Assurance RC', visible: true, fileUrl: '/mock/rc-2028.pdf', signed: false, uploadedAt: new Date('2027-10-02') },
-      { id: 'doc-suppliers', kind: 'supplier_list', label: 'Liste fournisseurs agréés', visible: true, fileUrl: '/mock/fournisseurs-2028.pdf', signed: false, uploadedAt: new Date('2027-08-20') },
+      { id: 'doc-quote-1', kind: 'quote', label: 'Devis 2028', visible: true, fileUrl: '/mock/devis-2028-signe.pdf', signingUrl: null, signed: true, uploadedAt: new Date('2027-09-01') },
+      { id: 'doc-invoice-1', kind: 'invoice', label: 'Facture 2028', visible: true, fileUrl: '/mock/facture-2028.pdf', signingUrl: null, signed: false, uploadedAt: new Date('2027-09-15') },
+      { id: 'doc-insurance-1', kind: 'insurance', label: 'Assurance RC', visible: true, fileUrl: '/mock/rc-2028.pdf', signingUrl: null, signed: false, uploadedAt: new Date('2027-10-02') },
+      { id: 'doc-suppliers', kind: 'supplier_list', label: 'Liste fournisseurs agréés', visible: true, fileUrl: '/mock/fournisseurs-2028.pdf', signingUrl: null, signed: false, uploadedAt: new Date('2027-08-20') },
     ],
     payment: {
       standTotalTtc: 1885,
