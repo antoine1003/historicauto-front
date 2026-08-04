@@ -66,6 +66,7 @@ export class EditionFormStateService {
   readonly loading = this.loadingSignal.asReadonly();
   readonly loadError = this.loadErrorSignal.asReadonly();
   readonly submitStatus = this.submitStatusSignal.asReadonly();
+  readonly statusState = computed(() => this.state()?.status);
 
   readonly isReadOnly = computed(() => this.state()?.readOnly ?? false);
   readonly editionYear = computed(() => this.state()?.editionYear ?? null);
