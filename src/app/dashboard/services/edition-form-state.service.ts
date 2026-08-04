@@ -1,42 +1,83 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
+import { Injectable, computed, inject, signal } from '@angular/core';
+import { HttpErrorResponse } from '@angular/common/http';
+import { catchError, of } from 'rxjs';
+import { MessageService } from 'primeng/api';
+import { environment } from '../../../environments/environment';
 import {
   AutosaveStatus,
   DocumentItem,
   DocumentKind,
   EditionRegistrationState,
+  EntityStepPayload,
+  EntityStepState,
+  NewManagerPayload,
   OptionCategory,
+  OptionDefinition,
   RegistrationStatus,
   RegistrationStep,
   StandManagerForm,
+  StandStepPayload,
+  StandStepState,
 } from '../models/edition-form.models';
 import { getOptionById, OPTIONS_CATALOG } from '@app/dashboard/services/options-catalog';
 import { loadMockRegistration } from '@app/dashboard/services/mock-registrations';
 import { RegistrationService } from '@app/shared/services/registration.service';
 import { DocumentService } from '@app/shared/services/document.service';
 import { DocumentSummary } from '@app/core/models/document.model';
+import {
+  EntityStepApiDto,
+  RegistrationDetailApiDto,
+  StandStepApiDto,
+} from '../models/registration-api.models';
+import { OptionsCatalogService } from '@app/dashboard/services/options-catalog.service';
 
 /** Délai avant déclenchement de la sauvegarde auto après la dernière modification (ms). */
 const AUTOSAVE_DEBOUNCE_MS = 800;
 
+/** Origine du backend (sans /api), pour résoudre les URLs relatives renvoyées par l'API (ex: visuel exposant). */
+const API_ORIGIN = environment.apiUrl.replace(/\/api\/?$/, '');
+
+function toAbsoluteUrl(url: string): string {
+  return /^https?:\/\//i.test(url) ? url : `${API_ORIGIN}${url}`;
+}
+
 /**
  * État central du formulaire d'inscription, partagé par les 5 étapes.
  *
- * À PROVIDER AU NIVEAU DE LA ROUTE (cf. edition-form.routes.ts), jamais en `providedIn: 'root'` :
+ * À PROVIDER AU NIVEAU DE LA ROUTE (cf. dashboard.routes.ts), jamais en `providedIn: 'root'` :
  * chaque navigation vers /edition/:year doit repartir d'un état propre à cette édition, sans
  * fuite de données entre deux éditions consultées successivement.
  */
 @Injectable()
 export class EditionFormStateService {
+  private readonly registrationService = inject(RegistrationService);
+  private readonly optionsCatalogService = inject(OptionsCatalogService);
+  private readonly messageService = inject(MessageService);
+
   private readonly state = signal<EditionRegistrationState | null>(null);
   private readonly activeStepSignal = signal<RegistrationStep>(RegistrationStep.ENTITY);
   private readonly autosaveStatusSignal = signal<AutosaveStatus>('idle');
   private autosaveTimer: ReturnType<typeof setTimeout> | null = null;
   private readonly registrationService = inject(RegistrationService);
   private readonly documentService = inject(DocumentService);
+  private readonly optionsSignal = signal<OptionDefinition[]>([]);
+  private readonly entityAutosaveStatusSignal = signal<AutosaveStatus>('idle');
+  private readonly standAutosaveStatusSignal = signal<AutosaveStatus>('idle');
+  private readonly loadingSignal = signal(false);
+  private readonly loadErrorSignal = signal<'not_found' | 'closed' | null>(null);
+  private readonly submitStatusSignal = signal<'idle' | 'submitting' | 'submitted' | 'error'>('idle');
+  private entityAutosaveTimer: ReturnType<typeof setTimeout> | null = null;
+  private standAutosaveTimer: ReturnType<typeof setTimeout> | null = null;
 
   readonly registration = this.state.asReadonly();
   readonly activeStep = this.activeStepSignal.asReadonly();
-  readonly autosaveStatus = this.autosaveStatusSignal.asReadonly();
+  readonly entityAutosaveStatus = this.entityAutosaveStatusSignal.asReadonly();
+  readonly standAutosaveStatus = this.standAutosaveStatusSignal.asReadonly();
+  readonly loading = this.loadingSignal.asReadonly();
+  readonly loadError = this.loadErrorSignal.asReadonly();
+  readonly submitStatus = this.submitStatusSignal.asReadonly();
+  readonly statusState = computed(() => this.state()?.status);
 
   readonly isReadOnly = computed(() => this.state()?.readOnly ?? false);
   readonly editionYear = computed(() => this.state()?.editionYear ?? null);
@@ -88,23 +129,8 @@ export class EditionFormStateService {
     };
   });
 
-  /** Total TTC du stand sélectionné (pack surface + options en quantité). */
-  readonly standTotalTtc = computed(() => {
-    const reg = this.state();
-    if (!reg) {
-      return 0;
-    }
-
-    let total = 0;
-    if (reg.stand.selectedSurfaceOptionId) {
-      total += getOptionById(reg.stand.selectedSurfaceOptionId)?.mockPriceTtc ?? 0;
-    }
-    for (const [optionId, quantity] of Object.entries(reg.stand.quantitiesByOptionId)) {
-      total += (getOptionById(optionId)?.mockPriceTtc ?? 0) * quantity;
-    }
-
-    return total;
-  });
+  /** Calculé côté serveur, source de vérité (cf. Registration::computeOptionsTotal() côté back). */
+  readonly standTotalTtc = computed(() => this.state()?.stand.standTotalTtc ?? 0);
 
   readonly paymentsTotalTtc = computed(() => {
     const reg = this.state();
@@ -122,27 +148,51 @@ export class EditionFormStateService {
     return orderTotal - this.paymentsTotalTtc();
   });
 
-  getOptionsByCategory(category: OptionCategory) {
-    return OPTIONS_CATALOG.filter((option) => option.category === category);
+  getOptionsByCategory(category: OptionCategory): OptionDefinition[] {
+    const exhibitorType = this.state()?.entity.exhibitorType ?? null;
+    return this.optionsSignal().filter(
+      (option) =>
+        option.category === category &&
+        (option.exhibitorType === null || option.exhibitorType === exhibitorType),
+    );
   }
 
   /**
-   * Charge le mock pour l'année donnée. Remplacer le corps de cette méthode par un appel HTTP
-   * (ex: `this.registrationApi.getByEditionYear(year)`) consommé via un resolver de route ou un
-   * effect, sans changer la signature ni les signals exposés ci-dessus — c'est ce qui permet aux
-   * composants d'étape de ne jamais savoir si la donnée vient d'un mock ou de l'API.
+   * Charge l'inscription réelle pour l'année donnée (get-or-create côté back). Asynchrone :
+   * `loading`/`loadError` reflètent l'état de la requête, `registration()` reste `null` tant
+   * qu'elle n'a pas abouti.
    */
-  loadForEditionYear(year: string): boolean {
-    const registration = loadMockRegistration(year);
-    this.state.set(registration);
+  loadForEditionYear(year: string): void {
+    this.loadingSignal.set(true);
+    this.loadErrorSignal.set(null);
+    this.state.set(null);
     this.activeStepSignal.set(RegistrationStep.ENTITY);
-    this.autosaveStatusSignal.set('idle');
+    this.entityAutosaveStatusSignal.set('idle');
+    this.standAutosaveStatusSignal.set('idle');
 
     if (registration) {
       this.loadRealQuoteDocuments(year);
     }
+    this.optionsCatalogService.getForEdition(year).subscribe({
+      next: (options) => this.optionsSignal.set(options),
+      error: () => this.optionsSignal.set([]),
+    });
 
-    return registration !== null;
+    this.registrationService
+      .getByEditionYear(year)
+      .pipe(
+        catchError((err: HttpErrorResponse) => {
+          this.loadErrorSignal.set(err.status === 403 ? 'closed' : 'not_found');
+          return of(null);
+        }),
+      )
+      .subscribe((response) => {
+        this.loadingSignal.set(false);
+        if (!response) {
+          return;
+        }
+        this.state.set(this.toEditionRegistrationState(response.data));
+      });
   }
 
   /**
@@ -237,102 +287,180 @@ export class EditionFormStateService {
   );
 
   updateEntity(patch: Partial<EditionRegistrationState['entity']>): void {
-    this.patchState((reg) => ({ entity: { ...reg.entity, ...patch } }));
+    this.patchLocalState((reg) => ({ entity: { ...reg.entity, ...patch } }));
+    this.scheduleEntityAutosave();
   }
 
-  addManager(manager: StandManagerForm): void {
-    this.patchState((reg) => ({ entity: { ...reg.entity, managers: [...reg.entity.managers, manager] } }));
+  addManager(manager: Omit<StandManagerForm, 'id'>): void {
+    const reg = this.state();
+    if (!reg || this.isReadOnly()) {
+      return;
+    }
+    const optimisticId = `temp-${crypto.randomUUID()}`;
+    const optimisticManager: StandManagerForm = { id: optimisticId, ...manager };
+    this.state.update((current) =>
+      current
+        ? { ...current, entity: { ...current.entity, managers: [...current.entity.managers, optimisticManager] } }
+        : current,
+    );
+
+    const payload: NewManagerPayload = {
+      firstName: manager.firstName,
+      lastName: manager.lastName,
+      phone: manager.phone || null,
+      email: manager.email,
+    };
+
+    this.registrationService.addManager(reg.id, payload).subscribe({
+      next: (response) => {
+        this.state.update((current) =>
+          current
+            ? {
+                ...current,
+                entity: {
+                  ...current.entity,
+                  managers: current.entity.managers.map((m) =>
+                    m.id === optimisticId
+                      ? {
+                          id: response.data.id,
+                          firstName: response.data.firstName,
+                          lastName: response.data.lastName,
+                          phone: response.data.phone ?? '',
+                          email: response.data.email,
+                        }
+                      : m,
+                  ),
+                },
+              }
+            : current,
+        );
+      },
+      error: () => {
+        this.state.update((current) =>
+          current
+            ? { ...current, entity: { ...current.entity, managers: current.entity.managers.filter((m) => m.id !== optimisticId) } }
+            : current,
+        );
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Échec',
+          detail: "Le responsable de stand n'a pas pu être ajouté.",
+        });
+      },
+    });
   }
 
   removeManager(managerId: string): void {
-    this.patchState((reg) => ({
-      entity: { ...reg.entity, managers: reg.entity.managers.filter((m) => m.id !== managerId) },
-    }));
+    const reg = this.state();
+    if (!reg || this.isReadOnly()) {
+      return;
+    }
+
+    this.registrationService.removeManager(reg.id, managerId).subscribe({
+      next: () => {
+        this.state.update((current) =>
+          current
+            ? { ...current, entity: { ...current.entity, managers: current.entity.managers.filter((m) => m.id !== managerId) } }
+            : current,
+        );
+      },
+      error: () => {
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Échec',
+          detail: "Le responsable de stand n'a pas pu être supprimé.",
+        });
+      },
+    });
+  }
+
+  uploadLogo(file: File): void {
+    const reg = this.state();
+    if (!reg || this.isReadOnly()) {
+      return;
+    }
+
+    this.registrationService.uploadLogo(reg.id, file).subscribe({
+      next: (response) => {
+        this.state.update((current) =>
+          current
+            ? { ...current, entity: { ...current.entity, visualUrl: toAbsoluteUrl(response.data.url) } }
+            : current,
+        );
+        this.messageService.add({
+          severity: 'success',
+          summary: 'Visuel téléversé',
+          detail: 'Votre visuel a bien été enregistré.',
+        });
+      },
+      error: () => {
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Échec',
+          detail: "Le visuel n'a pas pu être téléversé.",
+        });
+      },
+    });
   }
 
   selectSurfaceOption(optionId: string | null): void {
-    this.patchState((reg) => ({ stand: { ...reg.stand, selectedSurfaceOptionId: optionId } }));
+    this.patchLocalState((reg) => ({ stand: { ...reg.stand, selectedSurfaceOptionId: optionId } }));
+    this.scheduleStandAutosave();
   }
 
   setOptionQuantity(optionId: string, quantity: number): void {
-    this.patchState((reg) => ({
+    this.patchLocalState((reg) => ({
       stand: {
         ...reg.stand,
         quantitiesByOptionId: { ...reg.stand.quantitiesByOptionId, [optionId]: Math.max(0, quantity) },
       },
     }));
+    this.scheduleStandAutosave();
   }
 
   updateConfirmationChecklist(patch: Partial<EditionRegistrationState['confirmation']['checklist']>): void {
-    this.patchState((reg) => ({
+    this.patchLocalState((reg) => ({
       confirmation: { ...reg.confirmation, checklist: { ...reg.confirmation.checklist, ...patch } },
     }));
   }
 
   updateSignatory(name: string, role: string): void {
-    this.patchState((reg) => ({ confirmation: { ...reg.confirmation, signatoryName: name, signatoryRole: role } }));
+    this.patchLocalState((reg) => ({ confirmation: { ...reg.confirmation, signatoryName: name, signatoryRole: role } }));
   }
 
-  // ---------------------------------------------------------------------------------------------
-  // Méthodes volontairement non implémentées (front-only pour cette itération).
-  // Chacune documente la cible d'intégration côté API REST Symfony existante.
-  // ---------------------------------------------------------------------------------------------
-
-  /**
-   * Autosave debounced. Front-only pour cette itération : simule le cycle 'saving' → 'saved'
-   * via un timer, sans appel réseau. Chaque mutation via `patchState` la redéclenche.
-   *
-   * TODO intégration : remplacer le corps du `setTimeout` par l'appel réel
-   * `PATCH /api/registrations/{id}` (DTO partiel, cf. AbstractRestService côté back), en gardant
-   * la même mécanique de debounce et les mêmes transitions de `autosaveStatusSignal` ('saving'
-   * avant l'appel, 'saved' sur succès, 'error' sur échec réseau/validation serveur).
-   */
-  private scheduleAutosave(): void {
-    if (this.isReadOnly()) {
-      return;
-    }
-    if (this.autosaveTimer) {
-      clearTimeout(this.autosaveTimer);
-    }
-    this.autosaveStatusSignal.set('saving');
-    this.autosaveTimer = setTimeout(() => {
-      this.autosaveStatusSignal.set('saved');
-      this.autosaveTimer = null;
-    }, AUTOSAVE_DEBOUNCE_MS);
-  }
-
-  /**
-   * TODO intégration : POST /api/registrations/{id}/submit.
-   * Doit déclencher côté back la transition DRAFT → SUBMITTED (cf. RegistrationStatus::
-   * allowedTransitions) et l'ActivityLogAction::REGISTRATION_SUBMITTED. Gérer les erreurs de
-   * validation serveur (ex: champs PRO/CLUB requis manquants) en les remontant aux composants
-   * via une exception typée plutôt qu'un message générique.
-   *
-   * Retourne un booléen (front-only) pour permettre au composant Stand d'afficher une
-   * confirmation ; à remplacer par la réponse effective de l'appel HTTP.
-   */
-  submitRegistrationOptions(): boolean {
+  submitRegistrationOptions(): void {
     const reg = this.state();
     if (!reg || !reg.stand.selectedSurfaceOptionId) {
-      return false;
+      return;
     }
-    // no-op réseau (front only) — le back positionnera reg.status à SUBMITTED en réponse.
-    return true;
+
+    this.submitStatusSignal.set('submitting');
+    this.registrationService.submit(reg.id).subscribe({
+      next: (response) => {
+        this.state.update((current) =>
+          current ? { ...current, status: response.data.status as RegistrationStatus } : current,
+        );
+        this.submitStatusSignal.set('submitted');
+      },
+      error: (err: HttpErrorResponse) => {
+        this.submitStatusSignal.set('error');
+        const errors = (err.error?.errors ?? {}) as Record<string, string[]>;
+        const detail =
+          Object.values(errors).flat().join(' ') || "Votre demande n'a pas pu être envoyée.";
+        this.messageService.add({ severity: 'error', summary: 'Formulaire incomplet', detail });
+      },
+    });
   }
 
-  /**
-   * TODO intégration : confirmation définitive de l'étape 3.
-   * Endpoint cible : POST /api/registrations/{id}/confirm avec le nom/fonction du signataire.
-   * Le back doit horodater `confirmedAt` et persister une RegistrationSignature (entité déjà
-   * prévue) plutôt que de laisser le front fixer la date - la date affichée ici doit rester un
-   * simple `new Date()` d'affichage tant que le back n'a pas répondu.
-   */
+  // ---------------------------------------------------------------------------------------------
+  // Méthodes volontairement non implémentées (front-only pour cette itération — Étapes 3-4).
+  // ---------------------------------------------------------------------------------------------
+
   confirmRegistration(): void {
     const allChecked = Object.values(this.state()?.confirmation.checklist ?? {}).every(Boolean);
     if (!allChecked) {
       return;
     }
-    // no-op au-delà de la validation locale (front only)
   }
 
   /**
@@ -346,22 +474,147 @@ export class EditionFormStateService {
     }
   }
 
-  /**
-   * TODO intégration : upload de l'assurance RC.
-   * Endpoint cible : POST /api/registrations/{id}/documents (multipart), type=insurance.
-   * Toujours garder le dernier fichier téléversé en remplaçant l'ancien (cf. cahier des charges :
-   * "garder toujours la dernière téléversée en téléchargement"), donc upsert côté back plutôt
-   * qu'accumulation de lignes Document.
-   */
   uploadInsuranceDocument(file: File): void {
-    void file; // no-op (front only)
+    void file; // no-op (front only, étape 4 hors périmètre)
   }
 
-  private patchState(producer: (reg: EditionRegistrationState) => Partial<EditionRegistrationState>): void {
+  private scheduleEntityAutosave(): void {
+    if (this.isReadOnly()) {
+      return;
+    }
+    if (this.entityAutosaveTimer) {
+      clearTimeout(this.entityAutosaveTimer);
+    }
+    this.entityAutosaveStatusSignal.set('saving');
+    this.entityAutosaveTimer = setTimeout(() => {
+      const reg = this.state();
+      if (!reg) {
+        return;
+      }
+      const payload: EntityStepPayload = {
+        exhibitorType: reg.entity.exhibitorType,
+        companyName: reg.entity.companyName,
+        siret: reg.entity.siret,
+        activityDomainId: reg.entity.activityDomainId,
+        clubType: reg.entity.clubType,
+      };
+      this.registrationService.patchEntity(reg.id, payload).subscribe({
+        next: (response) => {
+          this.state.update((current) =>
+            current ? { ...current, entity: this.toEntityStepState(response.data) } : current,
+          );
+          this.entityAutosaveStatusSignal.set('saved');
+        },
+        error: () => {
+          this.entityAutosaveStatusSignal.set('error');
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Échec de la sauvegarde',
+            detail: "Vos informations d'entité n'ont pas pu être enregistrées. Nouvel essai à la prochaine modification.",
+          });
+        },
+      });
+      this.entityAutosaveTimer = null;
+    }, AUTOSAVE_DEBOUNCE_MS);
+  }
+
+  private scheduleStandAutosave(): void {
+    if (this.isReadOnly()) {
+      return;
+    }
+    if (this.standAutosaveTimer) {
+      clearTimeout(this.standAutosaveTimer);
+    }
+    this.standAutosaveStatusSignal.set('saving');
+    this.standAutosaveTimer = setTimeout(() => {
+      const reg = this.state();
+      if (!reg) {
+        return;
+      }
+      const payload: StandStepPayload = {
+        selectedSurfaceOptionId: reg.stand.selectedSurfaceOptionId,
+        quantitiesByOptionId: reg.stand.quantitiesByOptionId,
+      };
+      this.registrationService.patchStand(reg.id, payload).subscribe({
+        next: (response) => {
+          this.state.update((current) =>
+            current ? { ...current, stand: this.toStandStepState(response.data) } : current,
+          );
+          this.standAutosaveStatusSignal.set('saved');
+        },
+        error: () => {
+          this.standAutosaveStatusSignal.set('error');
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Échec de la sauvegarde',
+            detail: "Vos options de stand n'ont pas pu être enregistrées. Nouvel essai à la prochaine modification.",
+          });
+        },
+      });
+      this.standAutosaveTimer = null;
+    }, AUTOSAVE_DEBOUNCE_MS);
+  }
+
+  // ---------------------------------------------------------------------------------------------
+  // Mapping DTO API → état interne
+  // ---------------------------------------------------------------------------------------------
+
+  private toEditionRegistrationState(dto: RegistrationDetailApiDto): EditionRegistrationState {
+    return {
+      id: dto.id,
+      editionYear: dto.editionYear,
+      status: dto.status as RegistrationStatus,
+      readOnly: dto.readOnly,
+      entity: this.toEntityStepState(dto.entity),
+      stand: this.toStandStepState(dto.stand),
+      confirmation: {
+        checklist: { ...dto.confirmation.checklist },
+        signatoryName: dto.confirmation.signatoryName,
+        signatoryRole: dto.confirmation.signatoryRole,
+        confirmedAt: dto.confirmation.confirmedAt ? new Date(dto.confirmation.confirmedAt) : null,
+      },
+      documents: [],
+      payment: {
+        standTotalTtc: dto.payment.standTotalTtc,
+        discountPercent: dto.payment.discountPercent,
+        fileFeeTtc: dto.payment.fileFeeTtc,
+        depositRatePercent: dto.payment.depositRatePercent,
+        balanceDueDate: dto.payment.balanceDueDate ? new Date(dto.payment.balanceDueDate) : null,
+        payments: [],
+      },
+    };
+  }
+
+  private toEntityStepState(dto: EntityStepApiDto): EntityStepState {
+    return {
+      exhibitorType: dto.exhibitorType as EditionRegistrationState['entity']['exhibitorType'],
+      companyName: dto.companyName,
+      siret: dto.siret,
+      activityDomainId: dto.activityDomainId,
+      clubType: dto.clubType as EditionRegistrationState['entity']['clubType'],
+      visualUrl: dto.visualUrl ? toAbsoluteUrl(dto.visualUrl) : null,
+      managers: dto.managers.map((m) => ({
+        id: m.id,
+        firstName: m.firstName,
+        lastName: m.lastName,
+        phone: m.phone ?? '',
+        email: m.email,
+      })),
+    };
+  }
+
+  private toStandStepState(dto: StandStepApiDto): StandStepState {
+    return {
+      selectedSurfaceOptionId: dto.selectedSurfaceOptionId,
+      quantitiesByOptionId: dto.quantitiesByOptionId,
+      standTotalTtc: dto.standTotalTtc,
+    };
+  }
+
+  private patchLocalState(producer: (reg: EditionRegistrationState) => Partial<EditionRegistrationState>): void {
     if (this.isReadOnly()) {
       return;
     }
     this.state.update((reg) => (reg ? { ...reg, ...producer(reg) } : reg));
-    this.scheduleAutosave();
   }
 }

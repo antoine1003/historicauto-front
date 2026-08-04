@@ -1,4 +1,4 @@
-import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
+import { Component, DestroyRef, inject, OnInit } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -6,7 +6,6 @@ import { ButtonModule } from 'primeng/button';
 import { AccordionModule } from 'primeng/accordion';
 import { RadioButtonModule } from 'primeng/radiobutton';
 import { InputNumberModule } from 'primeng/inputnumber';
-import { getOptionsByCategory } from '@app/dashboard/services/options-catalog';
 import { ValidatableFormStep } from '@app/dashboard/models/validatable-form-step';
 import { EditionFormStateService } from '@app/dashboard/services/edition-form-state.service';
 import { OPTION_CATEGORY_LABELS, OptionCategory } from '@app/dashboard/models/edition-form.models';
@@ -30,8 +29,6 @@ export class StepStandComponent implements OnInit, ValidatableFormStep {
   private readonly fb = inject(FormBuilder);
   private readonly destroyRef = inject(DestroyRef);
 
-  protected readonly surfaceOptions = getOptionsByCategory(OptionCategory.SURFACE);
-
   /** Catégories autres que la surface, affichées en accordéon avec quantité libre. */
   protected readonly addonCategories = Object.values(OptionCategory).filter(
     (category) => category !== OptionCategory.SURFACE,
@@ -46,9 +43,6 @@ export class StepStandComponent implements OnInit, ValidatableFormStep {
   protected readonly form = this.fb.group({
     selectedSurfaceOptionId: this.fb.control<string | null>(null, Validators.required),
   });
-
-  /** Affiché après un envoi réussi, tant que l'utilisateur reste sur cette étape. */
-  protected readonly submitted = signal(false);
 
   ngOnInit(): void {
     const stand = this.formState.registration()?.stand;
@@ -69,8 +63,12 @@ export class StepStandComponent implements OnInit, ValidatableFormStep {
     return OPTION_CATEGORY_LABELS[category];
   }
 
+  protected surfaceOptions() {
+    return this.formState.getOptionsByCategory(OptionCategory.SURFACE);
+  }
+
   protected optionsForCategory(category: OptionCategory) {
-    return getOptionsByCategory(category);
+    return this.formState.getOptionsByCategory(category);
   }
 
   protected quantityFor(optionId: string): number {
@@ -88,15 +86,14 @@ export class StepStandComponent implements OnInit, ValidatableFormStep {
   }
 
   /**
-   * Envoi de la demande de stand une fois le formulaire valide. Cf. TODO d'intégration sur
-   * `EditionFormStateService.submitRegistrationOptions()` pour la cible API réelle
-   * (POST /api/registrations/{id}/submit, transition DRAFT → SUBMITTED).
+   * Envoi de la demande de stand une fois le formulaire valide. Le statut réel (submitting/
+   * submitted/error) est lu directement depuis `formState.submitStatus()` dans le template.
    */
   protected submit(): void {
     if (!this.validateAndTouch()) {
       return;
     }
-    this.submitted.set(this.formState.submitRegistrationOptions());
+    this.formState.submitRegistrationOptions();
   }
 
   /**

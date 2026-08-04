@@ -8,7 +8,7 @@
       </p>
 
       <div class="flex flex-col gap-1">
-        @for (option of surfaceOptions; track option.id) {
+        @for (option of surfaceOptions(); track option.id) {
           <div class="ef-option-row">
             <div class="flex items-center gap-2">
               <p-radio-button
@@ -18,7 +18,7 @@
               />
               <label [for]="option.id" class="ef-option-label">{{ option.label }}</label>
             </div>
-            <span class="ef-option-price">{{ option.mockPriceTtc | number: '1.0-2' }} € TTC</span>
+            <span class="ef-option-price">{{ option.priceTtc | number: '1.0-2' }} € TTC</span>
           </div>
         }
       </div>
@@ -46,7 +46,7 @@
                   }
                 </span>
                 <div class="flex items-center gap-3">
-                  <span class="ef-option-price">{{ option.mockPriceTtc | number: '1.0-2' }} € TTC / unité</span>
+                  <span class="ef-option-price">{{ option.priceTtc | number: '1.0-2' }} € TTC / unité</span>
                   <p-input-number
                     [ngModel]="quantityFor(option.id)"
                     [ngModelOptions]="{ standalone: true }"
@@ -84,8 +84,14 @@
 
     @if (!formState.isReadOnly()) {
       <div class="mt-5 flex flex-col items-start gap-2">
-        <p-button label="Envoyer ma demande" icon="pi pi-send" [disabled]="form.invalid" (onClick)="submit()" />
-        @if (submitted()) {
+        <p-button
+          label="Envoyer ma demande"
+          icon="pi pi-send"
+          [disabled]="form.invalid || formState.submitStatus() === 'submitting'"
+          [loading]="formState.submitStatus() === 'submitting'"
+          (onClick)="submit()"
+        />
+        @if (formState.submitStatus() === 'submitted') {
           <p class="ef-field-success">Votre demande a bien été envoyée à l'organisation.</p>
         }
       </div>

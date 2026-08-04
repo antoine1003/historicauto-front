@@ -40,7 +40,7 @@
       </p-button>
       }
 
-      @if (activeEdition() && showRegistrationLink() && !currentRegistration()) {
+      @if (activeEdition() && showRegistrationLink()) {
         <p-card
           [header]="'Formulaire d\'inscription exposant ' + activeEdition()!.year"
         >

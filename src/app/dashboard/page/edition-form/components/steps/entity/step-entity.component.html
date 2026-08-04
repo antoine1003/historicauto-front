@@ -42,9 +42,16 @@
           </div>
 
           <div class="ef-field">
-            <label class="ef-label" for="activityDomain">Domaine d'activité *</label>
-            <input pInputText id="activityDomain" class="w-full" formControlName="activityDomain" />
-            @if (form.controls.activityDomain.touched && form.controls.activityDomain.invalid) {
+            <label class="ef-label" for="activityDomainId">Domaine d'activité *</label>
+            <p-select
+              inputId="activityDomainId"
+              formControlName="activityDomainId"
+              [options]="activityDomainOptions()"
+              optionLabel="label"
+              optionValue="id"
+              styleClass="w-full"
+            />
+            @if (form.controls.activityDomainId.touched && form.controls.activityDomainId.invalid) {
               <p class="ef-field-error">Le domaine d'activité est obligatoire pour un exposant professionnel.</p>
             }
           </div>
@@ -68,8 +75,11 @@
 
       <div class="ef-field">
         <label class="ef-label">Visuel à faire figurer dans la liste des exposants</label>
-        @if (registration.entity.visualFileName) {
-          <p class="ef-help-text">Fichier actuel : {{ registration.entity.visualFileName }}</p>
+        @if (registration.entity.visualUrl) {
+          <p class="ef-help-text">
+            Fichier actuel :
+            <a [href]="registration.entity.visualUrl" target="_blank" rel="noopener">{{ registration.entity.visualUrl }}</a>
+          </p>
         }
         @if (!formState.isReadOnly()) {
           <p-fileupload

@@ -12,8 +12,9 @@ import {
 } from '@app/dashboard/page/edition-form/components/steps/documents/step-documents.component';
 import { StepPaymentComponent } from '@app/dashboard/page/edition-form/components/steps/payment/step-payment.component';
 import { EditionFormStateService } from '@app/dashboard/services/edition-form-state.service';
-import { RegistrationStep } from '@app/dashboard/models/edition-form.models';
+import { AutosaveStatus, RegistrationStep } from '@app/dashboard/models/edition-form.models';
 import { ValidatableFormStep } from '@app/dashboard/models/validatable-form-step';
+import { LoaderComponent } from '@app/shared/components/loader/loader.component';
 
 @Component({
   selector: 'app-edition-form-page',
@@ -25,6 +26,7 @@ import { ValidatableFormStep } from '@app/dashboard/models/validatable-form-step
     StepConfirmationComponent,
     StepDocumentsComponent,
     StepPaymentComponent,
+    LoaderComponent,
   ],
   styleUrl: '../../../core/styles/edition-form.theme.css',
   templateUrl: './edition-form-page.component.html',
@@ -38,13 +40,15 @@ export class EditionFormPageComponent implements OnInit {
   @ViewChild(StepStandComponent) private readonly standStep?: StepStandComponent;
 
   protected readonly RegistrationStep = RegistrationStep;
-  protected notFound = false;
+  protected missingYearParam = false;
 
   ngOnInit(): void {
     const year = this.route.snapshot.paramMap.get('year');
-    if (!year || !this.formState.loadForEditionYear(year)) {
-      this.notFound = true;
+    if (!year) {
+      this.missingYearParam = true;
+      return;
     }
+    this.formState.loadForEditionYear(year);
   }
 
   protected onStepChange(value: number | undefined): void {
@@ -52,6 +56,18 @@ export class EditionFormPageComponent implements OnInit {
       return;
     }
     this.formState.goToStep(value as RegistrationStep);
+  }
+
+  /** Statut d'autosave à afficher dans l'en-tête : celui de l'étape actuellement affichée. */
+  protected currentAutosaveStatus(): AutosaveStatus {
+    switch (this.formState.activeStep()) {
+      case RegistrationStep.ENTITY:
+        return this.formState.entityAutosaveStatus();
+      case RegistrationStep.STAND:
+        return this.formState.standAutosaveStatus();
+      default:
+        return 'idle';
+    }
   }
 
   /**
