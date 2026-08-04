@@ -22,8 +22,10 @@
         </div>
 
         <div class="flex items-center gap-2">
-          @if (doc.kind === 'quote' && !doc.signed && !formState.isReadOnly()) {
+          @if (doc.kind === 'quote' && !doc.signed && !formState.isReadOnly() && doc.signingUrl) {
             <p-button label="Signer votre devis" icon="pi pi-pen-to-square" (onClick)="signQuote(doc)" />
+          } @else if (doc.kind === 'quote' && !doc.signed && !formState.isReadOnly()) {
+            <span class="ef-help-text">En attente d'envoi par l'organisation</span>
           } @else {
             <p-button
               label="Télécharger"

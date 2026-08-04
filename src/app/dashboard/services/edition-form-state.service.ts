@@ -156,17 +156,27 @@ export class EditionFormStateService {
       next: (response) => {
         const match = response.data.find((r) => r.edition.year === year);
         if (!match) {
+          console.warn(`[EditionFormStateService] Aucune inscription réelle trouvée pour l'année ${year}.`);
           return;
         }
 
-        this.state.update((reg) => (reg ? { ...reg, registrationId: match.id } : reg));
+        this.state.update((reg) =>
+          reg
+            ? {
+                ...reg,
+                registrationId: match.id,
+                status: match.status as RegistrationStatus,
+                editionYear: match.edition.year,
+              }
+            : reg,
+        );
 
         this.documentService.getDocuments(match.id).subscribe({
           next: (docsResponse) => this.mergeRealQuoteDocuments(docsResponse.data),
-          error: () => void 0, // section Documents garde son état mock/vide en cas d'échec réseau
+          error: (err) => console.warn('[EditionFormStateService] Échec du chargement des documents réels :', err),
         });
       },
-      error: () => void 0,
+      error: (err) => console.warn('[EditionFormStateService] Échec du chargement de la registration réelle :', err),
     });
   }
 
