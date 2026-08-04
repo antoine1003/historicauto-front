@@ -1,5 +1,4 @@
-import { Injectable, computed, inject, signal } from '@angular/core';
-import { Injectable, computed, inject, signal } from '@angular/core';
+import { computed, inject, Injectable, signal } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { catchError, of } from 'rxjs';
 import { MessageService } from 'primeng/api';
@@ -20,16 +19,10 @@ import {
   StandStepPayload,
   StandStepState,
 } from '../models/edition-form.models';
-import { getOptionById, OPTIONS_CATALOG } from '@app/dashboard/services/options-catalog';
-import { loadMockRegistration } from '@app/dashboard/services/mock-registrations';
 import { RegistrationService } from '@app/shared/services/registration.service';
 import { DocumentService } from '@app/shared/services/document.service';
 import { DocumentSummary } from '@app/core/models/document.model';
-import {
-  EntityStepApiDto,
-  RegistrationDetailApiDto,
-  StandStepApiDto,
-} from '../models/registration-api.models';
+import { EntityStepApiDto, RegistrationDetailApiDto, StandStepApiDto, } from '../models/registration-api.models';
 import { OptionsCatalogService } from '@app/dashboard/services/options-catalog.service';
 
 /** Délai avant déclenchement de la sauvegarde auto après la dernière modification (ms). */
@@ -57,9 +50,6 @@ export class EditionFormStateService {
 
   private readonly state = signal<EditionRegistrationState | null>(null);
   private readonly activeStepSignal = signal<RegistrationStep>(RegistrationStep.ENTITY);
-  private readonly autosaveStatusSignal = signal<AutosaveStatus>('idle');
-  private autosaveTimer: ReturnType<typeof setTimeout> | null = null;
-  private readonly registrationService = inject(RegistrationService);
   private readonly documentService = inject(DocumentService);
   private readonly optionsSignal = signal<OptionDefinition[]>([]);
   private readonly entityAutosaveStatusSignal = signal<AutosaveStatus>('idle');
@@ -77,10 +67,17 @@ export class EditionFormStateService {
   readonly loading = this.loadingSignal.asReadonly();
   readonly loadError = this.loadErrorSignal.asReadonly();
   readonly submitStatus = this.submitStatusSignal.asReadonly();
-  readonly statusState = computed(() => this.state()?.status);
 
   readonly isReadOnly = computed(() => this.state()?.readOnly ?? false);
   readonly editionYear = computed(() => this.state()?.editionYear ?? null);
+
+  /**
+   * TODO: - Ajouter le bouton pour télécharger les documents et le devis
+   *       - Revoir comment fonctionne le step de confirmation.
+   *       - "Édition passée — ce formulaire est affiché à titre d'historique et n'est plus modifiable." Ce texte n'est pas correct
+   *       - Bien rester sur les branches develop et supprimer les autre
+   *       - Revoir le sisteme readonly sur le formulaire. Il ne doit pas être désactivé pârtout.
+   */
 
   /** Ordre linéaire du stepper pour les boutons Suivant/Précédent. */
   private readonly stepOrder: RegistrationStep[] = [
@@ -170,9 +167,6 @@ export class EditionFormStateService {
     this.entityAutosaveStatusSignal.set('idle');
     this.standAutosaveStatusSignal.set('idle');
 
-    if (registration) {
-      this.loadRealQuoteDocuments(year);
-    }
     this.optionsCatalogService.getForEdition(year).subscribe({
       next: (options) => this.optionsSignal.set(options),
       error: () => this.optionsSignal.set([]),
@@ -191,6 +185,8 @@ export class EditionFormStateService {
         if (!response) {
           return;
         }
+
+        this.loadRealQuoteDocuments(year);
         this.state.set(this.toEditionRegistrationState(response.data));
       });
   }
@@ -567,6 +563,7 @@ export class EditionFormStateService {
       readOnly: dto.readOnly,
       entity: this.toEntityStepState(dto.entity),
       stand: this.toStandStepState(dto.stand),
+      registrationId: dto.id,
       confirmation: {
         checklist: { ...dto.confirmation.checklist },
         signatoryName: dto.confirmation.signatoryName,
