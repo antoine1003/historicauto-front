@@ -9,11 +9,13 @@
     />
 
     @if (quoteDocument(); as quote) {
-      <p class="text-sm mb-4">
-        <a [href]="quote.fileUrl" target="_blank" rel="noopener" class="text-[#B03A2E] underline">
-          <i class="pi pi-file-pdf mr-1"></i>Consulter mon devis
-        </a>
-      </p>
+      @if (quote.fileUrl) {
+        <p class="text-sm mb-4">
+          <a [href]="quote.fileUrl" target="_blank" rel="noopener" class="text-[#B03A2E] underline">
+            <i class="pi pi-file-pdf mr-1"></i>Consulter mon devis
+          </a>
+        </p>
+      }
     }
 
     <div class="flex flex-col gap-3">
