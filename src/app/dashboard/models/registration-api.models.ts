@@ -43,6 +43,21 @@ export interface ConfirmationStepApiDto {
   confirmedAt: string | null;
 }
 
+/** Corps envoyé à POST /api/registrations/{id}/confirm — mêmes clés que ConfirmationStepApiDto. */
+export interface ConfirmationPayload {
+  checklist: {
+    acknowledgedQuoteAndPricing: boolean;
+    acceptedGeneralTerms: boolean;
+    noSublease: boolean;
+    noStandSharing: boolean;
+    cleanupCommitment: boolean;
+    respectLayout: boolean;
+    readAndApproved: boolean;
+  };
+  signatoryName: string;
+  signatoryRole: string;
+}
+
 export interface PaymentStepApiDto {
   standTotalTtc: number;
   discountPercent: number;

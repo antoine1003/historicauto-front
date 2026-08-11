@@ -5,6 +5,7 @@ import { RegistrationSummary } from '@app/core/models/registration.model';
 import { environment } from '../../../environments/environment';
 import { ApiResponse } from '@app/core/models/api.models';
 import {
+  ConfirmationPayload,
   EntityStepApiDto,
   RegistrationDetailApiDto,
   StandManagerApiDto,
@@ -79,6 +80,13 @@ export class RegistrationService {
     return this.http.post<ApiResponse<{ status: string }>>(
       `${environment.apiUrl}/${this.baseUrl}/${id}/submit`,
       {},
+    );
+  }
+
+  confirmRegistration(id: string, payload: ConfirmationPayload): Observable<ApiResponse<RegistrationDetailApiDto>> {
+    return this.http.post<ApiResponse<RegistrationDetailApiDto>>(
+      `${environment.apiUrl}/${this.baseUrl}/${id}/confirm`,
+      payload,
     );
   }
 }
