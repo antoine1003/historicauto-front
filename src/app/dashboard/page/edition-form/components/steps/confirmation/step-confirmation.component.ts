@@ -24,7 +24,7 @@ export class StepConfirmationComponent {
   protected readonly today = new Date();
 
   protected readonly checklistItems: ChecklistItem[] = [
-    { key: 'acknowledgedQuoteAndPricing', text: "J'ai pris connaissance de mon devis, de toutes les options commandées et des tarifs associés et modalités de paiement." },
+    { key: 'acknowledgedQuoteAndPricing', text: "J'ai pris connaissance de toutes les options commandées et des tarifs associés et modalités de paiement." },
     { key: 'acceptedGeneralTerms', text: "Je déclare avoir pris connaissance des conditions générales de vente et de participation et j'en accepte sans réserve toutes les clauses." },
     { key: 'noSublease', text: "J'interdis de céder, même à titre gracieux, ou sous-louer, de quelque manière que ce soit, mon emplacement." },
     { key: 'noStandSharing', text: "Je m'engage à ne pas mutualiser mon stand avec une autre entité et à ne pas promouvoir un tiers sans autorisation écrite." },
@@ -37,6 +37,10 @@ export class StepConfirmationComponent {
     const checklist = this.formState.registration()?.confirmation.checklist;
     return checklist ? Object.values(checklist).every(Boolean) : false;
   });
+
+  protected readonly quoteDocument = computed(() =>
+    this.formState.registration()?.documents.find((doc) => doc.kind === 'quote') ?? null,
+  );
 
   protected readonly canConfirm = computed(() => {
     const confirmation = this.formState.registration()?.confirmation;
