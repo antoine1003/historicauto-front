@@ -4,7 +4,7 @@ import { ButtonModule } from 'primeng/button';
 import { TagModule } from 'primeng/tag';
 import { FileUploadModule } from 'primeng/fileupload';
 import { EditionFormStateService } from '@app/dashboard/services/edition-form-state.service';
-import { DocumentItem, DocumentKind } from '@app/dashboard/models/edition-form.models';
+import { DocumentItem, DocumentKind, RegistrationStatus } from '@app/dashboard/models/edition-form.models';
 
 const DOCUMENT_KIND_ICON: Record<DocumentKind, string> = {
   quote: 'pi pi-file-edit',
@@ -25,6 +25,10 @@ export class StepDocumentsComponent {
 
   protected readonly visibleDocuments = computed(
     () => this.formState.registration()?.documents.filter((doc) => doc.visible) ?? [],
+  );
+
+  protected readonly canSignQuote = computed(
+    () => this.formState.registration()?.status === RegistrationStatus.CONFIRMED,
   );
 
   protected iconFor(doc: DocumentItem): string {

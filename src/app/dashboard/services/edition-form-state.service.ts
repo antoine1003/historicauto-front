@@ -101,9 +101,6 @@ export class EditionFormStateService {
     if (!reg) {
       return () => false;
     }
-    if (reg.readOnly) {
-      return () => true;
-    }
 
     return (step: RegistrationStep): boolean => {
       switch (step) {
@@ -113,13 +110,18 @@ export class EditionFormStateService {
         case RegistrationStep.CONFIRMATION:
           // Débloquée dès qu'un devis a été validé et rendu visible par HA (cf. spec
           // 2026-08-11-devis-confirmation-signature-design.md) — plus lié au total du stand.
-          return reg.documents.some((doc) => doc.kind === 'quote');
+          // reg.readOnly (édition passée/historique) garde l'étape consultable même sans devis.
+          return reg.readOnly || reg.documents.some((doc) => doc.kind === 'quote');
         case RegistrationStep.DOCUMENTS:
           // Débloquée uniquement une fois la confirmation soumise (génère le lien de signature) —
           // avant CONFIRMED, le devis est consultable via le lien de l'Étape 3, pas via cet onglet.
+          // Ne suit PAS reg.readOnly : sinon toute inscription non-DRAFT (donc aussi ACCEPTED, pas
+          // encore confirmée) débloquerait cet onglet prématurément.
           return reg.status === RegistrationStatus.CONFIRMED || reg.status === RegistrationStatus.COMPLETED;
         case RegistrationStep.PAYMENT:
-          return reg.status === RegistrationStatus.CONFIRMED || reg.status === RegistrationStatus.COMPLETED;
+          return (
+            reg.readOnly || reg.status === RegistrationStatus.CONFIRMED || reg.status === RegistrationStatus.COMPLETED
+          );
         default:
           return false;
       }
@@ -248,7 +250,7 @@ export class EditionFormStateService {
         kind: 'quote' as DocumentKind,
         label: doc.label,
         visible: true,
-        fileUrl: doc.fileUrl,
+        fileUrl: doc.fileUrl ? toAbsoluteUrl(doc.fileUrl) : null,
         signingUrl: doc.signingUrl,
         signed: doc.isSigned,
         uploadedAt: doc.notifiedAt ? new Date(doc.notifiedAt) : null,
@@ -429,13 +431,23 @@ export class EditionFormStateService {
   }
 
   updateConfirmationChecklist(patch: Partial<EditionRegistrationState['confirmation']['checklist']>): void {
-    this.patchLocalState((reg) => ({
-      confirmation: { ...reg.confirmation, checklist: { ...reg.confirmation.checklist, ...patch } },
-    }));
+    if (!this.isConfirmationEditable()) {
+      return;
+    }
+    this.state.update((reg) =>
+      reg
+        ? { ...reg, confirmation: { ...reg.confirmation, checklist: { ...reg.confirmation.checklist, ...patch } } }
+        : reg,
+    );
   }
 
   updateSignatory(name: string, role: string): void {
-    this.patchLocalState((reg) => ({ confirmation: { ...reg.confirmation, signatoryName: name, signatoryRole: role } }));
+    if (!this.isConfirmationEditable()) {
+      return;
+    }
+    this.state.update((reg) =>
+      reg ? { ...reg, confirmation: { ...reg.confirmation, signatoryName: name, signatoryRole: role } } : reg,
+    );
   }
 
   submitRegistrationOptions(): void {
