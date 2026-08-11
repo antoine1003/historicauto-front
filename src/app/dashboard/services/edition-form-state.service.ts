@@ -76,7 +76,7 @@ export class EditionFormStateService {
    *       - Revoir comment fonctionne le step de confirmation.
    *       - "Édition passée — ce formulaire est affiché à titre d'historique et n'est plus modifiable." Ce texte n'est pas correct
    *       - Bien rester sur les branches develop et supprimer les autre
-   *       - Revoir le sisteme readonly sur le formulaire. Il ne doit pas être désactivé pârtout.
+   *       - Revoir le systeme readonly sur le formulaire. Il ne doit pas être désactivé partout.
    */
 
   /** Ordre linéaire du stepper pour les boutons Suivant/Précédent. */
