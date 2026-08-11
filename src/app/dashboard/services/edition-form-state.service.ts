@@ -110,8 +110,9 @@ export class EditionFormStateService {
         case RegistrationStep.CONFIRMATION:
           // Débloquée dès qu'un devis a été validé et rendu visible par HA (cf. spec
           // 2026-08-11-devis-confirmation-signature-design.md) — plus lié au total du stand.
-          // reg.readOnly (édition passée/historique) garde l'étape consultable même sans devis.
-          return reg.readOnly || reg.documents.some((doc) => doc.kind === 'quote');
+          // confirmedAt garde l'étape consultable pour une inscription déjà confirmée (ex. vue
+          // historique), sans réintroduire le bug "reg.readOnly ≈ pas DRAFT" (pas "édition passée").
+          return reg.documents.some((doc) => doc.kind === 'quote') || reg.confirmation.confirmedAt !== null;
         case RegistrationStep.DOCUMENTS:
           // Débloquée uniquement une fois la confirmation soumise (génère le lien de signature) —
           // avant CONFIRMED, le devis est consultable via le lien de l'Étape 3, pas via cet onglet.

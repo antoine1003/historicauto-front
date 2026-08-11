@@ -27,9 +27,10 @@ export class StepDocumentsComponent {
     () => this.formState.registration()?.documents.filter((doc) => doc.visible) ?? [],
   );
 
-  protected readonly canSignQuote = computed(
-    () => this.formState.registration()?.status === RegistrationStatus.CONFIRMED,
-  );
+  protected readonly canSignQuote = computed(() => {
+    const status = this.formState.registration()?.status;
+    return status === RegistrationStatus.CONFIRMED || status === RegistrationStatus.COMPLETED;
+  });
 
   protected iconFor(doc: DocumentItem): string {
     return DOCUMENT_KIND_ICON[doc.kind];
