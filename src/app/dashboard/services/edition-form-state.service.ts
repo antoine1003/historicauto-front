@@ -57,6 +57,7 @@ export class EditionFormStateService {
   private readonly loadingSignal = signal(false);
   private readonly loadErrorSignal = signal<'not_found' | 'closed' | null>(null);
   private readonly submitStatusSignal = signal<'idle' | 'submitting' | 'submitted' | 'error'>('idle');
+  private readonly confirmStatusSignal = signal<'idle' | 'submitting' | 'error'>('idle');
   private entityAutosaveTimer: ReturnType<typeof setTimeout> | null = null;
   private standAutosaveTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -67,6 +68,7 @@ export class EditionFormStateService {
   readonly loading = this.loadingSignal.asReadonly();
   readonly loadError = this.loadErrorSignal.asReadonly();
   readonly submitStatus = this.submitStatusSignal.asReadonly();
+  readonly confirmStatus = this.confirmStatusSignal.asReadonly();
 
   readonly isReadOnly = computed(() => this.state()?.readOnly ?? false);
   readonly editionYear = computed(() => this.state()?.editionYear ?? null);
@@ -109,15 +111,13 @@ export class EditionFormStateService {
         case RegistrationStep.STAND:
           return true;
         case RegistrationStep.CONFIRMATION:
-          return this.standTotalTtc() > 0;
+          // Débloquée dès qu'un devis a été validé et rendu visible par HA (cf. spec
+          // 2026-08-11-devis-confirmation-signature-design.md) — plus lié au total du stand.
+          return reg.documents.some((doc) => doc.kind === 'quote');
         case RegistrationStep.DOCUMENTS:
-          // Le devis (Task 4, cf. spec 2026-08-04-devis-docuseal-signature-design.md) devient
-          // visible dès l'acceptation, avant que l'exposant ait fini l'étape Confirmation.
-          return (
-            reg.status === RegistrationStatus.ACCEPTED ||
-            reg.status === RegistrationStatus.CONFIRMED ||
-            reg.status === RegistrationStatus.COMPLETED
-          );
+          // Débloquée uniquement une fois la confirmation soumise (génère le lien de signature) —
+          // avant CONFIRMED, le devis est consultable via le lien de l'Étape 3, pas via cet onglet.
+          return reg.status === RegistrationStatus.CONFIRMED || reg.status === RegistrationStatus.COMPLETED;
         case RegistrationStep.PAYMENT:
           return reg.status === RegistrationStatus.CONFIRMED || reg.status === RegistrationStatus.COMPLETED;
         default:
@@ -128,6 +128,20 @@ export class EditionFormStateService {
 
   /** Calculé côté serveur, source de vérité (cf. Registration::computeOptionsTotal() côté back). */
   readonly standTotalTtc = computed(() => this.state()?.stand.standTotalTtc ?? 0);
+
+  /**
+   * L'Étape 3 n'est modifiable que tant que l'inscription est ACCEPTED et pas encore confirmée —
+   * une fois CONFIRMED, les champs redeviennent en lecture seule via cette garde dédiée plutôt
+   * que via le flag global `isReadOnly` (cf. spec 2026-08-11-..., §4.4 : ce dernier reste true
+   * dès que le statut quitte DRAFT, ce qui désactiverait ce formulaire trop tôt si on le réutilisait ici).
+   */
+  readonly isConfirmationEditable = computed(() => {
+    const reg = this.state();
+    if (!reg) {
+      return false;
+    }
+    return reg.status === RegistrationStatus.ACCEPTED && reg.confirmation.confirmedAt === null;
+  });
 
   readonly paymentsTotalTtc = computed(() => {
     const reg = this.state();
@@ -453,10 +467,59 @@ export class EditionFormStateService {
   // ---------------------------------------------------------------------------------------------
 
   confirmRegistration(): void {
-    const allChecked = Object.values(this.state()?.confirmation.checklist ?? {}).every(Boolean);
-    if (!allChecked) {
+    const reg = this.state();
+    if (!reg) {
       return;
     }
+    const allChecked = Object.values(reg.confirmation.checklist).every(Boolean);
+    if (!allChecked || !reg.confirmation.signatoryName || !reg.confirmation.signatoryRole) {
+      return;
+    }
+
+    this.confirmStatusSignal.set('submitting');
+    this.registrationService
+      .confirmRegistration(reg.id, {
+        checklist: reg.confirmation.checklist,
+        signatoryName: reg.confirmation.signatoryName,
+        signatoryRole: reg.confirmation.signatoryRole,
+      })
+      .subscribe({
+        next: (response) => {
+          this.state.update((current) =>
+            current
+              ? {
+                  ...current,
+                  status: response.data.status as RegistrationStatus,
+                  confirmation: {
+                    checklist: { ...response.data.confirmation.checklist },
+                    signatoryName: response.data.confirmation.signatoryName,
+                    signatoryRole: response.data.confirmation.signatoryRole,
+                    confirmedAt: response.data.confirmation.confirmedAt
+                      ? new Date(response.data.confirmation.confirmedAt)
+                      : null,
+                  },
+                }
+              : current,
+          );
+          this.confirmStatusSignal.set('idle');
+
+          this.documentService.getDocuments(reg.id).subscribe({
+            next: (docsResponse) => this.mergeRealQuoteDocuments(docsResponse.data),
+            error: (err) => console.warn('[EditionFormStateService] Échec du rechargement des documents après confirmation :', err),
+          });
+
+          this.goToStep(RegistrationStep.DOCUMENTS);
+        },
+        error: (err: HttpErrorResponse) => {
+          this.confirmStatusSignal.set('error');
+          const errors = (err.error?.errors ?? {}) as Record<string, string[]>;
+          const detail =
+            Object.values(errors).flat().join(' ') ||
+            err.error?.message ||
+            "La confirmation a échoué. Réessayez.";
+          this.messageService.add({ severity: 'error', summary: 'Confirmation impossible', detail });
+        },
+      });
   }
 
   /**
