@@ -16,16 +16,21 @@
               <p class="ef-help-text">Mis en ligne le {{ doc.uploadedAt | date: 'dd/MM/yyyy' }}</p>
             }
           </div>
-          @if (doc.kind === 'quote' && doc.signed) {
+          @if (doc.kind === 'quote' && doc.signatureStatus === 'signed') {
             <p-tag severity="success" value="Signé" />
+          }
+          @if (doc.kind === 'quote' && doc.signatureStatus === 'declined') {
+            <p-tag severity="danger" value="Signature refusée" />
           }
         </div>
 
         <div class="flex items-center gap-2">
-          @if (doc.kind === 'quote' && !doc.signed && canSignQuote() && doc.signingUrl) {
+          @if (doc.kind === 'quote' && doc.signatureStatus === 'pending' && canSignQuote() && doc.signingUrl) {
             <p-button label="Signer votre devis" icon="pi pi-pen-to-square" (onClick)="signQuote(doc)" />
-          } @else if (doc.kind === 'quote' && !doc.signed && canSignQuote()) {
+          } @else if (doc.kind === 'quote' && doc.signatureStatus === 'pending' && canSignQuote()) {
             <span class="ef-help-text">En attente d'envoi par l'organisation</span>
+          } @else if (doc.kind === 'quote' && doc.signatureStatus === 'declined') {
+            <span class="ef-help-text">HA va vous transmettre un nouveau devis</span>
           } @else {
             <p-button
               label="Télécharger"
