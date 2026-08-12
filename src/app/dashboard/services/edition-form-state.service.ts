@@ -122,8 +122,10 @@ export class EditionFormStateService {
         case RegistrationStep.PAYMENT:
           // Débloquée seulement après signature effective du devis (webhook Docuseal), pas dès la
           // simple confirmation — cf. spec 2026-08-12-docuseal-webhook-signature-design.md §7.2.
+          // N'utilise PAS reg.readOnly (même piège documenté ci-dessus pour DOCUMENTS) : ce flag vaut
+          // déjà true dès que le statut quitte DRAFT sur une édition active, ce qui débloquerait
+          // Paiement bien avant toute signature si on le gardait dans cette condition.
           return (
-            reg.readOnly ||
             reg.status === RegistrationStatus.COMPLETED ||
             reg.documents.some((doc) => doc.kind === 'quote' && doc.signatureStatus === 'signed')
           );
