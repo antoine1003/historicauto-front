@@ -56,4 +56,19 @@ export class StepDocumentsComponent implements OnInit, OnDestroy {
       this.formState.uploadInsuranceDocument(file);
     }
   }
+
+  protected downloadDocument(doc: DocumentItem) {
+    if (doc.fileUrl) {
+      const a = document.createElement('a');
+      let label = doc.label;
+      // if it does not have extension, add .pdf
+      if (!label.includes('.')) {
+        label += '.pdf';
+      }
+      a.href = doc.fileUrl;
+      a.download = label;
+      a.target = '_blank';
+      a.click();
+    }
+  }
 }

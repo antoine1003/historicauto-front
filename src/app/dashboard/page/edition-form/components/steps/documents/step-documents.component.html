@@ -36,6 +36,7 @@
               label="Télécharger"
               icon="pi pi-download"
               [text]="true"
+              (onClick)="downloadDocument(doc)"
               [disabled]="!doc.fileUrl"
             />
           }
