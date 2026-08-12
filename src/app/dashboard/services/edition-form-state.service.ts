@@ -253,7 +253,7 @@ export class EditionFormStateService {
         visible: true,
         fileUrl: doc.fileUrl ? toAbsoluteUrl(doc.fileUrl) : null,
         signingUrl: doc.signingUrl,
-        signed: doc.isSigned,
+        signatureStatus: doc.signatureStatus,
         uploadedAt: doc.notifiedAt ? new Date(doc.notifiedAt) : null,
       }));
 

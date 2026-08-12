@@ -1,3 +1,5 @@
+import { SignatureStatus } from '@app/core/models/document.model';
+
 /**
  * Miroir front des enums Symfony (App\Enum\ExhibitorType, ClubType, OptionCategory, RegistrationStatus).
  * Garder ces valeurs strictement synchronisées avec le back : elles sont envoyées telles quelles à l'API.
@@ -129,7 +131,7 @@ export interface DocumentItem {
   fileUrl: string | null;
   /** Lien de signature hébergé Docuseal, non nul uniquement pour un devis envoyé en signature. */
   signingUrl: string | null;
-  signed: boolean;
+  signatureStatus: SignatureStatus;
   uploadedAt: Date | null;
 }
 
