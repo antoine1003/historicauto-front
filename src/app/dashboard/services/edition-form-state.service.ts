@@ -550,6 +550,21 @@ export class EditionFormStateService {
     }
   }
 
+  /**
+   * Recharge les documents réels de l'inscription — utilisé au retour de focus après un aller-retour
+   * sur l'onglet de signature Docuseal, pour récupérer le nouvel état sans rechargement de page.
+   */
+  refreshDocuments(): void {
+    const registrationId = this.state()?.registrationId;
+    if (!registrationId) {
+      return;
+    }
+    this.documentService.getDocuments(registrationId).subscribe({
+      next: (response) => this.mergeRealQuoteDocuments(response.data),
+      error: (err) => console.warn('[EditionFormStateService] Échec du rafraîchissement des documents :', err),
+    });
+  }
+
   uploadInsuranceDocument(file: File): void {
     void file; // no-op (front only, étape 4 hors périmètre)
   }

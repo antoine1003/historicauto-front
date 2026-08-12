@@ -1,4 +1,4 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, inject, OnDestroy, OnInit } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { ButtonModule } from 'primeng/button';
 import { TagModule } from 'primeng/tag';
@@ -20,7 +20,7 @@ const DOCUMENT_KIND_ICON: Record<DocumentKind, string> = {
   imports: [DatePipe, ButtonModule, TagModule, FileUploadModule],
   templateUrl: './step-documents.component.html',
 })
-export class StepDocumentsComponent {
+export class StepDocumentsComponent implements OnInit, OnDestroy {
   protected readonly formState = inject(EditionFormStateService);
 
   protected readonly visibleDocuments = computed(
@@ -31,6 +31,16 @@ export class StepDocumentsComponent {
     const status = this.formState.registration()?.status;
     return status === RegistrationStatus.CONFIRMED || status === RegistrationStatus.COMPLETED;
   });
+
+  private readonly onWindowFocus = (): void => this.formState.refreshDocuments();
+
+  ngOnInit(): void {
+    window.addEventListener('focus', this.onWindowFocus);
+  }
+
+  ngOnDestroy(): void {
+    window.removeEventListener('focus', this.onWindowFocus);
+  }
 
   protected iconFor(doc: DocumentItem): string {
     return DOCUMENT_KIND_ICON[doc.kind];
