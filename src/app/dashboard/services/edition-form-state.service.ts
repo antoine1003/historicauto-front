@@ -120,8 +120,12 @@ export class EditionFormStateService {
           // encore confirmée) débloquerait cet onglet prématurément.
           return reg.status === RegistrationStatus.CONFIRMED || reg.status === RegistrationStatus.COMPLETED;
         case RegistrationStep.PAYMENT:
+          // Débloquée seulement après signature effective du devis (webhook Docuseal), pas dès la
+          // simple confirmation — cf. spec 2026-08-12-docuseal-webhook-signature-design.md §7.2.
           return (
-            reg.readOnly || reg.status === RegistrationStatus.CONFIRMED || reg.status === RegistrationStatus.COMPLETED
+            reg.readOnly ||
+            reg.status === RegistrationStatus.COMPLETED ||
+            reg.documents.some((doc) => doc.kind === 'quote' && doc.signatureStatus === 'signed')
           );
         default:
           return false;
