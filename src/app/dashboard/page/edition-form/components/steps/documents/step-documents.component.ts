@@ -27,6 +27,8 @@ export class StepDocumentsComponent implements OnInit, OnDestroy {
     () => this.formState.registration()?.documents.filter((doc) => doc.visible) ?? [],
   );
 
+  protected readonly sharedDocuments = this.formState.sharedDocuments;
+
   protected readonly canSignQuote = computed(() => {
     const status = this.formState.registration()?.status;
     return status === RegistrationStatus.CONFIRMED || status === RegistrationStatus.COMPLETED;
@@ -57,7 +59,7 @@ export class StepDocumentsComponent implements OnInit, OnDestroy {
     }
   }
 
-  protected downloadDocument(doc: DocumentItem) {
+  protected downloadDocument(doc: { label: string; fileUrl: string | null }) {
     if (doc.fileUrl) {
       const a = document.createElement('a');
       let label = doc.label;

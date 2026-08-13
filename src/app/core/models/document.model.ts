@@ -16,3 +16,15 @@ export interface DocumentSummary {
   depositPercent: string | null;
   notifiedAt: string | null;
 }
+
+/**
+ * Reflète App\DTO\Registration\SharedDocumentSummaryDto côté API — document commun à tous les
+ * exposants d'une édition (liste fournisseurs, etc.), pas une DocumentItem propre à une Registration.
+ */
+export interface SharedDocumentItem {
+  id: string;
+  label: string;
+  fileUrl: string | null;
+  originalName: string | null;
+  mimeType: string | null;
+}

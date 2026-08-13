@@ -21,7 +21,7 @@ import {
 } from '../models/edition-form.models';
 import { RegistrationService } from '@app/shared/services/registration.service';
 import { DocumentService } from '@app/shared/services/document.service';
-import { DocumentSummary } from '@app/core/models/document.model';
+import { DocumentSummary, SharedDocumentItem } from '@app/core/models/document.model';
 import { EntityStepApiDto, RegistrationDetailApiDto, StandStepApiDto, } from '../models/registration-api.models';
 import { OptionsCatalogService } from '@app/dashboard/services/options-catalog.service';
 
@@ -52,6 +52,7 @@ export class EditionFormStateService {
   private readonly activeStepSignal = signal<RegistrationStep>(RegistrationStep.ENTITY);
   private readonly documentService = inject(DocumentService);
   private readonly optionsSignal = signal<OptionDefinition[]>([]);
+  private readonly sharedDocumentsSignal = signal<SharedDocumentItem[]>([]);
   private readonly entityAutosaveStatusSignal = signal<AutosaveStatus>('idle');
   private readonly standAutosaveStatusSignal = signal<AutosaveStatus>('idle');
   private readonly loadingSignal = signal(false);
@@ -62,6 +63,7 @@ export class EditionFormStateService {
   private standAutosaveTimer: ReturnType<typeof setTimeout> | null = null;
 
   readonly registration = this.state.asReadonly();
+  readonly sharedDocuments = this.sharedDocumentsSignal.asReadonly();
   readonly activeStep = this.activeStepSignal.asReadonly();
   readonly entityAutosaveStatus = this.entityAutosaveStatusSignal.asReadonly();
   readonly standAutosaveStatus = this.standAutosaveStatusSignal.asReadonly();
@@ -189,10 +191,19 @@ export class EditionFormStateService {
     this.activeStepSignal.set(RegistrationStep.ENTITY);
     this.entityAutosaveStatusSignal.set('idle');
     this.standAutosaveStatusSignal.set('idle');
+    this.sharedDocumentsSignal.set([]);
 
     this.optionsCatalogService.getForEdition(year).subscribe({
       next: (options) => this.optionsSignal.set(options),
       error: () => this.optionsSignal.set([]),
+    });
+
+    this.documentService.getSharedDocuments(year).subscribe({
+      next: (response) =>
+        this.sharedDocumentsSignal.set(
+          response.data.map((doc) => ({ ...doc, fileUrl: doc.fileUrl ? toAbsoluteUrl(doc.fileUrl) : null })),
+        ),
+      error: (err) => console.warn('[EditionFormStateService] Échec du chargement des documents communs :', err),
     });
 
     this.registrationService

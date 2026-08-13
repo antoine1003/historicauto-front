@@ -45,6 +45,29 @@
     }
   </div>
 
+  @if (sharedDocuments().length > 0) {
+    <div class="ef-panel mt-6">
+      <h2 class="ef-section-title">Documents communs à l'édition</h2>
+      @for (doc of sharedDocuments(); track doc.id) {
+        <div class="ef-document-row">
+          <div class="flex items-center gap-3">
+            <i class="pi pi-file text-[#B8860B]"></i>
+            <p class="text-sm font-semibold text-[#1A1714]">{{ doc.label }}</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <p-button
+              label="Télécharger"
+              icon="pi pi-download"
+              [text]="true"
+              [disabled]="!doc.fileUrl"
+              (onClick)="downloadDocument(doc)"
+            />
+          </div>
+        </div>
+      }
+    </div>
+  }
+
   @if (!formState.isReadOnly()) {
     <div class="ef-panel mt-6">
       <h2 class="ef-section-title">Assurance RC</h2>
