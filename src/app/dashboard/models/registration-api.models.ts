@@ -72,6 +72,7 @@ export interface RegistrationDetailApiDto {
   editionYear: string;
   status: string;
   readOnly: boolean;
+  editionClosed: boolean;
   entity: EntityStepApiDto;
   stand: StandStepApiDto;
   confirmation: ConfirmationStepApiDto;

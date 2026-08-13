@@ -71,12 +71,12 @@ export class EditionFormStateService {
   readonly confirmStatus = this.confirmStatusSignal.asReadonly();
 
   readonly isReadOnly = computed(() => this.state()?.readOnly ?? false);
+  readonly isEditionClosed = computed(() => this.state()?.editionClosed ?? false);
   readonly editionYear = computed(() => this.state()?.editionYear ?? null);
 
   /**
    * TODO: - Ajouter le bouton pour télécharger les documents et le devis
    *       - Revoir comment fonctionne le step de confirmation.
-   *       - "Édition passée — ce formulaire est affiché à titre d'historique et n'est plus modifiable." Ce texte n'est pas correct
    *       - Bien rester sur les branches develop et supprimer les autre
    *       - Revoir le systeme readonly sur le formulaire. Il ne doit pas être désactivé partout.
    */
@@ -658,6 +658,7 @@ export class EditionFormStateService {
       editionYear: dto.editionYear,
       status: dto.status as RegistrationStatus,
       readOnly: dto.readOnly,
+      editionClosed: dto.editionClosed,
       entity: this.toEntityStepState(dto.entity),
       stand: this.toStandStepState(dto.stand),
       registrationId: dto.id,

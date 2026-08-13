@@ -159,8 +159,10 @@ export interface EditionRegistrationState {
   /** Id réel de la Registration côté back, résolu de façon asynchrone via RegistrationService.getMine(). */
   registrationId: string | null;
   status: RegistrationStatus;
-  /** Une édition est verrouillée en lecture seule dès qu'elle n'est plus l'édition active d'inscription. */
+  /** Verrouillé dès que le statut quitte DRAFT, quelle qu'en soit la raison (cf. editionClosed pour la distinguer). */
   readOnly: boolean;
+  /** true uniquement si l'édition n'est plus active/ouverte — distingue "édition passée" de "déjà soumis". */
+  editionClosed: boolean;
   entity: EntityStepState;
   stand: StandStepState;
   confirmation: ConfirmationStepState;

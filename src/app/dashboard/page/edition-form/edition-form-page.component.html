@@ -48,11 +48,19 @@
         }
       </div>
 
-      @if (registration.readOnly) {
+      @if (registration.editionClosed) {
         <div class="ef-readonly-banner">
           <i class="pi pi-lock"></i>
           <span>
             Édition passée — ce formulaire est affiché à titre d'historique et n'est plus modifiable.
+          </span>
+        </div>
+      } @else if (registration.readOnly) {
+        <div class="ef-readonly-banner">
+          <i class="pi pi-lock"></i>
+          <span>
+            Votre demande a été envoyée et n'est plus modifiable. Contactez-nous à
+            <a href="mailto:info@historic-auto.com">info@historic-auto.com</a> pour toute modification.
           </span>
         </div>
       }
