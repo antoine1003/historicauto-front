@@ -1,4 +1,4 @@
-import { Component, DestroyRef, inject, OnInit } from '@angular/core';
+import { Component, DestroyRef, effect, inject, OnInit } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -44,14 +44,25 @@ export class StepStandComponent implements OnInit, ValidatableFormStep {
     selectedSurfaceOptionId: this.fb.control<string | null>(null, Validators.required),
   });
 
+  constructor() {
+    /**
+     * `formState.isReadOnly()` peut passer à `true` après le montage du composant (ex. juste
+     * après l'envoi du formulaire à l'étape 2) — un simple contrôle dans `ngOnInit` ne le
+     * détecterait jamais. `effect()` reste synchronisé sur toute la durée de vie du composant.
+     */
+    effect(() => {
+      if (this.formState.isReadOnly()) {
+        this.form.disable({ emitEvent: false });
+      } else {
+        this.form.enable({ emitEvent: false });
+      }
+    });
+  }
+
   ngOnInit(): void {
     const stand = this.formState.registration()?.stand;
     if (stand) {
       this.form.patchValue({ selectedSurfaceOptionId: stand.selectedSurfaceOptionId }, { emitEvent: false });
-    }
-
-    if (this.formState.isReadOnly()) {
-      this.form.disable({ emitEvent: false });
     }
 
     this.form.controls.selectedSurfaceOptionId.valueChanges

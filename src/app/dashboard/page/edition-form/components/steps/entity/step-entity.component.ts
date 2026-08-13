@@ -1,4 +1,4 @@
-import { Component, DestroyRef, inject, OnInit } from '@angular/core';
+import { Component, DestroyRef, effect, inject, OnInit } from '@angular/core';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { ButtonModule } from 'primeng/button';
@@ -76,16 +76,23 @@ export class StepEntityComponent implements OnInit, ValidatableFormStep {
     email: '',
   };
 
+  constructor() {
+    /** Même raison que StepStandComponent : `ngOnInit` seul ne recapte pas un passage à readOnly après coup. */
+    effect(() => {
+      if (this.formState.isReadOnly()) {
+        this.form.disable({ emitEvent: false });
+      } else {
+        this.form.enable({ emitEvent: false });
+      }
+    });
+  }
+
   ngOnInit(): void {
     const entity = this.formState.registration()?.entity;
     if (entity) {
       this.form.patchValue(entity, { emitEvent: false });
     }
     this.applyExhibitorTypeValidators(entity?.exhibitorType ?? ExhibitorType.PRO);
-
-    if (this.formState.isReadOnly()) {
-      this.form.disable({ emitEvent: false });
-    }
 
     this.form.controls.exhibitorType.valueChanges
       .pipe(takeUntilDestroyed(this.destroyRef))

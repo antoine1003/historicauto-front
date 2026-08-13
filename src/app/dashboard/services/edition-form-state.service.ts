@@ -467,7 +467,9 @@ export class EditionFormStateService {
     this.registrationService.submit(reg.id).subscribe({
       next: (response) => {
         this.state.update((current) =>
-          current ? { ...current, status: response.data.status as RegistrationStatus } : current,
+          current
+            ? { ...current, status: response.data.status as RegistrationStatus, readOnly: true }
+            : current,
         );
         this.submitStatusSignal.set('submitted');
       },
