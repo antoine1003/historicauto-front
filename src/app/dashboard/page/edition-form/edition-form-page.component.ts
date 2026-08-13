@@ -89,7 +89,7 @@ export class EditionFormPageComponent implements OnInit {
 
   protected goToNextStep(): void {
     const currentStep = this.currentValidatableStep();
-    if (currentStep && !currentStep.validateAndTouch()) {
+    if (!this.formState.isReadOnly() && currentStep && !currentStep.validateAndTouch()) {
       return;
     }
     this.formState.goToNextStep();

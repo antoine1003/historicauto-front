@@ -82,8 +82,8 @@
       </div>
     </div>
 
-    @if (!formState.isReadOnly()) {
-      <div class="mt-5 flex flex-col items-start gap-2">
+    <div class="mt-5 flex flex-col items-start gap-2">
+      @if (!formState.isReadOnly()) {
         <p-button
           label="Envoyer ma demande"
           icon="pi pi-send"
@@ -91,10 +91,10 @@
           [loading]="formState.submitStatus() === 'submitting'"
           (onClick)="submit()"
         />
-        @if (formState.submitStatus() === 'submitted') {
-          <p class="ef-field-success">Votre demande a bien été envoyée à l'organisation.</p>
-        }
-      </div>
-    }
+      }
+      @if (formState.submitStatus() === 'submitted') {
+        <p class="ef-field-success">Votre demande a bien été envoyée à l'organisation.</p>
+      }
+    </div>
   </div>
 }
