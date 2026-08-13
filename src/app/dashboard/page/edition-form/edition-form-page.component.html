@@ -128,6 +128,7 @@
             icon="pi pi-arrow-left"
             severity="secondary"
             [outlined]="true"
+            [disabled]="!formState.isPreviousStepUnlocked()"
             (onClick)="formState.goToPreviousStep()"
           />
         } @else {
@@ -139,6 +140,7 @@
             label="Suivant"
             icon="pi pi-arrow-right"
             iconPos="right"
+            [disabled]="!formState.isNextStepUnlocked()"
             (onClick)="goToNextStep()"
           />
         }

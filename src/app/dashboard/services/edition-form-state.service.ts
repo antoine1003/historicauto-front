@@ -305,6 +305,18 @@ export class EditionFormStateService {
     () => this.stepOrder.indexOf(this.activeStepSignal()) === this.stepOrder.length - 1,
   );
 
+  /** Le bouton "Suivant" ne doit être actionnable que si l'étape suivante est réellement atteignable. */
+  readonly isNextStepUnlocked = computed(() => {
+    const next = this.stepOrder[this.stepOrder.indexOf(this.activeStepSignal()) + 1];
+    return next !== undefined && this.isStepUnlocked()(next);
+  });
+
+  /** Symétrique pour "Précédent" — protège contre le même dead-click si une étape antérieure se reverrouillait. */
+  readonly isPreviousStepUnlocked = computed(() => {
+    const previous = this.stepOrder[this.stepOrder.indexOf(this.activeStepSignal()) - 1];
+    return previous !== undefined && this.isStepUnlocked()(previous);
+  });
+
   updateEntity(patch: Partial<EditionRegistrationState['entity']>): void {
     this.patchLocalState((reg) => ({ entity: { ...reg.entity, ...patch } }));
     this.scheduleEntityAutosave();
