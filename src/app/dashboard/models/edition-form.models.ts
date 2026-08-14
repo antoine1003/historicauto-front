@@ -140,6 +140,7 @@ export interface PaymentItem {
   amountTtc: number;
   method: string;
   paidAt: Date;
+  label: string | null;
 }
 
 export interface PaymentSummary {
@@ -148,6 +149,8 @@ export interface PaymentSummary {
   fileFeeTtc: number;
   depositRatePercent: number;
   balanceDueDate: Date | null;
+  bankIban: string | null;
+  bankBic: string | null;
   payments: PaymentItem[];
 }
 

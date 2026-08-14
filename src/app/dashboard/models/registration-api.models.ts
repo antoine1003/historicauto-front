@@ -58,13 +58,23 @@ export interface ConfirmationPayload {
   signatoryRole: string;
 }
 
+export interface PaymentEntryApiDto {
+  id: string;
+  amountTtc: number;
+  method: string;
+  paidAt: string;
+  label: string | null;
+}
+
 export interface PaymentStepApiDto {
   standTotalTtc: number;
   discountPercent: number;
   fileFeeTtc: number;
   depositRatePercent: number;
   balanceDueDate: string | null;
-  payments: unknown[];
+  bankIban: string | null;
+  bankBic: string | null;
+  payments: PaymentEntryApiDto[];
 }
 
 export interface RegistrationDetailApiDto {
