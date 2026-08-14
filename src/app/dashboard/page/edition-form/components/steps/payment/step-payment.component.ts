@@ -5,6 +5,13 @@ import { TableModule } from 'primeng/table';
 import { MessageModule } from 'primeng/message';
 import { EditionFormStateService } from '@app/dashboard/services/edition-form-state.service';
 
+const PAYMENT_METHOD_LABELS: Record<string, string> = {
+  card: 'Carte bancaire',
+  transfer: 'Virement',
+  cheque: 'Chèque',
+  cash: 'Espèces',
+};
+
 @Component({
   selector: 'app-step-payment',
   standalone: true,
@@ -33,6 +40,10 @@ export class StepPaymentComponent {
     const reg = this.formState.registration();
     return reg ? this.orderTotalTtc() * (reg.payment.depositRatePercent / 100) : 0;
   });
+
+  protected methodLabel(method: string): string {
+    return PAYMENT_METHOD_LABELS[method] ?? method;
+  }
 
   /**
    * TODO intégration : déclenche le plugin de paiement en ligne (Stripe/PayPal). Le solde

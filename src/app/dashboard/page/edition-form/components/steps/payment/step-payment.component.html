@@ -63,13 +63,15 @@
           <tr>
             <th>Date</th>
             <th>Moyen de paiement</th>
+            <th>Libellé</th>
             <th class="text-right">Montant TTC</th>
           </tr>
         </ng-template>
         <ng-template #body let-payment>
           <tr>
             <td>{{ payment.paidAt | date: 'dd/MM/yyyy' }}</td>
-            <td>{{ payment.method }}</td>
+            <td>{{ methodLabel(payment.method) }}</td>
+            <td>{{ payment.label ?? '—' }}</td>
             <td class="text-right">{{ payment.amountTtc | number: '1.0-2' }} €</td>
           </tr>
         </ng-template>
@@ -82,7 +84,10 @@
       <h2 class="ef-section-title">Régler en ligne</h2>
       <p-button label="Payer par carte bancaire" icon="pi pi-credit-card" (onClick)="payByCard()" />
       <p class="ef-help-text mt-3">
-        Virement : IBAN FR76 1380 7001 9732 0211 8536 804 — SWIFT (BIC) CCBPFRPPNAN.
+        @if (registration.payment.bankIban && registration.payment.bankBic) {
+          Virement : IBAN {{ registration.payment.bankIban }} — SWIFT (BIC)
+          {{ registration.payment.bankBic }}.
+        }
         Pour tout autre moyen de paiement, contactez-nous.
       </p>
     </div>
