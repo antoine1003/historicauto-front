@@ -700,7 +700,15 @@ export class EditionFormStateService {
         fileFeeTtc: dto.payment.fileFeeTtc,
         depositRatePercent: dto.payment.depositRatePercent,
         balanceDueDate: dto.payment.balanceDueDate ? new Date(dto.payment.balanceDueDate) : null,
-        payments: [],
+        bankIban: dto.payment.bankIban,
+        bankBic: dto.payment.bankBic,
+        payments: dto.payment.payments.map((p) => ({
+          id: p.id,
+          amountTtc: p.amountTtc,
+          method: p.method,
+          paidAt: new Date(p.paidAt),
+          label: p.label,
+        })),
       },
     };
   }
