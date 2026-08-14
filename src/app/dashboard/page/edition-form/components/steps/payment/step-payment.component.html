@@ -11,7 +11,7 @@
     <div class="ef-summary-card">
       <div class="ef-summary-row">
         <span>Total du stand</span>
-        <span>{{ formState.standTotalTtc() | number: '1.0-2' }} € TTC</span>
+        <span>{{ registration.payment.standTotalTtc | number: '1.0-2' }} € TTC</span>
       </div>
 
       @if (hasDiscount()) {
@@ -79,7 +79,7 @@
     }
   </div>
 
-  @if (!formState.isReadOnly() && formState.balanceDueTtc() > 0) {
+  @if (formState.balanceDueTtc() > 0) {
     <div class="ef-panel mt-6">
       <h2 class="ef-section-title">Régler en ligne</h2>
       <p-button label="Payer par carte bancaire" icon="pi pi-credit-card" (onClick)="payByCard()" />

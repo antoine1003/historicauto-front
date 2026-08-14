@@ -164,7 +164,7 @@ export class EditionFormStateService {
     if (!reg) {
       return 0;
     }
-    const discounted = this.standTotalTtc() * (1 - reg.payment.discountPercent / 100);
+    const discounted = reg.payment.standTotalTtc * (1 - reg.payment.discountPercent / 100);
     const orderTotal = discounted + reg.payment.fileFeeTtc;
 
     return orderTotal - this.paymentsTotalTtc();

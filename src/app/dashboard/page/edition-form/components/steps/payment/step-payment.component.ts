@@ -28,7 +28,7 @@ export class StepPaymentComponent {
     if (!reg) {
       return 0;
     }
-    return this.formState.standTotalTtc() * (1 - reg.payment.discountPercent / 100);
+    return reg.payment.standTotalTtc * (1 - reg.payment.discountPercent / 100);
   });
 
   protected readonly orderTotalTtc = computed(() => {
