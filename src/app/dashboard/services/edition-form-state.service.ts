@@ -297,6 +297,7 @@ export class EditionFormStateService {
         const match = response.data.find((r) => r.edition.year === year);
         if (!match) {
           console.warn(`[EditionFormStateService] Aucune inscription réelle trouvée pour l'année ${year}.`);
+          this.pendingPaymentStep = false;
           return;
         }
 
@@ -313,10 +314,16 @@ export class EditionFormStateService {
 
         this.documentService.getDocuments(match.id).subscribe({
           next: (docsResponse) => this.mergeRealQuoteDocuments(docsResponse.data),
-          error: (err) => console.warn('[EditionFormStateService] Échec du chargement des documents réels :', err),
+          error: (err) => {
+            console.warn('[EditionFormStateService] Échec du chargement des documents réels :', err);
+            this.pendingPaymentStep = false;
+          },
         });
       },
-      error: (err) => console.warn('[EditionFormStateService] Échec du chargement de la registration réelle :', err),
+      error: (err) => {
+        console.warn('[EditionFormStateService] Échec du chargement de la registration réelle :', err);
+        this.pendingPaymentStep = false;
+      },
     });
   }
 
