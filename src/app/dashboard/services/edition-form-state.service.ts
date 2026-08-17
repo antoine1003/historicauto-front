@@ -61,6 +61,7 @@ export class EditionFormStateService {
   private readonly confirmStatusSignal = signal<'idle' | 'submitting' | 'error'>('idle');
   private entityAutosaveTimer: ReturnType<typeof setTimeout> | null = null;
   private standAutosaveTimer: ReturnType<typeof setTimeout> | null = null;
+  private readonly checkoutInProgressSignal = signal(false);
 
   readonly registration = this.state.asReadonly();
   readonly sharedDocuments = this.sharedDocumentsSignal.asReadonly();
@@ -71,6 +72,7 @@ export class EditionFormStateService {
   readonly loadError = this.loadErrorSignal.asReadonly();
   readonly submitStatus = this.submitStatusSignal.asReadonly();
   readonly confirmStatus = this.confirmStatusSignal.asReadonly();
+  readonly checkoutInProgress = this.checkoutInProgressSignal.asReadonly();
 
   readonly isReadOnly = computed(() => this.state()?.readOnly ?? false);
   readonly isEditionClosed = computed(() => this.state()?.editionClosed ?? false);
@@ -184,7 +186,7 @@ export class EditionFormStateService {
    * `loading`/`loadError` reflètent l'état de la requête, `registration()` reste `null` tant
    * qu'elle n'a pas abouti.
    */
-  loadForEditionYear(year: string): void {
+  loadForEditionYear(year: string, paymentReturnStatus: 'success' | 'cancelled' | null = null): void {
     this.loadingSignal.set(true);
     this.loadErrorSignal.set(null);
     this.state.set(null);
@@ -222,6 +224,23 @@ export class EditionFormStateService {
 
         this.loadRealQuoteDocuments(year);
         this.state.set(this.toEditionRegistrationState(response.data));
+
+        if (paymentReturnStatus) {
+          this.goToStep(RegistrationStep.PAYMENT);
+          this.messageService.add(
+            paymentReturnStatus === 'success'
+              ? {
+                  severity: 'success',
+                  summary: 'Paiement en cours de confirmation',
+                  detail: 'Votre règlement a bien été transmis à Stripe. Le solde sera mis à jour dès sa confirmation.',
+                }
+              : {
+                  severity: 'warn',
+                  summary: 'Paiement annulé',
+                  detail: 'Vous avez annulé le paiement. Vous pouvez réessayer à tout moment.',
+                },
+          );
+        }
       });
   }
 
@@ -506,6 +525,34 @@ export class EditionFormStateService {
     });
   }
 
+  /**
+   * Crée une session Stripe Checkout pour le montant actuellement recommandé (ou fixé par l'admin,
+   * cf. Registration::getNextCardPaymentAmountTtc côté back) et redirige l'exposant vers Stripe. Le
+   * solde n'est jamais mis à jour ici : c'est le webhook Stripe (côté back) qui fait foi, cf.
+   * loadForEditionYear() qui recharge l'état réel au retour de paiement.
+   */
+  startCardPayment(): void {
+    const reg = this.state();
+    if (!reg || this.checkoutInProgressSignal()) {
+      return;
+    }
+
+    this.checkoutInProgressSignal.set(true);
+    this.registrationService.createPaymentCheckoutSession(reg.id).subscribe({
+      next: (response) => {
+        window.location.href = response.data.url;
+      },
+      error: () => {
+        this.checkoutInProgressSignal.set(false);
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Paiement indisponible',
+          detail: "Le paiement par carte n'a pas pu être initié. Réessayez dans quelques instants.",
+        });
+      },
+    });
+  }
+
   // ---------------------------------------------------------------------------------------------
   // Méthodes volontairement non implémentées (front-only pour cette itération — Étapes 3-4).
   // ---------------------------------------------------------------------------------------------
@@ -702,6 +749,7 @@ export class EditionFormStateService {
         balanceDueDate: dto.payment.balanceDueDate ? new Date(dto.payment.balanceDueDate) : null,
         bankIban: dto.payment.bankIban,
         bankBic: dto.payment.bankBic,
+        nextCardPaymentAmountTtc: dto.payment.nextCardPaymentAmountTtc,
         payments: dto.payment.payments.map((p) => ({
           id: p.id,
           amountTtc: p.amountTtc,
