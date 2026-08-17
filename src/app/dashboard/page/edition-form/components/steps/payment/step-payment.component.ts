@@ -45,12 +45,7 @@ export class StepPaymentComponent {
     return PAYMENT_METHOD_LABELS[method] ?? method;
   }
 
-  /**
-   * TODO intégration : déclenche le plugin de paiement en ligne (Stripe/PayPal). Le solde
-   * affiché ici doit rester piloté par le back (Payment ajoutés depuis le dashboard HA), le
-   * front ne doit jamais recalculer un "payé" optimiste avant confirmation du paiement.
-   */
   protected payByCard(): void {
-    // no-op (front only)
+    this.formState.startCardPayment();
   }
 }

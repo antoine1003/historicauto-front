@@ -82,7 +82,13 @@
   @if (formState.balanceDueTtc() > 0) {
     <div class="ef-panel mt-6">
       <h2 class="ef-section-title">Régler en ligne</h2>
-      <p-button label="Payer par carte bancaire" icon="pi pi-credit-card" (onClick)="payByCard()" />
+      <p-button
+        label="Payer par carte bancaire"
+        icon="pi pi-credit-card"
+        [loading]="formState.checkoutInProgress()"
+        [disabled]="formState.checkoutInProgress()"
+        (onClick)="payByCard()"
+      />
       <p class="ef-help-text mt-3">
         @if (registration.payment.bankIban && registration.payment.bankBic) {
           Virement : IBAN {{ registration.payment.bankIban }} — SWIFT (BIC)
