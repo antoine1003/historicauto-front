@@ -5,6 +5,7 @@ import { RegistrationSummary } from '@app/core/models/registration.model';
 import { environment } from '../../../environments/environment';
 import { ApiResponse } from '@app/core/models/api.models';
 import {
+  CheckoutSessionApiDto,
   ConfirmationPayload,
   EntityStepApiDto,
   RegistrationDetailApiDto,
@@ -87,6 +88,13 @@ export class RegistrationService {
     return this.http.post<ApiResponse<RegistrationDetailApiDto>>(
       `${environment.apiUrl}/${this.baseUrl}/${id}/confirm`,
       payload,
+    );
+  }
+
+  createPaymentCheckoutSession(id: string): Observable<ApiResponse<CheckoutSessionApiDto>> {
+    return this.http.post<ApiResponse<CheckoutSessionApiDto>>(
+      `${environment.apiUrl}/${this.baseUrl}/${id}/payment/checkout-session`,
+      {},
     );
   }
 }
