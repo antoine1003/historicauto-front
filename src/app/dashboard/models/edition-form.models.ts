@@ -151,6 +151,7 @@ export interface PaymentSummary {
   balanceDueDate: Date | null;
   bankIban: string | null;
   bankBic: string | null;
+  nextCardPaymentAmountTtc: number;
   payments: PaymentItem[];
 }
 
