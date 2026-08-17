@@ -74,7 +74,18 @@ export class LoginComponent implements OnInit {
     token_invalid:   'Ce lien de confirmation est invalide ou a expiré. Veuillez vous réinscrire.',
   };
 
+  /**
+   * URL à laquelle revenir après connexion, transmise par ex. par EditionFormStateService quand
+   * une session expire pendant un retour de paiement Stripe (`?returnUrl=...`), pour que
+   * `?payment=success` survive au détour par le login. Nouveau pattern introduit pour ce besoin :
+   * aucun mécanisme "returnUrl" n'existait déjà dans ce code base (authGuard redirige vers /login
+   * sans le préserver).
+   */
+  private returnUrl: string | null = null;
+
   ngOnInit(): void {
+    this.returnUrl = this.route.snapshot.queryParamMap.get('returnUrl');
+
     const status  = this.route.snapshot.queryParamMap.get('status');
     const message = this.route.snapshot.queryParamMap.get('message');
 
@@ -114,7 +125,7 @@ export class LoginComponent implements OnInit {
         password: this.password(),
       }, this.rememberMe())
       .subscribe({
-        next: () => void this.router.navigate(['/dashboard']),
+        next: () => void this.router.navigateByUrl(this.returnUrl ?? '/dashboard'),
         error: (err: HttpErrorResponse) => {
           if (err.status === 401) {
             const message = err.error?.message || 'Email ou mot de passe incorrect.';

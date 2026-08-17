@@ -1,5 +1,6 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
+import { Router } from '@angular/router';
 import { catchError, of } from 'rxjs';
 import { MessageService } from 'primeng/api';
 import { environment } from '../../../environments/environment';
@@ -47,6 +48,7 @@ export class EditionFormStateService {
   private readonly registrationService = inject(RegistrationService);
   private readonly optionsCatalogService = inject(OptionsCatalogService);
   private readonly messageService = inject(MessageService);
+  private readonly router = inject(Router);
 
   private readonly state = signal<EditionRegistrationState | null>(null);
   private readonly activeStepSignal = signal<RegistrationStep>(RegistrationStep.ENTITY);
@@ -62,6 +64,26 @@ export class EditionFormStateService {
   private entityAutosaveTimer: ReturnType<typeof setTimeout> | null = null;
   private standAutosaveTimer: ReturnType<typeof setTimeout> | null = null;
   private readonly checkoutInProgressSignal = signal(false);
+  /**
+   * Navigation vers l'Étape 5 différée jusqu'à ce que les documents réels (dont le devis signé,
+   * condition de déverrouillage de PAYMENT dans isStepUnlocked) soient chargés en état — sinon
+   * goToStep(PAYMENT) échoue silencieusement au retour de Stripe (cf. revue finale). Positionné
+   * uniquement dans loadForEditionYear() côté retour de paiement, consommé dans
+   * mergeRealQuoteDocuments() quel que soit l'appelant (loadRealQuoteDocuments/confirmRegistration/refreshDocuments).
+   */
+  private pendingPaymentStep = false;
+
+  constructor() {
+    // Filet de sécurité bfcache : si le navigateur restaure cette page depuis le cache
+    // arrière/avant après un retour en arrière post-redirection Stripe, `checkoutInProgress`
+    // pourrait rester bloqué à `true` (le rechargement JS normal qui le remettrait à `false`
+    // n'a pas lieu lors d'une restauration bfcache).
+    window.addEventListener('pageshow', (event) => {
+      if (event.persisted) {
+        this.checkoutInProgressSignal.set(false);
+      }
+    });
+  }
 
   readonly registration = this.state.asReadonly();
   readonly sharedDocuments = this.sharedDocumentsSignal.asReadonly();
@@ -187,6 +209,11 @@ export class EditionFormStateService {
    * qu'elle n'a pas abouti.
    */
   loadForEditionYear(year: string, paymentReturnStatus: 'success' | 'cancelled' | null = null): void {
+    // Capturé synchronement AVANT que le composant appelant ne retire `?payment=...` de l'URL
+    // (cf. EditionFormPageComponent.ngOnInit, qui nettoie l'URL juste après cet appel) : si on
+    // lisait `this.router.url` plus tard, dans le catchError 401 ci-dessous, le paramètre aurait
+    // déjà disparu et ne survivrait pas au détour par le login.
+    const currentUrlForReturn = this.router.url;
     this.loadingSignal.set(true);
     this.loadErrorSignal.set(null);
     this.state.set(null);
@@ -212,6 +239,16 @@ export class EditionFormStateService {
       .getByEditionYear(year)
       .pipe(
         catchError((err: HttpErrorResponse) => {
+          if (err.status === 401) {
+            // Session expirée pendant l'aller-retour Stripe (les sessions Checkout peuvent vivre
+            // jusqu'à 24h) : ne PAS afficher "Aucune inscription trouvée", rediriger vers le login
+            // en conservant l'URL courante (dont ?payment=success/cancelled) pour y revenir après
+            // connexion — cf. revue finale §Important. Aucun pattern "returnUrl" préexistant dans ce
+            // code base (authGuard redirige vers /login sans le préserver) : celui-ci est introduit
+            // ici et consommé par LoginComponent.
+            void this.router.navigate(['/login'], { queryParams: { returnUrl: currentUrlForReturn } });
+            return of(null);
+          }
           this.loadErrorSignal.set(err.status === 403 ? 'closed' : 'not_found');
           return of(null);
         }),
@@ -226,7 +263,11 @@ export class EditionFormStateService {
         this.state.set(this.toEditionRegistrationState(response.data));
 
         if (paymentReturnStatus) {
-          this.goToStep(RegistrationStep.PAYMENT);
+          // Ne PAS naviguer ici : à cet instant reg.documents === [] (mock hardcodé dans
+          // toEditionRegistrationState), donc isStepUnlocked(PAYMENT) est encore false — le devis
+          // signé n'arrive qu'après via loadRealQuoteDocuments() → mergeRealQuoteDocuments(),
+          // asynchrone. On diffère la navigation jusqu'à ce que ce merge ait réellement eu lieu.
+          this.pendingPaymentStep = true;
           this.messageService.add(
             paymentReturnStatus === 'success'
               ? {
@@ -301,6 +342,11 @@ export class EditionFormStateService {
 
       return { ...reg, documents: [...otherDocuments, ...quoteItems] };
     });
+
+    if (this.pendingPaymentStep) {
+      this.pendingPaymentStep = false;
+      this.goToStep(RegistrationStep.PAYMENT);
+    }
   }
 
   goToStep(step: RegistrationStep): void {
@@ -540,17 +586,30 @@ export class EditionFormStateService {
     this.checkoutInProgressSignal.set(true);
     this.registrationService.createPaymentCheckoutSession(reg.id).subscribe({
       next: (response) => {
+        if (!response.data?.url) {
+          this.handleCheckoutSessionError();
+          return;
+        }
         window.location.href = response.data.url;
       },
-      error: () => {
-        this.checkoutInProgressSignal.set(false);
-        this.messageService.add({
-          severity: 'error',
-          summary: 'Paiement indisponible',
-          detail: "Le paiement par carte n'a pas pu être initié. Réessayez dans quelques instants.",
-        });
-      },
+      error: (err: HttpErrorResponse) => this.handleCheckoutSessionError(err),
     });
+  }
+
+  /**
+   * Gère à la fois l'échec réseau/serveur de createPaymentCheckoutSession() et le cas d'une
+   * réponse 2xx sans `url` exploitable (backend inattendu) : mêmes toast et remise à zéro du
+   * signal de chargement dans les deux cas, pour ne jamais laisser `window.location.href`
+   * naviguer vers "undefined".
+   */
+  private handleCheckoutSessionError(err?: HttpErrorResponse): void {
+    this.checkoutInProgressSignal.set(false);
+    const errors = (err?.error?.errors ?? {}) as Record<string, string[]>;
+    const detail =
+      Object.values(errors).flat().join(' ') ||
+      err?.error?.message ||
+      "Le paiement par carte n'a pas pu être initié. Réessayez dans quelques instants.";
+    this.messageService.add({ severity: 'error', summary: 'Paiement indisponible', detail });
   }
 
   // ---------------------------------------------------------------------------------------------

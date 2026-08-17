@@ -82,6 +82,9 @@
   @if (formState.balanceDueTtc() > 0) {
     <div class="ef-panel mt-6">
       <h2 class="ef-section-title">Régler en ligne</h2>
+      <p class="ef-help-text mb-3">
+        Montant qui sera débité : {{ registration.payment.nextCardPaymentAmountTtc | number: '1.0-2' }} € TTC
+      </p>
       <p-button
         label="Payer par carte bancaire"
         icon="pi pi-credit-card"

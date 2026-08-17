@@ -1,5 +1,5 @@
 import { Component, inject, OnInit, ViewChild } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { StepperModule } from 'primeng/stepper';
 import { ButtonModule } from 'primeng/button';
 import {
@@ -34,6 +34,7 @@ import { LoaderComponent } from '@app/shared/components/loader/loader.component'
 })
 export class EditionFormPageComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
   protected readonly formState = inject(EditionFormStateService);
 
   @ViewChild(StepEntityComponent) private readonly entityStep?: StepEntityComponent;
@@ -52,6 +53,12 @@ export class EditionFormPageComponent implements OnInit {
     const paymentParam = this.route.snapshot.queryParamMap.get('payment');
     const paymentReturnStatus = paymentParam === 'success' || paymentParam === 'cancelled' ? paymentParam : null;
     this.formState.loadForEditionYear(year, paymentReturnStatus);
+
+    if (paymentReturnStatus) {
+      // Retire `?payment=...` de l'URL une fois consommé : un rafraîchissement ou un
+      // marque-page ne doit pas refaire apparaître le toast des jours plus tard.
+      void this.router.navigate([], { relativeTo: this.route, queryParams: {}, replaceUrl: true });
+    }
   }
 
   protected onStepChange(value: number | undefined): void {
