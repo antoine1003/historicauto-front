@@ -74,7 +74,13 @@ export interface PaymentStepApiDto {
   balanceDueDate: string | null;
   bankIban: string | null;
   bankBic: string | null;
+  nextCardPaymentAmountTtc: number;
   payments: PaymentEntryApiDto[];
+}
+
+/** Réponse de POST /api/registrations/{id}/payment/checkout-session. */
+export interface CheckoutSessionApiDto {
+  url: string;
 }
 
 export interface RegistrationDetailApiDto {
