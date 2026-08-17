@@ -48,7 +48,10 @@ export class EditionFormPageComponent implements OnInit {
       this.missingYearParam = true;
       return;
     }
-    this.formState.loadForEditionYear(year);
+
+    const paymentParam = this.route.snapshot.queryParamMap.get('payment');
+    const paymentReturnStatus = paymentParam === 'success' || paymentParam === 'cancelled' ? paymentParam : null;
+    this.formState.loadForEditionYear(year, paymentReturnStatus);
   }
 
   protected onStepChange(value: number | undefined): void {
