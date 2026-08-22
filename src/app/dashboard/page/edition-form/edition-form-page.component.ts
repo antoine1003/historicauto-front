@@ -15,6 +15,7 @@ import { EditionFormStateService } from '@app/dashboard/services/edition-form-st
 import { AutosaveStatus, RegistrationStep } from '@app/dashboard/models/edition-form.models';
 import { ValidatableFormStep } from '@app/dashboard/models/validatable-form-step';
 import { LoaderComponent } from '@app/shared/components/loader/loader.component';
+import { Title } from '@angular/platform-browser';
 
 @Component({
   selector: 'app-edition-form-page',
@@ -34,6 +35,7 @@ import { LoaderComponent } from '@app/shared/components/loader/loader.component'
 })
 export class EditionFormPageComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
+  private readonly title = inject(Title);
   private readonly router = inject(Router);
   protected readonly formState = inject(EditionFormStateService);
 
@@ -59,6 +61,8 @@ export class EditionFormPageComponent implements OnInit {
       // marque-page ne doit pas refaire apparaître le toast des jours plus tard.
       void this.router.navigate([], { relativeTo: this.route, queryParams: {}, replaceUrl: true });
     }
+
+    this.title.setTitle(`Formulaire d'inscription ${year}`);
   }
 
   protected onStepChange(value: number | undefined): void {
