@@ -12,8 +12,10 @@ import {
   EntityStepPayload,
   EntityStepState,
   NewManagerPayload,
-  OptionCategory,
-  OptionDefinition,
+  OptionGroupBehaviour,
+  OptionGroupDefinition,
+  PARTITION_SEGMENT_COUNTS,
+  PartitionDetailForm,
   RegistrationStatus,
   RegistrationStep,
   StandManagerForm,
@@ -53,7 +55,7 @@ export class EditionFormStateService {
   private readonly state = signal<EditionRegistrationState | null>(null);
   private readonly activeStepSignal = signal<RegistrationStep>(RegistrationStep.ENTITY);
   private readonly documentService = inject(DocumentService);
-  private readonly optionsSignal = signal<OptionDefinition[]>([]);
+  private readonly optionGroupsSignal = signal<OptionGroupDefinition[]>([]);
   private readonly sharedDocumentsSignal = signal<SharedDocumentItem[]>([]);
   private readonly entityAutosaveStatusSignal = signal<AutosaveStatus>('idle');
   private readonly standAutosaveStatusSignal = signal<AutosaveStatus>('idle');
@@ -86,6 +88,8 @@ export class EditionFormStateService {
   }
 
   readonly registration = this.state.asReadonly();
+  /** Sections d'options de l'édition courante, ordonnées par le serveur. */
+  readonly optionGroups = this.optionGroupsSignal.asReadonly();
   readonly sharedDocuments = this.sharedDocumentsSignal.asReadonly();
   readonly activeStep = this.activeStepSignal.asReadonly();
   readonly entityAutosaveStatus = this.entityAutosaveStatusSignal.asReadonly();
@@ -162,7 +166,7 @@ export class EditionFormStateService {
   });
 
   /** Calculé côté serveur, source de vérité (cf. Registration::computeOptionsTotal() côté back). */
-  readonly standTotalTtc = computed(() => this.state()?.stand.standTotalTtc ?? 0);
+  readonly standTotalTtc = computed(() => this.state()?.stand.totalTtc ?? 0);
 
   /**
    * L'Étape 3 n'est modifiable que tant que l'inscription est ACCEPTED et pas encore confirmée —
@@ -194,14 +198,17 @@ export class EditionFormStateService {
     return orderTotal - this.paymentsTotalTtc();
   });
 
-  getOptionsByCategory(category: OptionCategory): OptionDefinition[] {
-    const exhibitorType = this.state()?.entity.exhibitorType ?? null;
-    return this.optionsSignal().filter(
-      (option) =>
-        option.category === category &&
-        (option.exhibitorType === null || option.exhibitorType === exhibitorType),
+  /**
+   * Sections marquées obligatoires en administration dont aucune option n'est retenue.
+   * Remplace l'ancien `Validators.required` codé en dur sur la surface.
+   */
+  readonly missingRequiredGroups = computed<OptionGroupDefinition[]>(() => {
+    const selections = this.state()?.stand.selections ?? {};
+
+    return this.optionGroups().filter(
+      (group) => group.isRequired && !group.options.some((option) => (selections[option.id] ?? 0) > 0),
     );
-  }
+  });
 
   /**
    * Charge l'inscription réelle pour l'année donnée (get-or-create côté back). Asynchrone :
@@ -223,8 +230,8 @@ export class EditionFormStateService {
     this.sharedDocumentsSignal.set([]);
 
     this.optionsCatalogService.getForEdition(year).subscribe({
-      next: (options) => this.optionsSignal.set(options),
-      error: () => this.optionsSignal.set([]),
+      next: (groups) => this.optionGroupsSignal.set(groups),
+      error: () => this.optionGroupsSignal.set([]),
     });
 
     this.documentService.getSharedDocuments(year).subscribe({
@@ -517,18 +524,58 @@ export class EditionFormStateService {
     });
   }
 
-  selectSurfaceOption(optionId: string | null): void {
-    this.patchLocalState((reg) => ({ stand: { ...reg.stand, selectedSurfaceOptionId: optionId } }));
+  /**
+   * Choix unique dans une section : retire toutes les options de la section avant de poser la
+   * nouvelle. `optionId` à `null` vide la section.
+   */
+  selectSingleOption(group: OptionGroupDefinition, optionId: string | null): void {
+    this.patchLocalState((reg) => {
+      const selections = { ...reg.stand.selections };
+      for (const option of group.options) {
+        delete selections[option.id];
+      }
+      if (optionId !== null) {
+        selections[optionId] = 1;
+      }
+
+      return { stand: { ...reg.stand, selections } };
+    });
     this.scheduleStandAutosave();
   }
 
+  /** Coche ou décoche une option. La quantité facturée reste décidée par le serveur. */
+  toggleOption(optionId: string, selected: boolean): void {
+    this.patchLocalState((reg) => {
+      const selections = { ...reg.stand.selections };
+      if (selected) {
+        selections[optionId] = 1;
+      } else {
+        delete selections[optionId];
+      }
+
+      return { stand: { ...reg.stand, selections } };
+    });
+    this.scheduleStandAutosave();
+  }
+
+  /** Quantité saisie par l'exposant. Zéro équivaut à ne pas commander l'option. */
   setOptionQuantity(optionId: string, quantity: number): void {
-    this.patchLocalState((reg) => ({
-      stand: {
-        ...reg.stand,
-        quantitiesByOptionId: { ...reg.stand.quantitiesByOptionId, [optionId]: Math.max(0, quantity) },
-      },
-    }));
+    this.patchLocalState((reg) => {
+      const selections = { ...reg.stand.selections };
+      const safeQuantity = Math.max(0, quantity);
+      if (safeQuantity > 0) {
+        selections[optionId] = safeQuantity;
+      } else {
+        delete selections[optionId];
+      }
+
+      return { stand: { ...reg.stand, selections } };
+    });
+    this.scheduleStandAutosave();
+  }
+
+  setPartitionDetail(partition: PartitionDetailForm | null): void {
+    this.patchLocalState((reg) => ({ stand: { ...reg.stand, partition } }));
     this.scheduleStandAutosave();
   }
 
@@ -554,7 +601,7 @@ export class EditionFormStateService {
 
   submitRegistrationOptions(): void {
     const reg = this.state();
-    if (!reg || !reg.stand.selectedSurfaceOptionId) {
+    if (!reg || this.missingRequiredGroups().length > 0) {
       return;
     }
 
@@ -762,9 +809,18 @@ export class EditionFormStateService {
       if (!reg) {
         return;
       }
+      // Tant que le bloc cloison est incomplet, on n'envoie rien : le serveur rejette en 400 une
+      // disposition sans longueurs, et une saisie en cours n'a pas à faire remonter une erreur à
+      // l'exposant. La sauvegarde repart d'elle-même à la modification suivante.
+      if (!this.isStandPayloadSendable(reg.stand)) {
+        this.standAutosaveStatusSignal.set('idle');
+
+        return;
+      }
+
       const payload: StandStepPayload = {
-        selectedSurfaceOptionId: reg.stand.selectedSurfaceOptionId,
-        quantitiesByOptionId: reg.stand.quantitiesByOptionId,
+        selections: reg.stand.selections,
+        partition: reg.stand.partition,
       };
       this.registrationService.patchStand(reg.id, payload).subscribe({
         next: (response) => {
@@ -847,10 +903,34 @@ export class EditionFormStateService {
 
   private toStandStepState(dto: StandStepApiDto): StandStepState {
     return {
-      selectedSurfaceOptionId: dto.selectedSurfaceOptionId,
-      quantitiesByOptionId: dto.quantitiesByOptionId,
-      standTotalTtc: dto.standTotalTtc,
+      selections: dto.selections,
+      partition: dto.partition as StandStepState['partition'],
+      lines: dto.lines as StandStepState['lines'],
+      totalTtc: dto.totalTtc,
+      totalVat: dto.totalVat,
+      depositTtc: dto.depositTtc,
     };
+  }
+
+  /** Miroir de la validation serveur du bloc cloison (RegistrationStandStepController). */
+  private isStandPayloadSendable(stand: StandStepState): boolean {
+    const partitionGroup = this.optionGroups().find(
+      (group) => group.behaviour === OptionGroupBehaviour.PARTITION,
+    );
+    const partitionSelected =
+      partitionGroup?.options.some((option) => (stand.selections[option.id] ?? 0) > 0) ?? false;
+
+    if (!partitionSelected) {
+      return true;
+    }
+
+    const detail = stand.partition;
+
+    return (
+      detail !== null &&
+      detail.segments.length === PARTITION_SEGMENT_COUNTS[detail.layout] &&
+      detail.segments.every((length) => length > 0)
+    );
   }
 
   private patchLocalState(producer: (reg: EditionRegistrationState) => Partial<EditionRegistrationState>): void {
