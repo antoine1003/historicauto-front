@@ -22,10 +22,32 @@ export interface EntityStepApiDto {
   managers: StandManagerApiDto[];
 }
 
+export interface PartitionDetailApiDto {
+  layout: string;
+  segments: number[];
+  usageNotes: string | null;
+}
+
+export interface StandLineApiDto {
+  optionId: string;
+  groupCode: string;
+  groupLabel: string;
+  label: string;
+  unit: string | null;
+  quantity: number;
+  unitPriceTtc: number;
+  lineTotalTtc: number;
+  vatRate: number;
+  partition: PartitionDetailApiDto | null;
+}
+
 export interface StandStepApiDto {
-  selectedSurfaceOptionId: string | null;
-  quantitiesByOptionId: Record<string, number>;
-  standTotalTtc: number;
+  selections: Record<string, number>;
+  partition: PartitionDetailApiDto | null;
+  lines: StandLineApiDto[];
+  totalTtc: number;
+  totalVat: number;
+  depositTtc: number;
 }
 
 export interface ConfirmationStepApiDto {
@@ -98,13 +120,26 @@ export interface RegistrationDetailApiDto {
 
 export interface OptionPriceApiDto {
   optionId: string;
-  category: string;
   label: string;
   unit: string | null;
+  surfaceSqm: number | null;
   includedBadges: number | null;
-  exhibitorType: string | null;
   priceTtc: number;
   vatRate: number;
+  sortOrder: number;
+}
+
+export interface OptionGroupApiDto {
+  code: string;
+  label: string;
+  helpText: string | null;
+  inputType: string;
+  isRequired: boolean;
+  quantitySource: string;
+  behaviour: string;
+  sortOrder: number;
+  collapsedByDefault: boolean;
+  options: OptionPriceApiDto[];
 }
 
 export interface ActivityDomainApiDto {

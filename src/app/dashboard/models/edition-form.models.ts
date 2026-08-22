@@ -1,7 +1,7 @@
 import { SignatureStatus } from '@app/core/models/document.model';
 
 /**
- * Miroir front des enums Symfony (App\Enum\ExhibitorType, ClubType, OptionCategory, RegistrationStatus).
+ * Miroir front des enums Symfony (App\Enum\ExhibitorType, ClubType, RegistrationStatus).
  * Garder ces valeurs strictement synchronisées avec le back : elles sont envoyées telles quelles à l'API.
  */
 export enum ExhibitorType {
@@ -14,28 +14,42 @@ export enum ClubType {
   GENERALIST = 'generalist',
 }
 
-export enum OptionCategory {
-  SURFACE = 'surface',
-  CARPET = 'carpet',
-  PARTITION = 'partition',
-  STORAGE = 'storage',
-  ELECTRICITY = 'electricity',
-  LIGHTING = 'lighting',
-  BARRIER = 'barrier',
-  ACCESS = 'access',
-  STRUCTURE = 'structure',
+export enum OptionInputType {
+  RADIO = 'radio',
+  CHECKBOX = 'checkbox',
+  NUMBER = 'number',
 }
 
-export const OPTION_CATEGORY_LABELS: Record<OptionCategory, string> = {
-  [OptionCategory.SURFACE]: 'Surface',
-  [OptionCategory.CARPET]: 'Moquette',
-  [OptionCategory.PARTITION]: 'Cloison',
-  [OptionCategory.STORAGE]: 'Réserve',
-  [OptionCategory.ELECTRICITY]: 'Électricité',
-  [OptionCategory.LIGHTING]: 'Éclairage',
-  [OptionCategory.BARRIER]: 'Barriérage',
-  [OptionCategory.ACCESS]: 'Accès',
-  [OptionCategory.STRUCTURE]: 'Barnum / Structure',
+export enum OptionQuantitySource {
+  FIXED_ONE = 'fixed_one',
+  USER_INPUT = 'user_input',
+  STAND_SURFACE_SQM = 'stand_surface_sqm',
+  PARTITION_LENGTH = 'partition_length',
+}
+
+export enum OptionGroupBehaviour {
+  NONE = 'none',
+  SURFACE = 'surface',
+  PARTITION = 'partition',
+}
+
+export enum PartitionLayout {
+  BACK = 'back',
+  ANGLE = 'angle',
+  U = 'u',
+}
+
+export const PARTITION_LAYOUT_LABELS: Record<PartitionLayout, string> = {
+  [PartitionLayout.BACK]: 'Cloison de fond',
+  [PartitionLayout.ANGLE]: 'Cloisons en angle',
+  [PartitionLayout.U]: 'Cloisons en U',
+};
+
+/** Nombre de longueurs à saisir par disposition. Miroir de PartitionLayout::segmentCount(). */
+export const PARTITION_SEGMENT_COUNTS: Record<PartitionLayout, number> = {
+  [PartitionLayout.BACK]: 1,
+  [PartitionLayout.ANGLE]: 2,
+  [PartitionLayout.U]: 3,
 };
 
 export enum RegistrationStatus {
@@ -79,27 +93,65 @@ export interface EntityStepState {
   managers: StandManagerForm[];
 }
 
-/** Définition catalogue + tarif d'une option, source unique : GET /api/editions/{year}/option-prices. */
+/** Une option commandable, telle que renvoyée dans sa section par GET /editions/{year}/option-prices. */
 export interface OptionDefinition {
   id: string;
-  category: OptionCategory;
   label: string;
   unit: string | null;
-  /** Renseigné uniquement pour les packs de la catégorie SURFACE. */
+  /** Renseigné uniquement pour les packs d'un groupe de comportement SURFACE. */
+  surfaceSqm: number | null;
   includedBadges: number | null;
-  /** null = tarif commun Pro/Club (toutes catégories hors Surface). */
-  exhibitorType: ExhibitorType | null;
   priceTtc: number;
   vatRate: number;
+  sortOrder: number;
+}
+
+/**
+ * Section du formulaire d'options. Le type d'input, le caractère obligatoire et la source de
+ * quantité sont réglés en administration : le front n'en code aucun en dur.
+ */
+export interface OptionGroupDefinition {
+  code: string;
+  label: string;
+  helpText: string | null;
+  inputType: OptionInputType;
+  isRequired: boolean;
+  quantitySource: OptionQuantitySource;
+  behaviour: OptionGroupBehaviour;
+  sortOrder: number;
+  collapsedByDefault: boolean;
+  options: OptionDefinition[];
+}
+
+export interface PartitionDetailForm {
+  layout: PartitionLayout;
+  /** Longueurs en mètres, de taille PARTITION_SEGMENT_COUNTS[layout]. */
+  segments: number[];
+  usageNotes: string | null;
+}
+
+/** Ligne de commande déjà chiffrée par le serveur — le front n'effectue aucun calcul de prix. */
+export interface StandLine {
+  optionId: string;
+  groupCode: string;
+  groupLabel: string;
+  label: string;
+  unit: string | null;
+  quantity: number;
+  unitPriceTtc: number;
+  lineTotalTtc: number;
+  vatRate: number;
+  partition: PartitionDetailForm | null;
 }
 
 export interface StandStepState {
-  /** Pack de surface unique sélectionné (un seul stand par inscription). */
-  selectedSurfaceOptionId: string | null;
-  /** Quantité par option pour toutes les catégories hors SURFACE (0 = non sélectionnée). */
-  quantitiesByOptionId: Record<string, number>;
-  /** Calculé côté serveur, source de vérité (cf. Registration::computeOptionsTotal()). */
-  standTotalTtc: number;
+  /** Quantité retenue par identifiant d'option. Une option absente n'est pas commandée. */
+  selections: Record<string, number>;
+  partition: PartitionDetailForm | null;
+  lines: StandLine[];
+  totalTtc: number;
+  totalVat: number;
+  depositTtc: number;
 }
 
 export interface ConfirmationChecklistState {
@@ -187,8 +239,9 @@ export interface EntityStepPayload {
 }
 
 export interface StandStepPayload {
-  selectedSurfaceOptionId: string | null;
-  quantitiesByOptionId: Record<string, number>;
+  /** `null` pour les groupes à quantité dérivée : le serveur la recalcule de toute façon. */
+  selections: Record<string, number | null>;
+  partition: PartitionDetailForm | null;
 }
 
 export interface NewManagerPayload {
