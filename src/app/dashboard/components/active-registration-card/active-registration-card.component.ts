@@ -62,6 +62,13 @@ export class ActiveRegistrationCardComponent {
       return edition.registrationOpen ? 'Commencer mon inscription' : null;
     }
 
+    // Inscriptions fermées : le formulaire est en lecture seule quel que soit le statut
+    // (`RegistrationDetailDto.readOnly` dérive de `editionClosed`), donc plus question de
+    // proposer de le « reprendre » — seule la consultation a du sens.
+    if (!edition.registrationOpen) {
+      return 'Consulter mon dossier';
+    }
+
     switch (registration.status) {
       case 'draft':
         return 'Reprendre mon formulaire';

@@ -17,6 +17,10 @@
 
     @if (loading()) {
       <p class="auth-subheading">Chargement de vos éditions…</p>
+    } @else if (loadFailed()) {
+      <p class="auth-error-banner">
+        Impossible de charger vos éditions pour le moment. Merci de réessayer plus tard.
+      </p>
     } @else {
       <app-active-registration-card
         [edition]="activeEdition()"

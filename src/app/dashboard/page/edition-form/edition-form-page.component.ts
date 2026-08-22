@@ -16,6 +16,7 @@ import { AutosaveStatus, RegistrationStep } from '@app/dashboard/models/edition-
 import { ValidatableFormStep } from '@app/dashboard/models/validatable-form-step';
 import { LoaderComponent } from '@app/shared/components/loader/loader.component';
 import { Title } from '@angular/platform-browser';
+import { environment } from '../../../../environments/environment';
 
 @Component({
   selector: 'app-edition-form-page',
@@ -44,6 +45,9 @@ export class EditionFormPageComponent implements OnInit {
 
   protected readonly RegistrationStep = RegistrationStep;
   protected missingYearParam = false;
+
+  /** Centralisée dans `environment` pour ne pas dupliquer l'adresse en dur dans les templates. */
+  protected readonly contactEmail = environment.contactEmail;
 
   ngOnInit(): void {
     const year = this.route.snapshot.paramMap.get('year');

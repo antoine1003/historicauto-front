@@ -19,13 +19,17 @@
             />
           </span>
 
-          <p-button
-            label="Consulter"
-            severity="primary"
-            text
-            size="small"
-            (onClick)="consult.emit(registration.edition.year)"
-          />
+          @if (registration.edition.isVisible) {
+            <!-- Une édition masquée (`isVisible = false`) renvoie un 404 sur
+                 /registrations/by-edition-year/{year} : pas de lien vers une impasse. -->
+            <p-button
+              label="Consulter"
+              severity="primary"
+              text
+              size="small"
+              (onClick)="consult.emit(registration.edition.year)"
+            />
+          }
         </li>
       }
     </ul>

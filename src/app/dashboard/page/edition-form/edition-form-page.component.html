@@ -64,7 +64,7 @@
           <i class="pi pi-lock"></i>
           <span>
             Votre demande a été envoyée et n'est plus modifiable. Contactez-nous à
-            <a href="mailto:info@historic-auto.com">info&#64;historic-auto.com</a> pour toute modification.
+            <a [href]="'mailto:' + contactEmail">{{ contactEmail }}</a> pour toute modification.
           </span>
         </div>
       }
