@@ -1,18 +1,28 @@
-// src/app/features/mon-espace/pages/mon-espace-home/mon-espace-home.component.ts
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
-import { ButtonModule } from 'primeng/button';
-import { RegistrationService } from '../../../shared/services/registration.service';
-import { RegistrationSummary } from '@app/core/models/registration.model';
-import { EditionService } from '@app/shared/services/edition.service';
 import { finalize, forkJoin } from 'rxjs';
+import { RegistrationSummary } from '@app/core/models/registration.model';
 import { Edition } from '@app/shared/models/edition.interface';
-import { Card } from 'primeng/card';
+import { EditionService } from '@app/shared/services/edition.service';
+import { RegistrationService } from '@app/shared/services/registration.service';
+import {
+  ActiveRegistrationCardComponent,
+} from '@app/dashboard/components/active-registration-card/active-registration-card.component';
+import {
+  PastRegistrationsListComponent,
+} from '@app/dashboard/components/past-registrations-list/past-registrations-list.component';
+import { environment } from '../../../../environments/environment';
 
+/**
+ * Point d'entrée de l'espace exposant.
+ *
+ * Seul composant de la page à charger des données : il calcule la demande de l'édition active
+ * et l'historique, puis délègue tout l'affichage à deux composants de présentation.
+ */
 @Component({
   selector: 'app-mon-espace-home',
   standalone: true,
-  imports: [ButtonModule, Card],
+  imports: [ActiveRegistrationCardComponent, PastRegistrationsListComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './mon-espace-home.component.html',
 })
@@ -22,58 +32,46 @@ export class MonEspaceHomeComponent {
   private readonly router = inject(Router);
 
   private readonly registrations = signal<RegistrationSummary[]>([]);
-  readonly loading = signal(true);
-  readonly activeEdition = signal<Edition | null>(null);
 
+  protected readonly loading = signal(true);
+  protected readonly activeEdition = signal<Edition | null>(null);
+  protected readonly contactEmail = environment.contactEmail;
 
-  readonly currentRegistration = computed(() =>
-    this.registrations()?.find((r) => r.edition.isActive) ?? null,
+  protected readonly currentRegistration = computed<RegistrationSummary | null>(
+    () => this.registrations().find((registration) => registration.edition.isActive) ?? null,
   );
 
-  readonly pastRegistrations = computed(() =>
-    this.registrations()?.filter((r) => !r.edition.isActive) ?? [],
+  /**
+   * `findByExhibitor` trie les éditions par année croissante côté back ; l'historique se lit de
+   * la plus récente à la plus ancienne, d'où le tri inverse ici plutôt qu'une modification de
+   * l'API. `filter` renvoyant déjà un nouveau tableau, `sort` ne mute pas le signal.
+   */
+  protected readonly pastRegistrations = computed<RegistrationSummary[]>(() =>
+    this.registrations()
+      .filter((registration) => !registration.edition.isActive)
+      .sort((a, b) => b.edition.year.localeCompare(a.edition.year)),
   );
-
-
-  readonly showRegistrationLink = computed(() => {
-    const edition = this.activeEdition();
-    return !!edition && edition.registrationOpen && edition.isVisible;
-  });
 
   constructor() {
     forkJoin({
       mineResp: this.registrationService.getMine(),
       activeEditionResp: this.editionService.getActive(),
-    }).pipe(
-      finalize(() => this.loading.set(false))
-    ).subscribe(({mineResp, activeEditionResp}) => {
-      this.registrations.set(mineResp.data);
-      this.activeEdition.set(activeEditionResp.data);
     })
+      .pipe(finalize(() => this.loading.set(false)))
+      .subscribe(({ mineResp, activeEditionResp }) => {
+        this.registrations.set(mineResp.data);
+        this.activeEdition.set(activeEditionResp.data);
+      });
   }
 
-  statusLabel(status: RegistrationSummary['status']): string {
-    const labels: Record<RegistrationSummary['status'], string> = {
-      submitted: 'En cours d\'étude',
-      accepted: 'Acceptée',
-      refused: 'Refusée / liste d\'attente',
-      completed: 'Terminée',
-      confirmed: 'Validée',
-      draft: 'Brouillon',
-      waitlisted: 'Liste d\'attente',
-    };
-    return labels[status];
+  protected goToEdition(year: string): void {
+    void this.router.navigate(['/edition', year]);
   }
 
-  goToHistory(reg: RegistrationSummary): void {
-    void this.router.navigate(['/mon-espace/historique', reg.id]);
-  }
-
-  goToWizard(): void {
-    void this.router.navigate(['/edition/' + this.activeEdition()!.year]);
-  }
-
-  contact(): void {
-    void this.router.navigate(['/mon-espace/contact']);
+  protected goToActiveEdition(): void {
+    const edition = this.activeEdition();
+    if (edition !== null) {
+      this.goToEdition(edition.year);
+    }
   }
 }
