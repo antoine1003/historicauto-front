@@ -32,18 +32,20 @@
     }
   }
 
-  <div class="ef-summary-row ef-summary-row--total">
-    <span>Total du stand</span>
-    <span>{{ totalTtc() | number: '1.0-2' }} € TTC</span>
-  </div>
+  @if (showTotals()) {
+    <div class="ef-summary-row ef-summary-row--total">
+      <span>Total du stand</span>
+      <span>{{ totalTtc() | number: '1.0-2' }} € TTC</span>
+    </div>
 
-  <div class="ef-summary-row">
-    <span class="ef-muted">dont TVA</span>
-    <span class="ef-muted">{{ totalVat() | number: '1.0-2' }} €</span>
-  </div>
+    <div class="ef-summary-row">
+      <span class="ef-muted">dont TVA</span>
+      <span class="ef-muted">{{ totalVat() | number: '1.0-2' }} €</span>
+    </div>
 
-  <div class="ef-summary-row">
-    <span>Acompte à verser</span>
-    <span>{{ depositTtc() | number: '1.0-2' }} € TTC</span>
-  </div>
+    <div class="ef-summary-row">
+      <span>Acompte à verser</span>
+      <span>{{ depositTtc() | number: '1.0-2' }} € TTC</span>
+    </div>
+  }
 </div>

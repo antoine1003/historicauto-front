@@ -226,7 +226,7 @@ export interface EditionRegistrationState {
   payment: PaymentSummary;
 }
 
-export type AutosaveStatus = 'idle' | 'saving' | 'saved' | 'error';
+export type AutosaveStatus = 'idle' | 'saving' | 'saved' | 'error' | 'pending';
 
 // ── Payloads envoyés à l'API ──
 

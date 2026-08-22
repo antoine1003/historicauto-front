@@ -1,4 +1,12 @@
 @if (formState.registration(); as registration) {
+  @if (formState.catalogLoadFailed()) {
+    <p-message
+      severity="error"
+      text="Le catalogue des options n'a pas pu être chargé. Rechargez la page ou réessayez plus tard."
+      styleClass="w-full mb-4"
+    />
+  }
+
   @if (surfaceGroup(); as surface) {
     <div class="ef-panel">
       <h2 class="ef-section-title">{{ surface.label }}</h2>
@@ -89,6 +97,22 @@
                       inputStyleClass="w-24 text-center"
                     />
                   }
+                </div>
+              </div>
+            }
+
+            @if (group.inputType === OptionInputType.RADIO && !group.isRequired) {
+              <div class="ef-option-row">
+                <div class="flex items-center gap-2">
+                  <p-radio-button
+                    [inputId]="group.code + '-none'"
+                    [name]="group.code"
+                    [value]="null"
+                    [ngModel]="selectedOptionIdFor(group)"
+                    (ngModelChange)="onRadioChange(group, $event)"
+                    [disabled]="formState.isReadOnly()"
+                  />
+                  <label [for]="group.code + '-none'" class="ef-option-label ef-muted">Ne pas commander</label>
                 </div>
               </div>
             }
@@ -201,6 +225,9 @@
     </div>
 
     @if (showErrors()) {
+      @for (error of partitionErrors(); track error) {
+        <p class="ef-field-error mt-2">{{ error }}</p>
+      }
       @for (group of formState.missingRequiredGroups(); track group.code) {
         <p class="ef-field-error mt-2">
           La section « {{ group.label }} » est obligatoire : sélectionnez au moins une option.

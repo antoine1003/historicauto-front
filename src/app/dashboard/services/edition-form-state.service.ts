@@ -56,6 +56,8 @@ export class EditionFormStateService {
   private readonly activeStepSignal = signal<RegistrationStep>(RegistrationStep.ENTITY);
   private readonly documentService = inject(DocumentService);
   private readonly optionGroupsSignal = signal<OptionGroupDefinition[]>([]);
+  /** Bascule à true si le chargement du catalogue d'options a échoué (cf. revue finale). */
+  private readonly catalogLoadFailedSignal = signal(false);
   private readonly sharedDocumentsSignal = signal<SharedDocumentItem[]>([]);
   private readonly entityAutosaveStatusSignal = signal<AutosaveStatus>('idle');
   private readonly standAutosaveStatusSignal = signal<AutosaveStatus>('idle');
@@ -90,6 +92,7 @@ export class EditionFormStateService {
   readonly registration = this.state.asReadonly();
   /** Sections d'options de l'édition courante, ordonnées par le serveur. */
   readonly optionGroups = this.optionGroupsSignal.asReadonly();
+  readonly catalogLoadFailed = this.catalogLoadFailedSignal.asReadonly();
   readonly sharedDocuments = this.sharedDocumentsSignal.asReadonly();
   readonly activeStep = this.activeStepSignal.asReadonly();
   readonly entityAutosaveStatus = this.entityAutosaveStatusSignal.asReadonly();
@@ -228,10 +231,17 @@ export class EditionFormStateService {
     this.entityAutosaveStatusSignal.set('idle');
     this.standAutosaveStatusSignal.set('idle');
     this.sharedDocumentsSignal.set([]);
+    this.catalogLoadFailedSignal.set(false);
 
     this.optionsCatalogService.getForEdition(year).subscribe({
-      next: (groups) => this.optionGroupsSignal.set(groups),
-      error: () => this.optionGroupsSignal.set([]),
+      next: (groups) => {
+        this.optionGroupsSignal.set(groups);
+        this.catalogLoadFailedSignal.set(false);
+      },
+      error: () => {
+        this.optionGroupsSignal.set([]);
+        this.catalogLoadFailedSignal.set(true);
+      },
     });
 
     this.documentService.getSharedDocuments(year).subscribe({
@@ -813,7 +823,7 @@ export class EditionFormStateService {
       // disposition sans longueurs, et une saisie en cours n'a pas à faire remonter une erreur à
       // l'exposant. La sauvegarde repart d'elle-même à la modification suivante.
       if (!this.isStandPayloadSendable(reg.stand)) {
-        this.standAutosaveStatusSignal.set('idle');
+        this.standAutosaveStatusSignal.set('pending');
 
         return;
       }
@@ -824,9 +834,27 @@ export class EditionFormStateService {
       };
       this.registrationService.patchStand(reg.id, payload).subscribe({
         next: (response) => {
-          this.state.update((current) =>
-            current ? { ...current, stand: this.toStandStepState(response.data) } : current,
-          );
+          // On ne remplace QUE les champs dérivés côté serveur (lignes/totaux) : `selections` et
+          // `partition` restent sous contrôle local, car l'exposant peut avoir continué à modifier
+          // ces champs pendant l'aller-retour réseau (debounce + latence) — un écho serveur qui
+          // remplacerait tout écraserait silencieusement une saisie en cours (cf. revue finale).
+          this.state.update((current) => {
+            if (!current) {
+              return current;
+            }
+            const dto = this.toStandStepState(response.data);
+
+            return {
+              ...current,
+              stand: {
+                ...current.stand,
+                lines: dto.lines,
+                totalTtc: dto.totalTtc,
+                totalVat: dto.totalVat,
+                depositTtc: dto.depositTtc,
+              },
+            };
+          });
           this.standAutosaveStatusSignal.set('saved');
         },
         error: () => {

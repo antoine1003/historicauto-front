@@ -26,6 +26,13 @@ export class OptionsRecapComponent {
   readonly totalVat = input.required<number>();
   readonly depositTtc = input.required<number>();
   readonly title = input<string>('Détail de votre commande');
+  /**
+   * Masque le bloc de totaux (Total du stand / dont TVA / Acompte à verser) tout en gardant le
+   * détail ligne à ligne. Utile à l'étape 5, qui affiche déjà son propre récapitulatif financier
+   * agrégé (tenant compte remise/frais de dossier/override admin) juste en dessous — cf. revue
+   * finale : deux "Acompte" contradictoires sur un même écran sinon.
+   */
+  readonly showTotals = input<boolean>(true);
 
   /**
    * Regroupe les lignes consécutives partageant la même section. Les lignes arrivent déjà

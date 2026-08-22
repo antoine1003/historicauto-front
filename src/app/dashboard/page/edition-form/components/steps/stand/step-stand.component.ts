@@ -7,6 +7,7 @@ import { RadioButtonModule } from 'primeng/radiobutton';
 import { CheckboxModule } from 'primeng/checkbox';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { TextareaModule } from 'primeng/textarea';
+import { MessageModule } from 'primeng/message';
 import { ValidatableFormStep } from '@app/dashboard/models/validatable-form-step';
 import { EditionFormStateService } from '@app/dashboard/services/edition-form-state.service';
 import { OptionsRecapComponent } from '@app/dashboard/components/options-recap/options-recap.component';
@@ -32,6 +33,7 @@ import {
     CheckboxModule,
     InputNumberModule,
     TextareaModule,
+    MessageModule,
     OptionsRecapComponent,
   ],
   templateUrl: './step-stand.component.html',
@@ -55,9 +57,10 @@ export class StepStandComponent implements ValidatableFormStep {
       null,
   );
 
-  protected readonly addonGroups = computed<OptionGroupDefinition[]>(() =>
-    this.formState.optionGroups().filter((group) => group.behaviour !== OptionGroupBehaviour.SURFACE),
-  );
+  protected readonly addonGroups = computed<OptionGroupDefinition[]>(() => {
+    const surface = this.surfaceGroup();
+    return this.formState.optionGroups().filter((group) => group !== surface);
+  });
 
   /** Panneaux ouverts par défaut, pilotés par `collapsedByDefault` côté admin. */
   protected readonly expandedGroupCodes = computed<string[]>(() =>
@@ -106,7 +109,10 @@ export class StepStandComponent implements ValidatableFormStep {
   });
 
   protected readonly isValid = computed<boolean>(
-    () => this.formState.missingRequiredGroups().length === 0 && this.partitionErrors().length === 0,
+    () =>
+      this.formState.missingRequiredGroups().length === 0 &&
+      this.partitionErrors().length === 0 &&
+      !this.formState.catalogLoadFailed(),
   );
 
   constructor() {
