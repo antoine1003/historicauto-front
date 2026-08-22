@@ -113,7 +113,7 @@ export class StepStandComponent implements ValidatableFormStep {
     // Quel que soit l'inputType de la cloison (radio/checkbox/number), la désélection efface
     // toujours le détail, pour ne jamais patcher un détail orphelin.
     effect(() => {
-      if (!this.partitionSelected() && this.partition() !== null) {
+      if (this.partitionGroup() !== null && !this.partitionSelected() && this.partition() !== null) {
         this.formState.setPartitionDetail(null);
       }
     });
