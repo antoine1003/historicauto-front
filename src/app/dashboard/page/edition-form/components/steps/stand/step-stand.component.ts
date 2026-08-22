@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, signal } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
@@ -59,6 +59,13 @@ export class StepStandComponent implements ValidatableFormStep {
     this.formState.optionGroups().filter((group) => group.behaviour !== OptionGroupBehaviour.SURFACE),
   );
 
+  /** Panneaux ouverts par défaut, pilotés par `collapsedByDefault` côté admin. */
+  protected readonly expandedGroupCodes = computed<string[]>(() =>
+    this.addonGroups()
+      .filter((group) => !group.collapsedByDefault)
+      .map((group) => group.code),
+  );
+
   protected readonly partitionGroup = computed<OptionGroupDefinition | null>(
     () =>
       this.formState
@@ -101,6 +108,16 @@ export class StepStandComponent implements ValidatableFormStep {
   protected readonly isValid = computed<boolean>(
     () => this.formState.missingRequiredGroups().length === 0 && this.partitionErrors().length === 0,
   );
+
+  constructor() {
+    // Quel que soit l'inputType de la cloison (radio/checkbox/number), la désélection efface
+    // toujours le détail, pour ne jamais patcher un détail orphelin.
+    effect(() => {
+      if (!this.partitionSelected() && this.partition() !== null) {
+        this.formState.setPartitionDetail(null);
+      }
+    });
+  }
 
   protected selectedOptionIdFor(group: OptionGroupDefinition): string | null {
     return group.options.find((option) => this.isSelected(option.id))?.id ?? null;
@@ -162,22 +179,51 @@ export class StepStandComponent implements ValidatableFormStep {
   }
 
   /**
+   * Pose une disposition par défaut la première fois que les Cloisons sont sélectionnées, quel
+   * que soit l'inputType (radio/checkbox/number) qui a déclenché la sélection, afin que les
+   * champs de longueur apparaissent immédiatement. La désélection est gérée uniformément par
+   * l'`effect()` du constructeur.
+   */
+  private ensurePartitionDefaultLayout(): void {
+    if (this.partition() === null) {
+      this.selectLayout(PartitionLayout.BACK);
+    }
+  }
+
+  /**
    * Point d'entrée unique des cases à cocher, pour que le gabarit n'ait pas à choisir entre deux
-   * méthodes selon la section. Cocher les Cloisons pose une disposition par défaut afin que les
-   * champs de longueur apparaissent immédiatement ; les décocher efface le détail, comme le fait
-   * le serveur.
+   * méthodes selon la section.
    */
   protected onCheckboxChange(group: OptionGroupDefinition, optionId: string, selected: boolean): void {
     this.formState.toggleOption(optionId, selected);
 
-    if (group.behaviour !== OptionGroupBehaviour.PARTITION) {
-      return;
+    if (group.behaviour === OptionGroupBehaviour.PARTITION && selected) {
+      this.ensurePartitionDefaultLayout();
     }
+  }
 
-    if (selected && this.partition() === null) {
-      this.selectLayout(PartitionLayout.BACK);
-    } else if (!selected && !this.partitionSelected()) {
-      this.formState.setPartitionDetail(null);
+  /**
+   * Point d'entrée unique des groupes à choix unique (radio), pour que la pose de disposition
+   * par défaut des Cloisons fonctionne aussi lorsque ce groupe est configuré en RADIO plutôt
+   * qu'en CHECKBOX.
+   */
+  protected onRadioChange(group: OptionGroupDefinition, optionId: string | null): void {
+    this.formState.selectSingleOption(group, optionId);
+
+    if (group.behaviour === OptionGroupBehaviour.PARTITION && optionId !== null) {
+      this.ensurePartitionDefaultLayout();
+    }
+  }
+
+  /**
+   * Point d'entrée unique des quantités numériques, pour que la pose de disposition par défaut
+   * des Cloisons fonctionne aussi lorsque ce groupe est configuré en NUMBER.
+   */
+  protected onQuantityChange(group: OptionGroupDefinition, optionId: string, quantity: number): void {
+    this.formState.setOptionQuantity(optionId, quantity);
+
+    if (group.behaviour === OptionGroupBehaviour.PARTITION && quantity > 0) {
+      this.ensurePartitionDefaultLayout();
     }
   }
 

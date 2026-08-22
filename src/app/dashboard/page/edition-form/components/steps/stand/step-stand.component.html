@@ -12,7 +12,7 @@
             <div class="flex items-center gap-2">
               <p-radio-button
                 [inputId]="option.id"
-                name="surface"
+                [name]="surface.code"
                 [value]="option.id"
                 [ngModel]="selectedOptionIdFor(surface)"
                 (ngModelChange)="formState.selectSingleOption(surface, $event)"
@@ -35,7 +35,7 @@
   <div class="ef-panel mt-6">
     <h2 class="ef-section-title">Options complémentaires</h2>
 
-    <p-accordion [multiple]="true">
+    <p-accordion [multiple]="true" [value]="expandedGroupCodes()">
       @for (group of addonGroups(); track group.code) {
         <p-accordion-panel [value]="group.code">
           <p-accordion-header>{{ group.label }}</p-accordion-header>
@@ -53,7 +53,7 @@
                       [name]="group.code"
                       [value]="option.id"
                       [ngModel]="selectedOptionIdFor(group)"
-                      (ngModelChange)="formState.selectSingleOption(group, $event)"
+                      (ngModelChange)="onRadioChange(group, $event)"
                       [disabled]="formState.isReadOnly()"
                     />
                   } @else if (group.inputType === OptionInputType.CHECKBOX) {
@@ -79,9 +79,10 @@
                   </span>
                   @if (group.inputType === OptionInputType.NUMBER) {
                     <p-input-number
+                      [inputId]="option.id"
                       [ngModel]="quantityFor(option.id)"
                       [ngModelOptions]="{ standalone: true }"
-                      (ngModelChange)="formState.setOptionQuantity(option.id, $event ?? 0)"
+                      (ngModelChange)="onQuantityChange(group, option.id, $event ?? 0)"
                       [min]="0"
                       [showButtons]="true"
                       [disabled]="formState.isReadOnly()"
@@ -212,7 +213,7 @@
         <p-button
           label="Envoyer ma demande"
           icon="pi pi-send"
-          [disabled]="!isValid() || formState.submitStatus() === 'submitting'"
+          [disabled]="formState.submitStatus() === 'submitting'"
           [loading]="formState.submitStatus() === 'submitting'"
           (onClick)="submit()"
         />
