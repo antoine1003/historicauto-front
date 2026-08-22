@@ -1,0 +1,33 @@
+@if (registrations().length > 0) {
+  <section class="mt-8">
+    <h2 class="font-serif font-semibold text-lg text-[#1A1714] mb-3">
+      Mes éditions précédentes
+    </h2>
+
+    <ul class="list-none m-0 p-0 border-t border-[#D4C9A8]">
+      @for (registration of registrations(); track registration.id) {
+        <li
+          class="flex items-center justify-between gap-3 flex-wrap py-3 border-b border-[#D4C9A8]"
+        >
+          <span class="flex items-center gap-3">
+            <span class="font-semibold text-[#1A1714]">
+              Édition {{ registration.edition.year }}
+            </span>
+            <p-tag
+              [severity]="statusSeverity(registration.status)"
+              [value]="statusLabel(registration.status)"
+            />
+          </span>
+
+          <p-button
+            label="Consulter"
+            severity="primary"
+            text
+            size="small"
+            (onClick)="consult.emit(registration.edition.year)"
+          />
+        </li>
+      }
+    </ul>
+  </section>
+}
