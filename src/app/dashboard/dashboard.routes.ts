@@ -14,6 +14,7 @@ export const DASHBOARD_ROUTES: Routes = [
   {
     path: 'edition/:year',
     loadComponent: () => import('./page/edition-form/edition-form-page.component').then((m) => m.EditionFormPageComponent),
+    canActivate: [authGuard],
     providers: [EditionFormStateService],
   },
 ];
