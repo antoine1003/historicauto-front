@@ -1,0 +1,37 @@
+@if (edition(); as activeEdition) {
+  <p-card>
+    <div class="flex items-center justify-between gap-3 flex-wrap mb-3">
+      <h2 class="font-serif font-semibold text-xl text-[#1A1714] m-0">
+        Édition {{ activeEdition.year }}
+      </h2>
+      <p-tag [severity]="severity()" [value]="label()" />
+    </div>
+
+    @if (message(); as text) {
+      <p class="auth-subheading !mb-4">{{ text }}</p>
+    }
+
+    @if (refusalComment(); as comment) {
+      <div class="auth-error-banner">{{ comment }}</div>
+    }
+
+    @if (isRefused()) {
+      <p class="auth-subheading !mb-4">Vous conservez votre espace et vos données.</p>
+    }
+
+    @if (registrationsClosed()) {
+      <p class="auth-subheading !mb-4">Les inscriptions ne sont pas ouvertes pour le moment.</p>
+    }
+
+    @if (actionLabel(); as action) {
+      <p-button
+        [label]="action"
+        severity="primary"
+        size="small"
+        (onClick)="consult.emit()"
+      />
+    }
+  </p-card>
+} @else {
+  <p class="auth-subheading">Aucune édition n'est ouverte actuellement.</p>
+}
