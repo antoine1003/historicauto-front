@@ -1,62 +1,202 @@
 @if (formState.registration(); as registration) {
-  <form [formGroup]="form">
+  @if (formState.catalogLoadFailed()) {
+    <p-message
+      severity="error"
+      text="Le catalogue des options n'a pas pu être chargé. Rechargez la page ou réessayez plus tard."
+      styleClass="w-full mb-4"
+    />
+  }
+
+  @if (surfaceGroup(); as surface) {
     <div class="ef-panel">
-      <h2 class="ef-section-title">Surface de stand</h2>
-      <p class="ef-help-text mb-4">
-        La commande d'un pack génère la mise à disposition d'une surface nue, des badges
-        exposants associés et d'un sticker pare-brise donnant accès au parking exposants.
-      </p>
+      <h2 class="ef-section-title">{{ surface.label }}</h2>
+      @if (surface.helpText) {
+        <p class="ef-help-text mb-4">{{ surface.helpText }}</p>
+      }
 
       <div class="flex flex-col gap-1">
-        @for (option of surfaceOptions(); track option.id) {
+        @for (option of surface.options; track option.id) {
           <div class="ef-option-row">
             <div class="flex items-center gap-2">
               <p-radio-button
                 [inputId]="option.id"
-                formControlName="selectedSurfaceOptionId"
+                [name]="surface.code"
                 [value]="option.id"
+                [ngModel]="selectedOptionIdFor(surface)"
+                (ngModelChange)="formState.selectSingleOption(surface, $event)"
+                [disabled]="formState.isReadOnly()"
               />
-              <label [for]="option.id" class="ef-option-label">{{ option.label }}</label>
+              <label [for]="option.id" class="ef-option-label">
+                {{ option.label }}
+                @if (option.includedBadges) {
+                  <span class="ef-muted">+ {{ option.includedBadges }} badges exposants</span>
+                }
+              </label>
             </div>
             <span class="ef-option-price">{{ option.priceTtc | number: '1.0-2' }} € TTC</span>
           </div>
         }
       </div>
-
-      @if (form.controls.selectedSurfaceOptionId.touched && form.controls.selectedSurfaceOptionId.invalid) {
-        <p class="ef-field-error mt-2">Sélectionnez une surface de stand pour continuer.</p>
-      }
     </div>
-  </form>
+  }
 
   <div class="ef-panel mt-6">
     <h2 class="ef-section-title">Options complémentaires</h2>
 
-    <p-accordion [multiple]="true">
-      @for (category of addonCategories; track category) {
-        <p-accordion-panel [value]="category">
-          <p-accordion-header>{{ categoryLabel(category) }}</p-accordion-header>
+    <p-accordion [multiple]="true" [value]="expandedGroupCodes()">
+      @for (group of addonGroups(); track group.code) {
+        <p-accordion-panel [value]="group.code">
+          <p-accordion-header>{{ group.label }}</p-accordion-header>
           <p-accordion-content>
-            @for (option of optionsForCategory(category); track option.id) {
+            @if (group.helpText) {
+              <p class="ef-help-text mb-3">{{ group.helpText }}</p>
+            }
+
+            @for (option of group.options; track option.id) {
               <div class="ef-option-row">
-                <span class="ef-option-label">
-                  {{ option.label }}
-                  @if (option.unit) {
-                    <span class="ef-muted">({{ option.unit }})</span>
+                <div class="flex items-center gap-2">
+                  @if (group.inputType === OptionInputType.RADIO) {
+                    <p-radio-button
+                      [inputId]="option.id"
+                      [name]="group.code"
+                      [value]="option.id"
+                      [ngModel]="selectedOptionIdFor(group)"
+                      (ngModelChange)="onRadioChange(group, $event)"
+                      [disabled]="formState.isReadOnly()"
+                    />
+                  } @else if (group.inputType === OptionInputType.CHECKBOX) {
+                    <p-checkbox
+                      [inputId]="option.id"
+                      [binary]="true"
+                      [ngModel]="isSelected(option.id)"
+                      (ngModelChange)="onCheckboxChange(group, option.id, $event)"
+                      [disabled]="formState.isReadOnly()"
+                    />
                   }
-                </span>
-                <div class="flex items-center gap-3">
-                  <span class="ef-option-price">{{ option.priceTtc | number: '1.0-2' }} € TTC / unité</span>
-                  <p-input-number
-                    [ngModel]="quantityFor(option.id)"
-                    [ngModelOptions]="{ standalone: true }"
-                    (ngModelChange)="formState.setOptionQuantity(option.id, $event ?? 0)"
-                    [min]="0"
-                    [showButtons]="true"
-                    [disabled]="formState.isReadOnly()"
-                    inputStyleClass="w-24 text-center"
-                  />
+                  <label [for]="option.id" class="ef-option-label">
+                    {{ option.label }}
+                    @if (option.unit) {
+                      <span class="ef-muted">({{ option.unit }})</span>
+                    }
+                  </label>
                 </div>
+
+                <div class="flex items-center gap-3">
+                  <span class="ef-option-price">
+                    {{ option.priceTtc | number: '1.0-2' }} € TTC{{ option.unit ? ' / ' + option.unit : '' }}
+                  </span>
+                  @if (group.inputType === OptionInputType.NUMBER) {
+                    <p-input-number
+                      [inputId]="option.id"
+                      [ngModel]="quantityFor(option.id)"
+                      [ngModelOptions]="{ standalone: true }"
+                      (ngModelChange)="onQuantityChange(group, option.id, $event ?? 0)"
+                      [min]="0"
+                      [showButtons]="true"
+                      [disabled]="formState.isReadOnly()"
+                      inputStyleClass="w-24 text-center"
+                    />
+                  }
+                </div>
+              </div>
+            }
+
+            @if (group.inputType === OptionInputType.RADIO && !group.isRequired) {
+              <div class="ef-option-row">
+                <div class="flex items-center gap-2">
+                  <p-radio-button
+                    [inputId]="group.code + '-none'"
+                    [name]="group.code"
+                    [value]="null"
+                    [ngModel]="selectedOptionIdFor(group)"
+                    (ngModelChange)="onRadioChange(group, $event)"
+                    [disabled]="formState.isReadOnly()"
+                  />
+                  <label [for]="group.code + '-none'" class="ef-option-label ef-muted">Ne pas commander</label>
+                </div>
+              </div>
+            }
+
+            @if (group.behaviour === OptionGroupBehaviour.PARTITION && partitionSelected()) {
+              <div class="mt-4 border-l-2 border-[#1A1714]/20 pl-4">
+                <p class="ef-help-text mb-3">
+                  Précisez la disposition parmi les trois proposées, ainsi que le métrage de vos
+                  cloisons.
+                </p>
+
+                <div class="flex flex-wrap gap-4">
+                  @for (layout of partitionLayouts; track layout) {
+                    <label
+                      class="flex cursor-pointer flex-col items-center gap-2 rounded border p-3"
+                      [class.border-[#1A1714]]="partition()?.layout === layout"
+                      [class.border-transparent]="partition()?.layout !== layout"
+                    >
+                      <p-radio-button
+                        name="partitionLayout"
+                        [value]="layout"
+                        [ngModel]="partition()?.layout ?? null"
+                        (ngModelChange)="selectLayout($event)"
+                        [disabled]="formState.isReadOnly()"
+                      />
+                      <!-- Schémas dessinés en ligne : traits épais reprenant le cahier des charges. -->
+                      <svg viewBox="0 0 64 40" class="h-10 w-16 text-[#1A1714]" aria-hidden="true">
+                        @switch (layout) {
+                          @case ('back') {
+                            <path d="M6 14 H58" fill="none" stroke="currentColor" stroke-width="6" />
+                          }
+                          @case ('angle') {
+                            <path d="M6 14 H58 V36" fill="none" stroke="currentColor" stroke-width="6" />
+                          }
+                          @case ('u') {
+                            <path d="M6 36 V14 H58 V36" fill="none" stroke="currentColor" stroke-width="6" />
+                          }
+                        }
+                      </svg>
+                      <span class="text-sm">{{ layoutLabels[layout] }}</span>
+                    </label>
+                  }
+                </div>
+
+                @if (partition(); as detail) {
+                  <div class="mt-4 flex flex-wrap items-end gap-4">
+                    @for (index of segmentIndexes(); track index) {
+                      <div class="flex flex-col gap-1">
+                        <label class="text-sm">Longueur {{ index + 1 }} (m)</label>
+                        <p-input-number
+                          [ngModel]="segmentAt(index)"
+                          [ngModelOptions]="{ standalone: true }"
+                          (ngModelChange)="setSegment(index, $event)"
+                          [min]="0"
+                          [maxFractionDigits]="2"
+                          [disabled]="formState.isReadOnly()"
+                          inputStyleClass="w-24 text-center"
+                        />
+                      </div>
+                    }
+                  </div>
+
+                  <div class="mt-4 flex flex-col gap-1">
+                    <label for="partitionUsage" class="text-sm">
+                      Précisez quelles utilisations vous souhaitez faire de vos cloisons
+                    </label>
+                    <textarea
+                      pTextarea
+                      id="partitionUsage"
+                      rows="3"
+                      class="w-full"
+                      [ngModel]="detail.usageNotes ?? ''"
+                      [ngModelOptions]="{ standalone: true }"
+                      (ngModelChange)="setUsageNotes($event)"
+                      [disabled]="formState.isReadOnly()"
+                    ></textarea>
+                  </div>
+                }
+
+                @if (showErrors()) {
+                  @for (error of partitionErrors(); track error) {
+                    <p class="ef-field-error mt-2">{{ error }}</p>
+                  }
+                }
               </div>
             }
           </p-accordion-content>
@@ -75,19 +215,32 @@
       </div>
     }
 
-    <div class="ef-summary-card">
-      <div class="ef-summary-row ef-summary-row--total">
-        <span>Total du stand</span>
-        <span>{{ formState.standTotalTtc() | number: '1.0-2' }} € TTC</span>
-      </div>
+    <div class="mt-6">
+      <app-options-recap
+        [lines]="registration.stand.lines"
+        [totalTtc]="registration.stand.totalTtc"
+        [totalVat]="registration.stand.totalVat"
+        [depositTtc]="registration.stand.depositTtc"
+      />
     </div>
+
+    @if (showErrors()) {
+      @for (error of partitionErrors(); track error) {
+        <p class="ef-field-error mt-2">{{ error }}</p>
+      }
+      @for (group of formState.missingRequiredGroups(); track group.code) {
+        <p class="ef-field-error mt-2">
+          La section « {{ group.label }} » est obligatoire : sélectionnez au moins une option.
+        </p>
+      }
+    }
 
     <div class="mt-5 flex flex-col items-start gap-2">
       @if (!formState.isReadOnly()) {
         <p-button
           label="Envoyer ma demande"
           icon="pi pi-send"
-          [disabled]="form.invalid || formState.submitStatus() === 'submitting'"
+          [disabled]="formState.submitStatus() === 'submitting'"
           [loading]="formState.submitStatus() === 'submitting'"
           (onClick)="submit()"
         />

@@ -4,6 +4,7 @@ import { ButtonModule } from 'primeng/button';
 import { TableModule } from 'primeng/table';
 import { MessageModule } from 'primeng/message';
 import { EditionFormStateService } from '@app/dashboard/services/edition-form-state.service';
+import { OptionsRecapComponent } from '@app/dashboard/components/options-recap/options-recap.component';
 
 const PAYMENT_METHOD_LABELS: Record<string, string> = {
   card: 'Carte bancaire',
@@ -15,7 +16,7 @@ const PAYMENT_METHOD_LABELS: Record<string, string> = {
 @Component({
   selector: 'app-step-payment',
   standalone: true,
-  imports: [DatePipe, DecimalPipe, ButtonModule, TableModule, MessageModule],
+  imports: [DatePipe, DecimalPipe, ButtonModule, TableModule, MessageModule, OptionsRecapComponent],
   templateUrl: './step-payment.component.html',
 })
 export class StepPaymentComponent {

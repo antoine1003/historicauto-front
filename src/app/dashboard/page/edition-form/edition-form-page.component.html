@@ -28,7 +28,7 @@
         @if (!registration.readOnly) {
           <div
             class="ef-autosave-indicator"
-            [class.ef-autosave-indicator--error]="currentAutosaveStatus() === 'error'"
+            [class.ef-autosave-indicator--error]="currentAutosaveStatus() === 'error' || currentAutosaveStatus() === 'pending'"
           >
             @switch (currentAutosaveStatus()) {
               @case ('saving') {
@@ -42,6 +42,10 @@
               @case ('error') {
                 <i class="pi pi-exclamation-triangle"></i>
                 <span>Échec de la sauvegarde</span>
+              }
+              @case ('pending') {
+                <i class="pi pi-exclamation-triangle"></i>
+                <span>Cloisons incomplètes — vos modifications ne sont pas encore enregistrées</span>
               }
             }
           </div>

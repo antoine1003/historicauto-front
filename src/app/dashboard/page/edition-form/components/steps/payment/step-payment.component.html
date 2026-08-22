@@ -8,6 +8,15 @@
       styleClass="w-full mb-5"
     />
 
+    <app-options-recap
+      title="Détail des options de votre stand"
+      [lines]="registration.stand.lines"
+      [totalTtc]="registration.stand.totalTtc"
+      [totalVat]="registration.stand.totalVat"
+      [depositTtc]="registration.stand.depositTtc"
+      [showTotals]="false"
+    />
+
     <div class="ef-summary-card">
       <div class="ef-summary-row">
         <span>Total du stand</span>
