@@ -1,8 +1,8 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
-import { catchError, Observable, of, switchMap, tap } from 'rxjs';
-import { AuthUser, JwtResponse, LoginRequest, RegisterRequest } from '../models/auth.model';
+import { catchError, map, Observable, of, switchMap, tap } from 'rxjs';
+import { AuthUser, JwtResponse, LoginRequest, MeResponse, RegisterRequest } from '../models/auth.model';
 import { environment } from '../../../environments/environment';
 import { TokenStorageService } from '@app/core/services/token-storage.service';
 
@@ -73,7 +73,6 @@ export class AuthService {
 
   private checkInitialAuth(): void {
     const token = this.getToken();
-    console.log('Token in checkInitialAuth: ', token)
     if (token) {
       this.isLoading.set(true);
       this.fetchCurrentUser().subscribe({
@@ -94,13 +93,12 @@ export class AuthService {
 
   private fetchCurrentUser(): Observable<AuthUser | null> {
     // Assuming there's an endpoint to get the current user profile
-    return this.http.get<AuthUser>(`${environment.apiUrl}/me`).pipe(
+    return this.http.get<MeResponse>(`${environment.apiUrl}/me`).pipe(
+      map(response => response.user ?? null),
       tap(user => {
-        if (user) {
-          this._currentUser.set(user);
-        }
+        this._currentUser.set(user);
       }),
-      catchError((err, caught) => {
+      catchError(err => {
         console.error('Error fetching current user:', err);
         return of(null);
       })

@@ -29,16 +29,18 @@ export interface RegisterResponse {
   message?: string;
 }
 
+/** Réponse du endpoint /api/me */
+export interface MeResponse {
+  authenticated: boolean;
+  user?: AuthUser;
+}
+
 // ── Utilisateur ──
 
 export interface AuthUser extends BaseEntity {
   email: string;
-  firstName: string;
-  isPremium: boolean;
   roles: string[];
-  quizDailyLimit: number;
-  quizDailyUsed: number;
-  quizDailyRemaining: number;
+  isVerified: boolean;
 }
 
 // ── JWT décodé ──

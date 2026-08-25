@@ -139,7 +139,8 @@ export class ContactComponent {
 
     const user = this.knownUser();
     const payload: ContactRequest = {
-      name: user?.firstName ?? this.name().trim(),
+      // Le back ne fournit pas encore de nom pour l'exposant connecté : on retombe sur son email, faute de mieux.
+      name: user?.email ?? this.name().trim(),
       email: user?.email ?? this.email().trim(),
       subject,
       message: this.message().trim(),
