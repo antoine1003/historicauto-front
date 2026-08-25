@@ -1,3 +1,152 @@
 <section class="pub-container pub-section">
+  <p class="pub-eyebrow">Contact</p>
   <h1 class="pub-h1">Nous contacter</h1>
+  <p class="pub-lead">
+    Une question sur votre demande de stand, sur les options ou sur votre facturation ?
+    Écrivez-nous, nous vous répondons par email.
+  </p>
+
+  <div class="pub-contact-grid">
+    <div class="pub-panel">
+      @if (sent()) {
+        <div class="pub-success">
+          <div class="pub-success-icon">
+            <i class="pi pi-check" aria-hidden="true"></i>
+          </div>
+          <h2 class="pub-section-title">Message envoyé</h2>
+          <p class="pub-lead text-center">
+            Merci, votre message est parti. Nous vous répondrons à l’adresse
+            <strong>{{ replyToEmail() }}</strong>.
+          </p>
+          <button type="button" class="pub-btn pub-btn--ghost" (click)="reset()">
+            Écrire un autre message
+          </button>
+        </div>
+      } @else {
+        @if (apiError()) {
+          <div class="auth-error-banner">{{ apiError() }}</div>
+        }
+
+        @if (knownUser(); as user) {
+          <p class="pub-identity">
+            <i class="pi pi-user" aria-hidden="true"></i>
+            <span>
+              Vous écrivez en tant que
+              <span class="pub-identity-name">{{ user.firstName }}</span> — {{ user.email }}
+            </span>
+          </p>
+        } @else {
+          <div class="auth-field">
+            <label class="auth-label" for="contact-name">Nom</label>
+            <input
+              pInputText
+              id="contact-name"
+              type="text"
+              placeholder="Votre nom"
+              autocomplete="name"
+              [ngModel]="name()"
+              (ngModelChange)="name.set($event)"
+              (blur)="nameTouched.set(true)"
+              [disabled]="loading()"
+              fluid
+              class="auth-input"
+              [class.auth-input--error]="nameError()"
+            />
+            @if (nameError()) {
+              <p class="auth-field-error">{{ nameError() }}</p>
+            }
+          </div>
+
+          <div class="auth-field">
+            <label class="auth-label" for="contact-email">Adresse email</label>
+            <input
+              pInputText
+              id="contact-email"
+              type="email"
+              placeholder="vous@exemple.com"
+              autocomplete="email"
+              [ngModel]="email()"
+              (ngModelChange)="email.set($event)"
+              (blur)="emailTouched.set(true)"
+              [disabled]="loading()"
+              fluid
+              class="auth-input"
+              [class.auth-input--error]="emailError()"
+            />
+            @if (emailError()) {
+              <p class="auth-field-error">{{ emailError() }}</p>
+            }
+          </div>
+        }
+
+        <div class="auth-field">
+          <label class="auth-label" for="contact-subject">Sujet</label>
+          <p-select
+            inputId="contact-subject"
+            [options]="subjectOptions"
+            optionLabel="label"
+            optionValue="value"
+            placeholder="Choisissez un sujet"
+            [ngModel]="subject()"
+            (ngModelChange)="subject.set($event)"
+            (onBlur)="subjectTouched.set(true)"
+            [disabled]="loading()"
+            fluid
+            [styleClass]="subjectError() ? 'auth-input--error' : ''"
+          />
+          @if (subjectError()) {
+            <p class="auth-field-error">{{ subjectError() }}</p>
+          }
+        </div>
+
+        <div class="auth-field">
+          <label class="auth-label" for="contact-message">Message</label>
+          <textarea
+            id="contact-message"
+            class="pub-textarea"
+            placeholder="Décrivez votre demande en quelques lignes."
+            [class.auth-input--error]="messageError()"
+            [ngModel]="message()"
+            (ngModelChange)="message.set($event)"
+            (blur)="messageTouched.set(true)"
+            [disabled]="loading()"
+          ></textarea>
+          @if (messageError()) {
+            <p class="auth-field-error">{{ messageError() }}</p>
+          }
+        </div>
+
+        <p-button
+          label="Envoyer"
+          styleClass="auth-btn-primary"
+          [loading]="loading()"
+          [disabled]="loading()"
+          (onClick)="onSubmit()"
+        />
+      }
+    </div>
+
+    <aside class="pub-aside">
+      <div>
+        <p class="pub-aside-title">Nous écrire</p>
+        <a [href]="'mailto:' + contactEmail" class="auth-link">{{ contactEmail }}</a>
+      </div>
+
+      <div>
+        <p class="pub-aside-title">Adresse</p>
+        <address class="pub-aside-text">
+          HISTORIC AUTO<br />
+          5 bis avenue de l’Europe<br />
+          44260 La Montagne
+        </address>
+      </div>
+
+      <div>
+        <p class="pub-aside-title">Le salon</p>
+        <a href="https://www.historic-auto.com" target="_blank" rel="noopener" class="auth-link">
+          historic-auto.com
+        </a>
+      </div>
+    </aside>
+  </div>
 </section>
