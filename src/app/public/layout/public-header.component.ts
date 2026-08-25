@@ -9,6 +9,7 @@ import { AuthService } from '@app/core/services/auth.service';
   imports: [RouterLink, RouterLinkActive, NgTemplateOutlet],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './public-header.component.html',
+  styles: [':host { display: contents; }'],
 })
 export class PublicHeaderComponent {
   protected readonly auth = inject(AuthService);
