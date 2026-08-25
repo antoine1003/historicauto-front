@@ -1,0 +1,276 @@
+/* src/app/core/styles/public.theme.css */
+@reference "tailwindcss";
+
+/* ── Coquille ── */
+
+.pub-shell {
+  @apply min-h-screen flex flex-col bg-[#F7F5F0] text-[#1A1714];
+}
+
+.pub-main {
+  @apply flex-1;
+}
+
+.pub-container {
+  @apply w-full max-w-5xl mx-auto px-5 sm:px-8;
+}
+
+/* ── En-tête ── */
+
+.pub-header {
+  @apply sticky top-0 z-30 bg-[#F7F5F0] border-b border-[#D4C9A8];
+}
+
+.pub-header-inner {
+  @apply flex items-center justify-between gap-4 h-[72px];
+}
+
+.pub-brand {
+  @apply flex items-center gap-3 no-underline;
+}
+
+.pub-nav {
+  @apply hidden md:flex items-center gap-7;
+}
+
+.pub-nav-link {
+  @apply text-[0.95rem] no-underline text-[#6B6560] hover:text-[#1A1714] transition-colors;
+}
+
+.pub-nav-link--active {
+  @apply text-[#1A1714] font-semibold;
+}
+
+.pub-header-actions {
+  @apply hidden md:flex items-center gap-5;
+}
+
+.pub-burger {
+  @apply md:hidden w-10 h-10 flex items-center justify-center
+  bg-transparent border border-[#D4C9A8] rounded-sm text-[#1A1714] cursor-pointer;
+}
+
+.pub-mobile-menu {
+  @apply md:hidden flex flex-col items-start gap-4 border-t border-[#D4C9A8] py-5;
+}
+
+/* ── Boutons ── */
+
+.pub-btn {
+  @apply inline-flex items-center justify-center h-[44px] px-5
+  text-[0.95rem] font-semibold tracking-wide rounded-sm
+  no-underline cursor-pointer transition-colors;
+}
+
+.pub-btn--primary {
+  @apply bg-[#B8860B] hover:bg-[#9A7009] text-white border-none;
+}
+
+.pub-btn--ghost {
+  @apply bg-transparent text-[#B8860B] border border-[#B8860B] hover:bg-[#B8860B]/10;
+}
+
+/* ── Sections ── */
+
+.pub-section {
+  @apply py-14 sm:py-16;
+}
+
+.pub-eyebrow {
+  @apply text-[0.78rem] font-semibold uppercase tracking-[0.22em] text-[#B8860B] mb-4;
+}
+
+.pub-h1 {
+  @apply font-serif font-semibold text-[2.6rem] sm:text-[3.4rem] leading-[1.08] text-[#1A1714] mb-5;
+}
+
+.pub-lead {
+  @apply text-[1.05rem] leading-relaxed text-[#6B6560] mb-8 max-w-xl;
+}
+
+.pub-section-title {
+  @apply font-serif font-semibold text-[2rem] sm:text-[2.4rem] leading-tight text-[#1A1714] mb-3;
+}
+
+.pub-section-lead {
+  @apply text-[1rem] leading-relaxed text-[#6B6560] mb-10 max-w-2xl;
+}
+
+/* ── Hero ── */
+
+.pub-hero {
+  @apply py-14 sm:py-20 grid gap-10 md:grid-cols-[1.15fr_1fr] md:items-center;
+}
+
+.pub-hero-actions {
+  @apply flex flex-wrap items-center gap-6;
+}
+
+/* ── Bandeau salon ── */
+
+.pub-band {
+  @apply border-y border-[#D4C9A8] bg-[#FAFAF7];
+}
+
+.pub-band-meta {
+  @apply flex flex-wrap items-center justify-center gap-x-3 gap-y-1
+  py-8 text-[0.95rem] text-[#6B6560] text-center;
+}
+
+.pub-band-meta-strong {
+  @apply font-serif font-semibold text-[1.15rem] text-[#1A1714];
+}
+
+.pub-stats {
+  @apply grid grid-cols-2 md:grid-cols-4 gap-4 pb-12;
+}
+
+.pub-stat {
+  @apply bg-white border border-[#D4C9A8] border-l-4 border-l-[#B8860B] px-4 py-6 text-center;
+}
+
+.pub-stat-value {
+  @apply font-serif font-semibold text-[2rem] leading-none text-[#1A1714] mb-2;
+}
+
+.pub-stat-label {
+  @apply text-[0.8rem] uppercase tracking-[0.12em] text-[#6B6560];
+}
+
+/* ── Emplacements image ── */
+
+.pub-image-slot {
+  @apply w-full flex flex-col items-center justify-center gap-2 text-center
+  bg-[#EFEADD] border border-[#D4C9A8] border-l-4 border-l-[#B8860B] text-[#6B6560];
+}
+
+.pub-image-slot--hero {
+  @apply aspect-[4/3];
+}
+
+.pub-image-slot--band {
+  @apply aspect-[3/1];
+}
+
+.pub-image-slot-label {
+  @apply text-[0.85rem] font-semibold text-[#1A1714];
+}
+
+.pub-image-slot-hint {
+  @apply text-[0.75rem];
+}
+
+/* ── Étapes ── */
+
+.pub-steps {
+  @apply grid gap-5 sm:grid-cols-2 lg:grid-cols-3;
+}
+
+.pub-step {
+  @apply bg-white border border-[#D4C9A8] border-l-4 border-l-[#B8860B] px-6 py-6;
+}
+
+.pub-step-index {
+  @apply block font-serif font-semibold text-[1.1rem] text-[#B8860B] mb-2;
+}
+
+.pub-step-title {
+  @apply font-serif font-semibold text-[1.3rem] text-[#1A1714] mb-2;
+}
+
+.pub-step-text {
+  @apply text-[0.95rem] leading-relaxed text-[#6B6560];
+}
+
+/* ── Appel à l'action de clôture ── */
+
+.pub-cta {
+  @apply bg-[#1A1714] text-[#F7F5F0] px-8 py-12 sm:px-14 sm:py-16 text-center;
+}
+
+.pub-cta-title {
+  @apply font-serif font-semibold text-[2rem] sm:text-[2.4rem] leading-tight mb-4;
+}
+
+.pub-cta-text {
+  @apply text-[1rem] leading-relaxed text-[#C9C2B8] mb-8 max-w-xl mx-auto;
+}
+
+.pub-cta-link {
+  @apply text-[#DCB54C] font-semibold no-underline hover:underline;
+}
+
+/* ── Pied de page ── */
+
+.pub-footer {
+  @apply border-t border-[#D4C9A8] bg-[#FAFAF7];
+}
+
+.pub-footer-grid {
+  @apply grid gap-8 sm:grid-cols-3 py-12;
+}
+
+.pub-footer-title {
+  @apply text-[0.78rem] font-semibold uppercase tracking-[0.18em] text-[#B8860B] mb-3;
+}
+
+.pub-footer-text {
+  @apply text-[0.9rem] leading-relaxed text-[#6B6560] not-italic;
+}
+
+.pub-footer-link {
+  @apply block text-[0.9rem] no-underline text-[#6B6560] hover:text-[#B8860B] transition-colors py-0.5;
+}
+
+.pub-footer-bottom {
+  @apply border-t border-[#D4C9A8] py-5 text-[0.82rem] text-[#6B6560] text-center;
+}
+
+/* ── Page de contact ── */
+
+.pub-contact-grid {
+  @apply grid gap-10 lg:grid-cols-[1.6fr_1fr] items-start;
+}
+
+.pub-panel {
+  @apply bg-white border border-[#D4C9A8] border-l-4 border-l-[#B8860B] px-6 py-7 sm:px-8 sm:py-8;
+}
+
+.pub-identity {
+  @apply flex items-center gap-3 bg-[#FAFAF7] border border-[#D4C9A8] rounded-sm
+  px-4 py-3 mb-5 text-[0.9rem] text-[#6B6560];
+}
+
+.pub-identity-name {
+  @apply font-semibold text-[#1A1714];
+}
+
+.pub-textarea {
+  @apply w-full min-h-[160px] px-4 py-3 text-base
+  border-[1.5px] border-[#D4C9A8]
+  bg-[#FAFAF7] text-[#1A1714]
+  placeholder-[#B5AEA4]
+  focus:outline-none focus:border-[#B8860B] focus:bg-white
+  rounded-sm transition-colors resize-y;
+}
+
+.pub-success {
+  @apply flex flex-col items-center text-center py-6;
+}
+
+.pub-success-icon {
+  @apply w-14 h-14 rounded-full flex items-center justify-center
+  bg-[#B8860B]/10 border border-[#B8860B] text-[#B8860B] text-2xl mb-5;
+}
+
+.pub-aside {
+  @apply flex flex-col gap-7;
+}
+
+.pub-aside-title {
+  @apply text-[0.78rem] font-semibold uppercase tracking-[0.18em] text-[#B8860B] mb-2;
+}
+
+.pub-aside-text {
+  @apply text-[0.95rem] leading-relaxed text-[#6B6560] not-italic;
+}
