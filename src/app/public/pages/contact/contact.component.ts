@@ -1,4 +1,13 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import {
+  afterRenderEffect,
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  ElementRef,
+  inject,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
@@ -56,6 +65,23 @@ export class ContactComponent {
   protected readonly loading = signal(false);
   protected readonly sent = signal(false);
   protected readonly apiError = signal<string | null>(null);
+
+  // ── Gestion du focus autour de l'état de succès ──
+  private readonly successTitle = viewChild<ElementRef<HTMLElement>>('successTitle');
+  private readonly panel = viewChild<ElementRef<HTMLElement>>('panel');
+  private wasSent = false;
+
+  constructor() {
+    afterRenderEffect(() => {
+      const isSent = this.sent();
+      if (isSent && !this.wasSent) {
+        this.successTitle()?.nativeElement.focus();
+      } else if (!isSent && this.wasSent) {
+        this.panel()?.nativeElement.focus();
+      }
+      this.wasSent = isSent;
+    });
+  }
 
   /** Vrai une fois l'authentification résolue ; le bloc identité reste masqué avant. */
   protected readonly authResolved = this.auth.isInitialized;

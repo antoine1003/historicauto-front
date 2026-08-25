@@ -6,7 +6,7 @@
         <span class="auth-logo-text">Historic Auto</span>
       </a>
 
-      <nav class="pub-nav">
+      <nav class="pub-nav" aria-label="Navigation principale">
         <a
           routerLink="/"
           class="pub-nav-link"
@@ -36,7 +36,12 @@
       </button>
     </div>
 
-    <nav id="pub-mobile-menu" class="pub-mobile-menu" [style.display]="menuOpen() ? null : 'none'">
+    <nav
+      id="pub-mobile-menu"
+      class="pub-mobile-menu"
+      aria-label="Menu mobile"
+      [style.display]="menuOpen() ? null : 'none'"
+    >
       <a routerLink="/" class="pub-nav-link" (click)="closeMenu()">Accueil</a>
       <a routerLink="/contact" class="pub-nav-link" (click)="closeMenu()">Contact</a>
 

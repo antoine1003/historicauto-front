@@ -7,13 +7,13 @@
   </p>
 
   <div class="pub-contact-grid">
-    <div class="pub-panel">
+    <div class="pub-panel" tabindex="-1" #panel>
       @if (sent()) {
-        <div class="pub-success">
+        <div class="pub-success" role="status">
           <div class="pub-success-icon">
             <i class="pi pi-check" aria-hidden="true"></i>
           </div>
-          <h2 class="pub-section-title">Message envoyé</h2>
+          <h2 class="pub-section-title" tabindex="-1" #successTitle>Message envoyé</h2>
           <p class="pub-lead text-center">
             Merci, votre message est parti. Nous vous répondrons à l’adresse
             <strong>{{ replyToEmail() }}</strong>.
@@ -24,7 +24,7 @@
         </div>
       } @else {
         @if (apiError()) {
-          <div class="auth-error-banner">{{ apiError() }}</div>
+          <div class="auth-error-banner" role="alert">{{ apiError() }}</div>
         }
 
         @if (authResolved()) {
@@ -45,6 +45,8 @@
                 type="text"
                 placeholder="Votre nom"
                 autocomplete="name"
+                required
+                aria-required="true"
                 [ngModel]="name()"
                 (ngModelChange)="name.set($event)"
                 (blur)="nameTouched.set(true)"
@@ -68,6 +70,8 @@
                 type="email"
                 placeholder="vous@exemple.com"
                 autocomplete="email"
+                required
+                aria-required="true"
                 [ngModel]="email()"
                 (ngModelChange)="email.set($event)"
                 (blur)="emailTouched.set(true)"
@@ -103,6 +107,7 @@
             (ngModelChange)="subject.set($event)"
             (onBlur)="subjectTouched.set(true)"
             [disabled]="loading()"
+            [required]="true"
             fluid
             [styleClass]="subjectError() ? 'auth-input--error' : ''"
           />
@@ -119,6 +124,8 @@
             id="contact-message"
             class="pub-textarea"
             placeholder="Décrivez votre demande en quelques lignes."
+            required
+            aria-required="true"
             [class.auth-input--error]="messageError()"
             [ngModel]="message()"
             (ngModelChange)="message.set($event)"
