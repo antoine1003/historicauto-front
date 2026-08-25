@@ -57,14 +57,11 @@ export class ContactComponent {
   protected readonly sent = signal(false);
   protected readonly apiError = signal<string | null>(null);
 
-  /**
-   * Profil de l'exposant connecté, ou `null` tant que l'authentification n'est pas résolue
-   * ou si le visiteur n'est pas connecté. Attendre `isInitialized()` évite d'afficher les
-   * champs nom et email une fraction de seconde avant de les remplacer par le rappel.
-   */
-  protected readonly knownUser = computed(() =>
-    this.auth.isInitialized() ? this.auth.currentUser() : null
-  );
+  /** Vrai une fois l'authentification résolue ; le bloc identité reste masqué avant. */
+  protected readonly authResolved = this.auth.isInitialized;
+
+  /** Profil de l'exposant connecté, ou `null` si le visiteur n'est pas connecté. */
+  protected readonly knownUser = this.auth.currentUser;
 
   /** Adresse à laquelle la réponse sera envoyée, rappelée dans l'état de succès. */
   protected readonly replyToEmail = computed(

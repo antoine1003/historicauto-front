@@ -27,60 +27,62 @@
           <div class="auth-error-banner">{{ apiError() }}</div>
         }
 
-        @if (knownUser(); as user) {
-          <p class="pub-identity">
-            <i class="pi pi-user" aria-hidden="true"></i>
-            <span>
-              Vous écrivez en tant que
-              <span class="pub-identity-name">{{ user.email }}</span>
-            </span>
-          </p>
-        } @else {
-          <div class="auth-field">
-            <label class="auth-label" for="contact-name">Nom</label>
-            <input
-              pInputText
-              id="contact-name"
-              type="text"
-              placeholder="Votre nom"
-              autocomplete="name"
-              [ngModel]="name()"
-              (ngModelChange)="name.set($event)"
-              (blur)="nameTouched.set(true)"
-              [disabled]="loading()"
-              fluid
-              class="auth-input"
-              [class.auth-input--error]="nameError()"
-              [attr.aria-describedby]="nameError() ? 'contact-name-error' : null"
-              [attr.aria-invalid]="nameError() ? true : false"
-            />
-            @if (nameError()) {
-              <p id="contact-name-error" class="auth-field-error" role="alert">{{ nameError() }}</p>
-            }
-          </div>
+        @if (authResolved()) {
+          @if (knownUser(); as user) {
+            <p class="pub-identity">
+              <i class="pi pi-user" aria-hidden="true"></i>
+              <span>
+                Vous écrivez en tant que
+                <span class="pub-identity-name">{{ user.email }}</span>
+              </span>
+            </p>
+          } @else {
+            <div class="auth-field">
+              <label class="auth-label" for="contact-name">Nom</label>
+              <input
+                pInputText
+                id="contact-name"
+                type="text"
+                placeholder="Votre nom"
+                autocomplete="name"
+                [ngModel]="name()"
+                (ngModelChange)="name.set($event)"
+                (blur)="nameTouched.set(true)"
+                [disabled]="loading()"
+                fluid
+                class="auth-input"
+                [class.auth-input--error]="nameError()"
+                [attr.aria-describedby]="nameError() ? 'contact-name-error' : null"
+                [attr.aria-invalid]="nameError() ? true : false"
+              />
+              @if (nameError()) {
+                <p id="contact-name-error" class="auth-field-error" role="alert">{{ nameError() }}</p>
+              }
+            </div>
 
-          <div class="auth-field">
-            <label class="auth-label" for="contact-email">Adresse email</label>
-            <input
-              pInputText
-              id="contact-email"
-              type="email"
-              placeholder="vous@exemple.com"
-              autocomplete="email"
-              [ngModel]="email()"
-              (ngModelChange)="email.set($event)"
-              (blur)="emailTouched.set(true)"
-              [disabled]="loading()"
-              fluid
-              class="auth-input"
-              [class.auth-input--error]="emailError()"
-              [attr.aria-describedby]="emailError() ? 'contact-email-error' : null"
-              [attr.aria-invalid]="emailError() ? true : false"
-            />
-            @if (emailError()) {
-              <p id="contact-email-error" class="auth-field-error" role="alert">{{ emailError() }}</p>
-            }
-          </div>
+            <div class="auth-field">
+              <label class="auth-label" for="contact-email">Adresse email</label>
+              <input
+                pInputText
+                id="contact-email"
+                type="email"
+                placeholder="vous@exemple.com"
+                autocomplete="email"
+                [ngModel]="email()"
+                (ngModelChange)="email.set($event)"
+                (blur)="emailTouched.set(true)"
+                [disabled]="loading()"
+                fluid
+                class="auth-input"
+                [class.auth-input--error]="emailError()"
+                [attr.aria-describedby]="emailError() ? 'contact-email-error' : null"
+                [attr.aria-invalid]="emailError() ? true : false"
+              />
+              @if (emailError()) {
+                <p id="contact-email-error" class="auth-field-error" role="alert">{{ emailError() }}</p>
+              }
+            </div>
+          }
         }
 
         <div class="auth-field">

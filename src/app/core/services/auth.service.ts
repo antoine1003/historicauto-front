@@ -75,15 +75,15 @@ export class AuthService {
     const token = this.getToken();
     if (token) {
       this.isLoading.set(true);
-      this.fetchCurrentUser().subscribe({
-        next: () => {
-          this.isLoading.set(false);
-          this._isInitialized.set(true);
-        },
-        error: () => {
-          this.isLoading.set(false);
-          this._isInitialized.set(true);
-          this.logout();
+      // fetchCurrentUser() convertit déjà toute erreur HTTP en `of(null)` : cet abonnement ne
+      // reçoit donc jamais d'erreur. On teste le résultat plutôt que de compter sur `error`.
+      this.fetchCurrentUser().subscribe((user) => {
+        this.isLoading.set(false);
+        this._isInitialized.set(true);
+        if (!user) {
+          // Jeton présent mais invalide/expiré : on le purge sans logout(), qui forcerait une
+          // navigation vers /login — hostile depuis une page publique comme / ou /contact.
+          this.tokenStorage.clearToken();
         }
       });
     } else {
