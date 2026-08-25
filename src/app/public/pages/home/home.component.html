@@ -1,3 +1,44 @@
-<section class="pub-container pub-section">
-  <h1 class="pub-h1">Accueil</h1>
+<!-- ── Hero ── -->
+<section class="pub-container">
+  <div class="pub-hero">
+    <div>
+      <p class="pub-eyebrow">Espace exposant</p>
+
+      <h1 class="pub-h1">Réservez votre stand pour la 6<sup>e</sup> édition</h1>
+
+      <p class="pub-lead">
+        Historic Auto ouvre son espace en ligne aux exposants. Constituez votre dossier à votre
+        rythme — entité, stand et options, devis, documents, paiement — et suivez son avancement
+        à tout moment.
+      </p>
+
+      <div class="pub-hero-actions">
+        @if (auth.isInitialized()) {
+          @if (auth.isAuthenticated()) {
+            <a routerLink="/dashboard" class="pub-btn pub-btn--primary">Accéder à mon espace</a>
+          } @else {
+            <a routerLink="/register" class="pub-btn pub-btn--primary">
+              Créer mon compte exposant
+            </a>
+            <a routerLink="/login" class="auth-link">J'ai déjà un compte</a>
+          }
+        }
+      </div>
+    </div>
+
+    <!--
+      Emplacement image. Pour le remplacer, déposer le fichier dans public/images/ puis
+      substituer le bloc .pub-image-slot ci-dessous par :
+
+      <img
+        src="/images/hero.jpg"
+        alt="Véhicules de collection exposés au salon Historic Auto"
+        class="w-full aspect-[4/3] object-cover border border-[#D4C9A8] border-l-4 border-l-[#B8860B]"
+      />
+    -->
+    <div class="pub-image-slot pub-image-slot--hero">
+      <span class="pub-image-slot-label">Photo à fournir</span>
+      <span class="pub-image-slot-hint">public/images/hero.jpg — ratio 4:3</span>
+    </div>
+  </div>
 </section>
