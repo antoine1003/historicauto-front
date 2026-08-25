@@ -107,15 +107,15 @@
   <div class="pub-cta">
     <h2 class="pub-cta-title">Prêt à déposer votre demande ?</h2>
 
-    <p class="pub-cta-text">
-      La création de compte prend moins d'une minute. Vous pourrez ensuite commencer votre dossier
-      et le compléter quand vous le souhaitez.
-    </p>
-
     @if (auth.isInitialized()) {
       @if (auth.isAuthenticated()) {
+        <p class="pub-cta-text">Reprenez votre dossier là où vous l'avez laissé.</p>
         <a routerLink="/dashboard" class="pub-btn pub-btn--primary">Accéder à mon espace</a>
       } @else {
+        <p class="pub-cta-text">
+          La création de compte prend moins d'une minute. Vous pourrez ensuite commencer votre
+          dossier et le compléter quand vous le souhaitez.
+        </p>
         <a routerLink="/register" class="pub-btn pub-btn--primary">Créer mon compte exposant</a>
       }
     }
