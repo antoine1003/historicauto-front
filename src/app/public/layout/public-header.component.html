@@ -1,0 +1,64 @@
+<header class="pub-header">
+  <div class="pub-container">
+    <div class="pub-header-inner">
+      <a routerLink="/" class="pub-brand" (click)="closeMenu()">
+        <span class="auth-logo-mark">HA</span>
+        <span class="auth-logo-text">Historic Auto</span>
+      </a>
+
+      <nav class="pub-nav" aria-label="Navigation principale">
+        <a
+          routerLink="/"
+          class="pub-nav-link"
+          routerLinkActive="pub-nav-link--active"
+          [routerLinkActiveOptions]="{ exact: true }"
+        >
+          Accueil
+        </a>
+        <a routerLink="/contact" class="pub-nav-link" routerLinkActive="pub-nav-link--active">
+          Contact
+        </a>
+      </nav>
+
+      <div class="pub-header-actions">
+        <ng-container *ngTemplateOutlet="ctaLinks"></ng-container>
+      </div>
+
+      <button
+        type="button"
+        class="pub-burger"
+        (click)="toggleMenu()"
+        [attr.aria-expanded]="menuOpen()"
+        aria-controls="pub-mobile-menu"
+        [attr.aria-label]="menuOpen() ? 'Fermer le menu' : 'Ouvrir le menu'"
+      >
+        <i class="pi" [class.pi-bars]="!menuOpen()" [class.pi-times]="menuOpen()" aria-hidden="true"></i>
+      </button>
+    </div>
+
+    <nav
+      id="pub-mobile-menu"
+      class="pub-mobile-menu"
+      aria-label="Menu mobile"
+      [style.display]="menuOpen() ? null : 'none'"
+    >
+      <a routerLink="/" class="pub-nav-link" (click)="closeMenu()">Accueil</a>
+      <a routerLink="/contact" class="pub-nav-link" (click)="closeMenu()">Contact</a>
+
+      <ng-container *ngTemplateOutlet="ctaLinks"></ng-container>
+    </nav>
+  </div>
+</header>
+
+<ng-template #ctaLinks>
+  @if (auth.isInitialized()) {
+    @if (auth.isAuthenticated()) {
+      <a routerLink="/dashboard" class="pub-btn pub-btn--primary" (click)="closeMenu()">Mon Espace</a>
+    } @else {
+      <a routerLink="/login" class="pub-nav-link" (click)="closeMenu()">Connexion</a>
+      <a routerLink="/register" class="pub-btn pub-btn--primary" (click)="closeMenu()">
+        Créer un compte
+      </a>
+    }
+  }
+</ng-template>

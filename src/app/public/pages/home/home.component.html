@@ -1,0 +1,109 @@
+<!-- ── Hero ── -->
+<section class="pub-container">
+  <div class="pub-hero">
+    <div>
+      <p class="pub-eyebrow">Espace exposant</p>
+
+      <h1 class="pub-h1">Réservez votre stand pour la 6<sup>e</sup> édition</h1>
+
+      <p class="pub-lead">
+        Historic Auto ouvre son espace en ligne aux exposants. Constituez votre dossier à votre
+        rythme — entité, stand et options, devis, documents, paiement — et suivez son avancement
+        à tout moment.
+      </p>
+
+      <div class="pub-hero-actions">
+        @if (auth.isInitialized()) {
+          @if (auth.isAuthenticated()) {
+            <a routerLink="/dashboard" class="pub-btn pub-btn--primary">Accéder à mon espace</a>
+          } @else {
+            <a routerLink="/register" class="pub-btn pub-btn--primary">
+              Créer mon compte exposant
+            </a>
+            <a routerLink="/login" class="auth-link">J'ai déjà un compte</a>
+          }
+        }
+      </div>
+    </div>
+
+      <img
+        src="/images/hero.jpg"
+        alt="Véhicules de collection exposés au salon Historic Auto"
+        class="w-full aspect-[4/3] object-cover border border-[#D4C9A8] border-l-4 border-l-[#B8860B]"
+      />
+  </div>
+</section>
+
+<!-- ── Bandeau salon ── -->
+<section class="pub-band">
+  <div class="pub-container">
+    <p class="pub-band-meta">
+      <span class="pub-band-meta-strong">Février 2028</span>
+      <span aria-hidden="true">·</span>
+      <span class="pub-band-meta-strong">Nantes, Parc des Expositions</span>
+      <span aria-hidden="true">·</span>
+      <span>6<sup>e</sup> édition du salon du véhicule de collection</span>
+    </p>
+
+    <div class="pub-stats">
+      @for (stat of stats; track stat.label) {
+        <div class="pub-stat">
+          <p class="pub-stat-value">{{ stat.value }}</p>
+          <p class="pub-stat-label">{{ stat.label }}</p>
+        </div>
+      }
+    </div>
+  </div>
+</section>
+
+<!-- ── Bande image ── -->
+<section class="pub-container pub-section">
+    <img
+      src="/images/salon.jpg"
+      alt="Vue d'ensemble des allées du salon Historic Auto"
+      class="w-full aspect-[3/1] object-cover border border-[#D4C9A8] border-l-4 border-l-[#B8860B]"
+    />
+</section>
+
+<!-- ── Comment ça marche ── -->
+<section class="pub-container pub-section">
+  <h2 class="pub-section-title">Comment ça marche</h2>
+  <p class="pub-section-lead">
+    Votre demande de stand se construit en cinq étapes. Vous pouvez l'interrompre et la reprendre
+    quand vous le souhaitez : votre saisie est enregistrée au fur et à mesure.
+  </p>
+
+  <div class="pub-steps">
+    @for (step of steps; track step.index) {
+      <article class="pub-step">
+        <span class="pub-step-index">{{ step.index }}</span>
+        <h3 class="pub-step-title">{{ step.title }}</h3>
+        <p class="pub-step-text">{{ step.text }}</p>
+      </article>
+    }
+  </div>
+</section>
+
+<!-- ── Appel à l'action de clôture ── -->
+<section class="pub-container pub-section">
+  <div class="pub-cta">
+    <h2 class="pub-cta-title">Prêt à déposer votre demande ?</h2>
+
+    @if (auth.isInitialized()) {
+      @if (auth.isAuthenticated()) {
+        <p class="pub-cta-text">Reprenez votre dossier là où vous l'avez laissé.</p>
+        <a routerLink="/dashboard" class="pub-btn pub-btn--primary">Accéder à mon espace</a>
+      } @else {
+        <p class="pub-cta-text">
+          La création de compte prend moins d'une minute. Vous pourrez ensuite commencer votre
+          dossier et le compléter quand vous le souhaitez.
+        </p>
+        <a routerLink="/register" class="pub-btn pub-btn--primary">Créer mon compte exposant</a>
+      }
+    }
+
+    <p class="pub-cta-text mt-8 mb-0">
+      Une question ? <a routerLink="/contact" class="pub-cta-link">Écrivez-nous</a>.
+    </p>
+  </div>
+</section>
