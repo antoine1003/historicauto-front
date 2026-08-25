@@ -51,9 +51,11 @@
               fluid
               class="auth-input"
               [class.auth-input--error]="nameError()"
+              [attr.aria-describedby]="nameError() ? 'contact-name-error' : null"
+              [attr.aria-invalid]="nameError() ? true : false"
             />
             @if (nameError()) {
-              <p class="auth-field-error">{{ nameError() }}</p>
+              <p id="contact-name-error" class="auth-field-error" role="alert">{{ nameError() }}</p>
             }
           </div>
 
@@ -72,9 +74,11 @@
               fluid
               class="auth-input"
               [class.auth-input--error]="emailError()"
+              [attr.aria-describedby]="emailError() ? 'contact-email-error' : null"
+              [attr.aria-invalid]="emailError() ? true : false"
             />
             @if (emailError()) {
-              <p class="auth-field-error">{{ emailError() }}</p>
+              <p id="contact-email-error" class="auth-field-error" role="alert">{{ emailError() }}</p>
             }
           </div>
         }
@@ -110,9 +114,11 @@
             (ngModelChange)="message.set($event)"
             (blur)="messageTouched.set(true)"
             [disabled]="loading()"
+            [attr.aria-describedby]="messageError() ? 'contact-message-error' : null"
+            [attr.aria-invalid]="messageError() ? true : false"
           ></textarea>
           @if (messageError()) {
-            <p class="auth-field-error">{{ messageError() }}</p>
+            <p id="contact-message-error" class="auth-field-error" role="alert">{{ messageError() }}</p>
           }
         </div>
 
