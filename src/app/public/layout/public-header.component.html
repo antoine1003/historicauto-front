@@ -40,18 +40,18 @@
       <a routerLink="/" class="pub-nav-link" (click)="closeMenu()">Accueil</a>
       <a routerLink="/contact" class="pub-nav-link" (click)="closeMenu()">Contact</a>
 
-      <ng-container *ngTemplateOutlet="ctaLinks; context: { mobile: true }"></ng-container>
+      <ng-container *ngTemplateOutlet="ctaLinks"></ng-container>
     </nav>
   </div>
 </header>
 
-<ng-template #ctaLinks let-mobile="mobile">
+<ng-template #ctaLinks>
   @if (auth.isInitialized()) {
     @if (auth.isAuthenticated()) {
-      <a routerLink="/dashboard" class="pub-btn pub-btn--primary" (click)="mobile && closeMenu()">Mon Espace</a>
+      <a routerLink="/dashboard" class="pub-btn pub-btn--primary" (click)="closeMenu()">Mon Espace</a>
     } @else {
-      <a routerLink="/login" class="pub-nav-link" (click)="mobile && closeMenu()">Connexion</a>
-      <a routerLink="/register" class="pub-btn pub-btn--primary" (click)="mobile && closeMenu()">
+      <a routerLink="/login" class="pub-nav-link" (click)="closeMenu()">Connexion</a>
+      <a routerLink="/register" class="pub-btn pub-btn--primary" (click)="closeMenu()">
         Créer un compte
       </a>
     }
