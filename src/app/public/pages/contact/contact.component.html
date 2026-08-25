@@ -85,6 +85,12 @@
 
         <div class="auth-field">
           <label class="auth-label" for="contact-subject">Sujet</label>
+          <!--
+            Contrairement aux autres champs, le contrôle ne porte ni aria-describedby ni
+            aria-invalid : PrimeNG 21 n'expose pas d'entrée ariaDescribedBy sur p-select, et le
+            nœud réellement focusable (role="combobox") est un span interne hors d'atteinte du
+            template. Le role="alert" du message ci-dessous assure malgré tout son annonce.
+          -->
           <p-select
             inputId="contact-subject"
             [options]="subjectOptions"
@@ -99,7 +105,9 @@
             [styleClass]="subjectError() ? 'auth-input--error' : ''"
           />
           @if (subjectError()) {
-            <p class="auth-field-error">{{ subjectError() }}</p>
+            <p id="contact-subject-error" class="auth-field-error" role="alert">
+              {{ subjectError() }}
+            </p>
           }
         </div>
 
