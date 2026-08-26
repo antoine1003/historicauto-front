@@ -15,6 +15,7 @@ import { SelectModule } from 'primeng/select';
 import { AuthService } from '@app/core/services/auth.service';
 import { ContactRequest, ContactSubject } from '@app/public/models/contact.model';
 import { ContactService } from '@app/public/services/contact.service';
+import { CaptchaFieldComponent } from '@app/shared/components/captcha/captcha-field.component';
 import { environment } from '../../../../environments/environment';
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -33,7 +34,7 @@ interface SubjectOption {
 @Component({
   selector: 'app-contact',
   standalone: true,
-  imports: [FormsModule, ButtonModule, InputTextModule, SelectModule],
+  imports: [FormsModule, ButtonModule, InputTextModule, SelectModule, CaptchaFieldComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './contact.component.html',
 })
@@ -69,6 +70,7 @@ export class ContactComponent {
   // ── Gestion du focus autour de l'état de succès ──
   private readonly successTitle = viewChild<ElementRef<HTMLElement>>('successTitle');
   private readonly panel = viewChild<ElementRef<HTMLElement>>('panel');
+  private readonly captcha = viewChild(CaptchaFieldComponent);
   private wasSent = false;
 
   constructor() {
@@ -145,7 +147,12 @@ export class ContactComponent {
     const identityValid =
       this.knownUser() !== null ||
       (this.name().trim().length >= 2 && EMAIL_PATTERN.test(this.email().trim()));
-    return identityValid && this.subject() !== null && this.message().trim().length >= 10;
+    return (
+      identityValid &&
+      this.subject() !== null &&
+      this.message().trim().length >= 10 &&
+      this.captcha()?.payload() != null
+    );
   });
 
   protected onSubmit(): void {
@@ -153,10 +160,12 @@ export class ContactComponent {
     this.emailTouched.set(true);
     this.subjectTouched.set(true);
     this.messageTouched.set(true);
+    this.captcha()?.markTouched();
     this.apiError.set(null);
 
     const subject = this.subject();
-    if (this.loading() || !this.formValid() || subject === null) {
+    const captchaPayload = this.captcha()?.payload() ?? null;
+    if (this.loading() || !this.formValid() || subject === null || captchaPayload === null) {
       return;
     }
 
@@ -167,6 +176,7 @@ export class ContactComponent {
       email: user?.email ?? this.email().trim(),
       subject,
       message: this.message().trim(),
+      ...captchaPayload,
     };
 
     this.loading.set(true);
@@ -175,10 +185,14 @@ export class ContactComponent {
         this.loading.set(false);
         this.sent.set(true);
       },
-      error: () => {
+      error: (err) => {
         this.loading.set(false);
+        // Le défi est brûlé côté serveur dès la première vérification, juste ou fausse : la question
+        // affichée est morte quoi qu'il arrive.
+        this.captcha()?.refresh();
         this.apiError.set(
-          'Votre message n’a pas pu être envoyé. Merci de réessayer dans un instant.'
+          err?.error?.errors?.[0] ??
+            'Votre message n’a pas pu être envoyé. Merci de réessayer dans un instant.'
         );
       },
     });
