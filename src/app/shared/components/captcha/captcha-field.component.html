@@ -38,12 +38,14 @@
     pour un lecteur d'écran. `tabindex="-1"` l'exclut aussi de la navigation au clavier.
   -->
   <div class="captcha-honeypot" aria-hidden="true">
-    <label for="captcha-website">Site web</label>
+    <label for="cf-hp-field">Ne pas remplir</label>
     <input
-      id="captcha-website"
+      id="cf-hp-field"
       type="text"
       tabindex="-1"
       autocomplete="off"
+      data-lpignore="true"
+      data-1p-ignore
       [ngModel]="website()"
       (ngModelChange)="website.set($event)"
     />

@@ -66,6 +66,9 @@ export class CaptchaFieldComponent {
     if (this.loadFailed()) {
       return 'Impossible de charger la question de vérification.';
     }
+    if (this.challenge() === null) {
+      return null;
+    }
     if (this.touched() && this.payload() === null) {
       return 'Merci de répondre à la question de vérification.';
     }
@@ -76,6 +79,9 @@ export class CaptchaFieldComponent {
     this.refresh();
   }
 
+  /** Numéro de la dernière demande émise : toute réponse d'une génération antérieure est ignorée. */
+  private requestGeneration = 0;
+
   /**
    * Recharge un défi et vide la réponse saisie.
    *
@@ -83,13 +89,24 @@ export class CaptchaFieldComponent {
    * juste ou fausse, donc la question affichée est morte quoi qu'il arrive.
    */
   refresh(): void {
+    const generation = ++this.requestGeneration;
+
     this.challenge.set(null);
     this.answer.set('');
     this.touched.set(false);
     this.loadFailed.set(false);
+
     this.captchaService.fetch().subscribe({
-      next: (challenge) => this.challenge.set(challenge),
-      error: () => this.loadFailed.set(true),
+      next: (challenge) => {
+        if (generation === this.requestGeneration) {
+          this.challenge.set(challenge);
+        }
+      },
+      error: () => {
+        if (generation === this.requestGeneration) {
+          this.loadFailed.set(true);
+        }
+      },
     });
   }
 
