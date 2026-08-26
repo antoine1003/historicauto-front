@@ -31,7 +31,7 @@
     <p class="auth-subheading">Renseignez vos informations pour commencer.</p>
 
     @if (apiErrors().length) {
-      <div class="auth-error-banner">
+      <div class="auth-error-banner" #errorBanner>
         <ul class="auth-error-list">
           @for (err of apiErrors(); track err) {
             <li>{{ err }}</li>

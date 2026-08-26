@@ -24,7 +24,7 @@
         </div>
       } @else {
         @if (apiError()) {
-          <div class="auth-error-banner" role="alert">{{ apiError() }}</div>
+          <div class="auth-error-banner" role="alert" #errorBanner>{{ apiError() }}</div>
         }
 
         @if (authResolved()) {

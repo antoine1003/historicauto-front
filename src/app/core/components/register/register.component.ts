@@ -1,4 +1,4 @@
-import { Component, inject, signal, computed, viewChild } from '@angular/core';
+import { Component, ElementRef, inject, signal, computed, viewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -28,6 +28,7 @@ import { ButtonModule } from 'primeng/button';
 export class RegisterComponent {
   private authService = inject(AuthService);
   private readonly captcha = viewChild(CaptchaFieldComponent);
+  private readonly errorBanner = viewChild<ElementRef<HTMLElement>>('errorBanner');
 
   // ── Form state (Signals) ──────────────────────────
   email           = signal('');
@@ -82,7 +83,7 @@ export class RegisterComponent {
     this.captcha()?.markTouched();
 
     const captchaPayload = this.captcha()?.payload() ?? null;
-    if (!this.isFormValid() || captchaPayload === null) return;
+    if (this.loading() || !this.isFormValid() || captchaPayload === null) return;
 
     this.apiErrors.set([]);
 
@@ -107,6 +108,11 @@ export class RegisterComponent {
         } else {
           this.apiErrors.set(['Une erreur est survenue. Veuillez réessayer.']);
         }
+        // La bannière n'existe dans le DOM qu'une fois l'erreur posée : on laisse un cycle de rendu
+        // s'écouler avant de la chercher, puis on l'amène dans le champ de vision.
+        setTimeout(() => {
+          this.errorBanner()?.nativeElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 0);
       },
     });
   }

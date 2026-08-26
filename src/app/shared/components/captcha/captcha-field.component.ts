@@ -18,7 +18,8 @@ import { CaptchaService } from '@app/shared/services/captcha.service';
  *
  * Il n'emploie que les classes de `core/styles/auth.theme.css`, déjà utilisées par les deux pages :
  * il est donc cohérent partout sans ajouter une ligne de CSS globale — ce qui compte, le budget
- * `anyComponentStyle` d'Angular étant à 8 ko et `public.theme.css` en pesant déjà 6,1.
+ * `anyComponentStyle` d'Angular étant à 8 ko et `edition-form.theme.css` en pesant déjà 7,98, lui
+ * qui est à la fois importé globalement et employé comme `styleUrl` de composant.
  */
 @Component({
   selector: 'app-captcha-field',
@@ -42,6 +43,9 @@ import { CaptchaService } from '@app/shared/services/captcha.service';
 })
 export class CaptchaFieldComponent {
   private readonly captchaService = inject(CaptchaService);
+
+  /** Rend uniques les identifiants du gabarit : plusieurs instances peuvent coexister sur une page. */
+  protected readonly uid = Math.random().toString(36).slice(2, 10);
 
   protected readonly challenge = signal<CaptchaChallenge | null>(null);
   protected readonly answer = signal('');

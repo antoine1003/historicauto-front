@@ -70,6 +70,7 @@ export class ContactComponent {
   // ── Gestion du focus autour de l'état de succès ──
   private readonly successTitle = viewChild<ElementRef<HTMLElement>>('successTitle');
   private readonly panel = viewChild<ElementRef<HTMLElement>>('panel');
+  private readonly errorBanner = viewChild<ElementRef<HTMLElement>>('errorBanner');
   private readonly captcha = viewChild(CaptchaFieldComponent);
   private wasSent = false;
 
@@ -161,13 +162,14 @@ export class ContactComponent {
     this.subjectTouched.set(true);
     this.messageTouched.set(true);
     this.captcha()?.markTouched();
-    this.apiError.set(null);
 
     const subject = this.subject();
     const captchaPayload = this.captcha()?.payload() ?? null;
     if (this.loading() || !this.formValid() || subject === null || captchaPayload === null) {
       return;
     }
+
+    this.apiError.set(null);
 
     const user = this.knownUser();
     const payload: ContactRequest = {
@@ -190,10 +192,19 @@ export class ContactComponent {
         // Le défi est brûlé côté serveur dès la première vérification, juste ou fausse : la question
         // affichée est morte quoi qu'il arrive.
         this.captcha()?.refresh();
-        this.apiError.set(
-          err?.error?.errors?.[0] ??
-            'Votre message n’a pas pu être envoyé. Merci de réessayer dans un instant.'
-        );
+        const body = err?.error;
+        if (body?.errors?.[0]) {
+          this.apiError.set(body.errors[0]);
+        } else if (body?.message) {
+          this.apiError.set(body.message);
+        } else {
+          this.apiError.set('Votre message n’a pas pu être envoyé. Merci de réessayer dans un instant.');
+        }
+        // La bannière n'existe dans le DOM qu'une fois l'erreur posée : on laisse un cycle de rendu
+        // s'écouler avant de la chercher, puis on l'amène dans le champ de vision.
+        setTimeout(() => {
+          this.errorBanner()?.nativeElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 0);
       },
     });
   }
