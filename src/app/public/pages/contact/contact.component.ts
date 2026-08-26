@@ -15,6 +15,7 @@ import { SelectModule } from 'primeng/select';
 import { AuthService } from '@app/core/services/auth.service';
 import { ContactRequest, ContactSubject } from '@app/public/models/contact.model';
 import { ContactService } from '@app/public/services/contact.service';
+import { CaptchaFieldComponent } from '@app/shared/components/captcha/captcha-field.component';
 import { environment } from '../../../../environments/environment';
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -33,7 +34,7 @@ interface SubjectOption {
 @Component({
   selector: 'app-contact',
   standalone: true,
-  imports: [FormsModule, ButtonModule, InputTextModule, SelectModule],
+  imports: [FormsModule, ButtonModule, InputTextModule, SelectModule, CaptchaFieldComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './contact.component.html',
 })
@@ -69,6 +70,8 @@ export class ContactComponent {
   // ── Gestion du focus autour de l'état de succès ──
   private readonly successTitle = viewChild<ElementRef<HTMLElement>>('successTitle');
   private readonly panel = viewChild<ElementRef<HTMLElement>>('panel');
+  private readonly errorBanner = viewChild<ElementRef<HTMLElement>>('errorBanner');
+  private readonly captcha = viewChild(CaptchaFieldComponent);
   private wasSent = false;
 
   constructor() {
@@ -145,7 +148,12 @@ export class ContactComponent {
     const identityValid =
       this.knownUser() !== null ||
       (this.name().trim().length >= 2 && EMAIL_PATTERN.test(this.email().trim()));
-    return identityValid && this.subject() !== null && this.message().trim().length >= 10;
+    return (
+      identityValid &&
+      this.subject() !== null &&
+      this.message().trim().length >= 10 &&
+      this.captcha()?.payload() != null
+    );
   });
 
   protected onSubmit(): void {
@@ -153,12 +161,15 @@ export class ContactComponent {
     this.emailTouched.set(true);
     this.subjectTouched.set(true);
     this.messageTouched.set(true);
-    this.apiError.set(null);
+    this.captcha()?.markTouched();
 
     const subject = this.subject();
-    if (this.loading() || !this.formValid() || subject === null) {
+    const captchaPayload = this.captcha()?.payload() ?? null;
+    if (this.loading() || !this.formValid() || subject === null || captchaPayload === null) {
       return;
     }
+
+    this.apiError.set(null);
 
     const user = this.knownUser();
     const payload: ContactRequest = {
@@ -167,6 +178,7 @@ export class ContactComponent {
       email: user?.email ?? this.email().trim(),
       subject,
       message: this.message().trim(),
+      ...captchaPayload,
     };
 
     this.loading.set(true);
@@ -175,11 +187,24 @@ export class ContactComponent {
         this.loading.set(false);
         this.sent.set(true);
       },
-      error: () => {
+      error: (err) => {
         this.loading.set(false);
-        this.apiError.set(
-          'Votre message n’a pas pu être envoyé. Merci de réessayer dans un instant.'
-        );
+        // Le défi est brûlé côté serveur dès la première vérification, juste ou fausse : la question
+        // affichée est morte quoi qu'il arrive.
+        this.captcha()?.refresh();
+        const body = err?.error;
+        if (body?.errors?.[0]) {
+          this.apiError.set(body.errors[0]);
+        } else if (body?.message) {
+          this.apiError.set(body.message);
+        } else {
+          this.apiError.set('Votre message n’a pas pu être envoyé. Merci de réessayer dans un instant.');
+        }
+        // La bannière n'existe dans le DOM qu'une fois l'erreur posée : on laisse un cycle de rendu
+        // s'écouler avant de la chercher, puis on l'amène dans le champ de vision.
+        setTimeout(() => {
+          this.errorBanner()?.nativeElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 0);
       },
     });
   }

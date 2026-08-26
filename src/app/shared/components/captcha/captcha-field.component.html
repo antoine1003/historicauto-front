@@ -1,0 +1,53 @@
+<div class="auth-field">
+  <label class="auth-label" [for]="'captcha-answer-' + uid">
+    @if (challenge(); as current) {
+      {{ current.question }}
+    } @else if (loadFailed()) {
+      Question de vérification
+    } @else {
+      Chargement de la question de vérification…
+    }
+  </label>
+
+  <input
+    pInputText
+    [id]="'captcha-answer-' + uid"
+    class="auth-input"
+    autocomplete="off"
+    inputmode="numeric"
+    placeholder="Votre réponse"
+    [class.auth-input--error]="error()"
+    [disabled]="challenge() === null"
+    [ngModel]="answer()"
+    (ngModelChange)="answer.set($event)"
+    (blur)="markTouched()"
+    [attr.aria-describedby]="error() ? 'captcha-answer-error-' + uid : null"
+    [attr.aria-invalid]="error() ? true : false"
+  />
+
+  @if (loadFailed()) {
+    <button type="button" class="auth-link auth-link--sm" (click)="refresh()">Réessayer</button>
+  }
+
+  @if (error()) {
+    <p [id]="'captcha-answer-error-' + uid" class="auth-field-error" role="alert">{{ error() }}</p>
+  }
+
+  <!--
+    Honeypot : hors écran et retiré de l'arbre d'accessibilité, donc invisible pour un humain comme
+    pour un lecteur d'écran. `tabindex="-1"` l'exclut aussi de la navigation au clavier.
+  -->
+  <div class="captcha-honeypot" aria-hidden="true">
+    <label [for]="'cf-hp-field-' + uid">Ne pas remplir</label>
+    <input
+      [id]="'cf-hp-field-' + uid"
+      type="text"
+      tabindex="-1"
+      autocomplete="off"
+      data-lpignore="true"
+      data-1p-ignore
+      [ngModel]="website()"
+      (ngModelChange)="website.set($event)"
+    />
+  </div>
+</div>
