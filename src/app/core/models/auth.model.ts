@@ -1,4 +1,5 @@
 import { BaseEntity } from '@app/core/models/api.models';
+import { CaptchaPayload } from '@app/shared/models/captcha.model';
 
 // ── Requêtes ──
 
@@ -7,7 +8,7 @@ export interface LoginRequest {
   password: string;
 }
 
-export interface RegisterRequest {
+export interface RegisterRequest extends CaptchaPayload {
   firstName: string;
   email: string;
   password: string;

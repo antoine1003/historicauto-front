@@ -1,8 +1,9 @@
-import { Component, inject, signal, computed } from '@angular/core';
+import { Component, inject, signal, computed, viewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../services/auth.service';
+import { CaptchaFieldComponent } from '@app/shared/components/captcha/captcha-field.component';
 
 // PrimeNG
 import { InputTextModule } from 'primeng/inputtext';
@@ -19,12 +20,14 @@ import { ButtonModule } from 'primeng/button';
     InputTextModule,
     PasswordModule,
     ButtonModule,
+    CaptchaFieldComponent,
   ],
   templateUrl: './register.component.html',
   styleUrls: ['./register.component.scss'],
 })
 export class RegisterComponent {
   private authService = inject(AuthService);
+  private readonly captcha = viewChild(CaptchaFieldComponent);
 
   // ── Form state (Signals) ──────────────────────────
   email           = signal('');
@@ -76,8 +79,10 @@ export class RegisterComponent {
     this.emailTouched.set(true);
     this.passTouched.set(true);
     this.confirmTouched.set(true);
+    this.captcha()?.markTouched();
 
-    if (!this.isFormValid()) return;
+    const captchaPayload = this.captcha()?.payload() ?? null;
+    if (!this.isFormValid() || captchaPayload === null) return;
 
     this.apiErrors.set([]);
 
@@ -85,11 +90,15 @@ export class RegisterComponent {
       email: this.email().trim(),
       password: this.password(),
       firstName: '', // Added to match RegisterRequest interface
+      ...captchaPayload,
     }).subscribe({
       next: () => {
         this.success.set(true);
       },
       error: (err) => {
+        // Le défi est brûlé côté serveur même quand le rejet vient d'ailleurs — email déjà pris,
+        // par exemple. Sans ce refresh, l'utilisateur resterait devant une question morte.
+        this.captcha()?.refresh();
         const body = err.error;
         if (body?.errors) {
           this.apiErrors.set(body.errors);
