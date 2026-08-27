@@ -1,4 +1,13 @@
 <div class="ef-shell">
+  <div class="ef-breadcrumb-bar">
+    <p-breadcrumb [model]="breadcrumb()" />
+    <p-button
+      label="Retour à Mon Espace"
+      icon="pi pi-arrow-left"
+      [text]="true"
+      routerLink="/dashboard"
+    />
+  </div>
   @if (missingYearParam) {
     <div class="ef-content">
       <p class="ef-muted">Aucune édition spécifiée.</p>

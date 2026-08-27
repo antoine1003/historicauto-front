@@ -11,7 +11,6 @@ import {
 import {
   PastRegistrationsListComponent,
 } from '@app/dashboard/components/past-registrations-list/past-registrations-list.component';
-import { environment } from '../../../../environments/environment';
 
 /**
  * Point d'entrée de l'espace exposant.
@@ -35,7 +34,6 @@ export class MonEspaceHomeComponent {
 
   protected readonly loading = signal(true);
   protected readonly activeEdition = signal<Edition | null>(null);
-  protected readonly contactEmail = environment.contactEmail;
 
   /** `true` si le chargement des inscriptions a réellement échoué (pas le cas « aucune édition active »). */
   protected readonly loadFailed = signal(false);
