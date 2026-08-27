@@ -54,6 +54,7 @@
   @if (auth.isInitialized()) {
     @if (auth.isAuthenticated()) {
       <a routerLink="/dashboard" class="pub-btn pub-btn--primary" (click)="closeMenu()">Mon Espace</a>
+      <button type="button" class="pub-nav-link" (click)="logout()">Déconnexion</button>
     } @else {
       <a routerLink="/login" class="pub-nav-link" (click)="closeMenu()">Connexion</a>
       <a routerLink="/register" class="pub-btn pub-btn--primary" (click)="closeMenu()">
