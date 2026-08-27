@@ -779,30 +779,11 @@ export class EditionFormStateService {
     }
 
     this.documentService.uploadInsurance(reg.id, file).subscribe({
-      next: (response) => {
-        const uploaded = response.data;
-        this.state.update((current) => {
-          if (!current) {
-            return current;
-          }
-          const others = current.documents.filter((doc) => doc.kind !== 'insurance');
-          return {
-            ...current,
-            documents: [
-              ...others,
-              {
-                id: uploaded.id,
-                kind: uploaded.type,
-                label: uploaded.label,
-                visible: true,
-                fileUrl: uploaded.fileUrl ? toAbsoluteUrl(uploaded.fileUrl) : null,
-                signingUrl: uploaded.signingUrl,
-                signatureStatus: uploaded.signatureStatus,
-                uploadedAt: new Date(uploaded.uploadedAt),
-              },
-            ],
-          };
-        });
+      next: () => {
+        // Le serveur est la seule autorité sur `state.documents` : on recharge la liste complète
+        // plutôt que d'y injecter l'entrée manuellement, pour ne jamais perdre à une réponse GET
+        // concurrente (déclenchée par le retour de focus fenêtre, cf. revue finale — défaut n°3).
+        this.refreshDocuments();
         this.messageService.add({
           severity: 'success',
           summary: 'Assurance RC enregistrée',

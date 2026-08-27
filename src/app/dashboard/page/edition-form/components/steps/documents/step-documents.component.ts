@@ -6,6 +6,7 @@ import { EditionFormStateService } from '@app/dashboard/services/edition-form-st
 import { DocumentItem, RegistrationStatus } from '@app/dashboard/models/edition-form.models';
 import { DocumentType } from '@app/core/models/document.model';
 import { InsuranceRcComponent } from '@app/dashboard/page/edition-form/components/insurance-rc/insurance-rc.component';
+import { downloadDocumentFile } from '@app/core/utils/document-download.util';
 
 const DOCUMENT_TYPE_ICON: Record<DocumentType, string> = {
   quote: 'pi pi-file-edit',
@@ -58,16 +59,7 @@ export class StepDocumentsComponent implements OnInit, OnDestroy {
 
   protected downloadDocument(doc: { label: string; fileUrl: string | null }) {
     if (doc.fileUrl) {
-      const a = document.createElement('a');
-      let label = doc.label;
-      // if it does not have extension, add .pdf
-      if (!label.includes('.')) {
-        label += '.pdf';
-      }
-      a.href = doc.fileUrl;
-      a.download = label;
-      a.target = '_blank';
-      a.click();
+      downloadDocumentFile(doc.fileUrl, doc.label);
     }
   }
 }

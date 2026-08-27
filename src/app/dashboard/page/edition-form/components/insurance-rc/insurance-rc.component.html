@@ -2,7 +2,8 @@
   <label class="ef-label">Contrat d'assurance RC</label>
   <p class="ef-help-text mb-2">
     Il doit être valide à la date du salon. Vous avez la possibilité de nous le faire parvenir plus
-    tard, et de le remplacer à tout moment tant que l'édition est ouverte.
+    tard, et de le remplacer à tout moment tant que l'édition est ouverte. Formats acceptés : PDF,
+    Word, Excel, JPG, PNG. 10 Mo maximum.
   </p>
 
   @if (formState.insuranceDocument(); as insurance) {
@@ -32,7 +33,7 @@
     <p-fileupload
       mode="basic"
       chooseLabel="Téléverser votre assurance RC"
-      accept="application/pdf,image/*"
+      accept="application/pdf,.doc,.docx,.xls,.xlsx,image/jpeg,image/png"
       [auto]="true"
       [customUpload]="true"
       (uploadHandler)="onInsuranceUpload($event)"

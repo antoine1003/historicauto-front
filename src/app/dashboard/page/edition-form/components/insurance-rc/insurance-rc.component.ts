@@ -3,6 +3,7 @@ import { DatePipe } from '@angular/common';
 import { ButtonModule } from 'primeng/button';
 import { FileUploadModule } from 'primeng/fileupload';
 import { EditionFormStateService } from '@app/dashboard/services/edition-form-state.service';
+import { downloadDocumentFile } from '@app/core/utils/document-download.util';
 
 /**
  * Bloc « Contrat d'assurance RC », monté à l'étape 1 (Entité) et à l'étape 4 (Documents).
@@ -32,10 +33,6 @@ export class InsuranceRcComponent {
     if (!doc?.fileUrl) {
       return;
     }
-    const a = document.createElement('a');
-    a.href = doc.fileUrl;
-    a.download = doc.label.includes('.') ? doc.label : `${doc.label}.pdf`;
-    a.target = '_blank';
-    a.click();
+    downloadDocumentFile(doc.fileUrl, doc.label);
   }
 }
