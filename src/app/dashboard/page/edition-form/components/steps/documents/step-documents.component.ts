@@ -4,14 +4,15 @@ import { ButtonModule } from 'primeng/button';
 import { TagModule } from 'primeng/tag';
 import { FileUploadModule } from 'primeng/fileupload';
 import { EditionFormStateService } from '@app/dashboard/services/edition-form-state.service';
-import { DocumentItem, DocumentKind, RegistrationStatus } from '@app/dashboard/models/edition-form.models';
+import { DocumentItem, RegistrationStatus } from '@app/dashboard/models/edition-form.models';
+import { DocumentType } from '@app/core/models/document.model';
 
-const DOCUMENT_KIND_ICON: Record<DocumentKind, string> = {
+const DOCUMENT_TYPE_ICON: Record<DocumentType, string> = {
   quote: 'pi pi-file-edit',
   invoice: 'pi pi-receipt',
   insurance: 'pi pi-shield',
-  supplier_list: 'pi pi-list',
   ticket: 'pi pi-ticket',
+  other: 'pi pi-file',
 };
 
 @Component({
@@ -45,7 +46,7 @@ export class StepDocumentsComponent implements OnInit, OnDestroy {
   }
 
   protected iconFor(doc: DocumentItem): string {
-    return DOCUMENT_KIND_ICON[doc.kind];
+    return DOCUMENT_TYPE_ICON[doc.kind];
   }
 
   protected signQuote(doc: DocumentItem): void {
