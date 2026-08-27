@@ -68,21 +68,8 @@
     </div>
   }
 
-  @if (!formState.isReadOnly()) {
-    <div class="ef-panel mt-6">
-      <h2 class="ef-section-title">Assurance RC</h2>
-      <p class="ef-help-text mb-3">
-        Vous pouvez téléverser une nouvelle assurance à tout moment ; seule la dernière version
-        téléversée est conservée et téléchargeable.
-      </p>
-      <p-fileupload
-        mode="basic"
-        chooseLabel="Téléverser votre assurance RC"
-        accept="application/pdf"
-        [auto]="true"
-        [customUpload]="true"
-        (uploadHandler)="onInsuranceUpload($event)"
-      />
-    </div>
-  }
+  <div class="ef-panel mt-6">
+    <h2 class="ef-section-title">Assurance RC</h2>
+    <app-insurance-rc />
+  </div>
 }

@@ -2,10 +2,10 @@ import { Component, computed, inject, OnDestroy, OnInit } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { ButtonModule } from 'primeng/button';
 import { TagModule } from 'primeng/tag';
-import { FileUploadModule } from 'primeng/fileupload';
 import { EditionFormStateService } from '@app/dashboard/services/edition-form-state.service';
 import { DocumentItem, RegistrationStatus } from '@app/dashboard/models/edition-form.models';
 import { DocumentType } from '@app/core/models/document.model';
+import { InsuranceRcComponent } from '@app/dashboard/page/edition-form/components/insurance-rc/insurance-rc.component';
 
 const DOCUMENT_TYPE_ICON: Record<DocumentType, string> = {
   quote: 'pi pi-file-edit',
@@ -18,14 +18,17 @@ const DOCUMENT_TYPE_ICON: Record<DocumentType, string> = {
 @Component({
   selector: 'app-step-documents',
   standalone: true,
-  imports: [DatePipe, ButtonModule, TagModule, FileUploadModule],
+  imports: [DatePipe, ButtonModule, TagModule, InsuranceRcComponent],
   templateUrl: './step-documents.component.html',
 })
 export class StepDocumentsComponent implements OnInit, OnDestroy {
   protected readonly formState = inject(EditionFormStateService);
 
   protected readonly visibleDocuments = computed(
-    () => this.formState.registration()?.documents.filter((doc) => doc.visible) ?? [],
+    () =>
+      this.formState
+        .registration()
+        ?.documents.filter((doc) => doc.visible && doc.kind !== 'insurance') ?? [],
   );
 
   protected readonly sharedDocuments = this.formState.sharedDocuments;
@@ -51,13 +54,6 @@ export class StepDocumentsComponent implements OnInit, OnDestroy {
 
   protected signQuote(doc: DocumentItem): void {
     this.formState.signQuote(doc.id);
-  }
-
-  protected onInsuranceUpload(event: { files: File[] }): void {
-    const file = event.files[0];
-    if (file) {
-      this.formState.uploadInsuranceDocument(file);
-    }
   }
 
   protected downloadDocument(doc: { label: string; fileUrl: string | null }) {

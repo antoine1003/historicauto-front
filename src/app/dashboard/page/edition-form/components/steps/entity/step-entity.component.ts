@@ -11,6 +11,7 @@ import { ValidatableFormStep } from '@app/dashboard/models/validatable-form-step
 import { EditionFormStateService } from '@app/dashboard/services/edition-form-state.service';
 import { ActivityDomainService } from '@app/dashboard/services/activity-domain.service';
 import { ActivityDomainApiDto } from '@app/dashboard/models/registration-api.models';
+import { InsuranceRcComponent } from '@app/dashboard/page/edition-form/components/insurance-rc/insurance-rc.component';
 
 interface ClubTypeOption {
   label: string;
@@ -41,6 +42,7 @@ interface EntityFormControls {
     SelectModule,
     FileUploadModule,
     InputMaskDirective,
+    InsuranceRcComponent,
   ],
   templateUrl: './step-entity.component.html',
 })
