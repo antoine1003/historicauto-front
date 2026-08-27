@@ -16,6 +16,16 @@ export class DocumentService {
     );
   }
 
+  uploadInsurance(registrationId: string, file: File): Observable<ApiResponse<DocumentSummary>> {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    return this.http.post<ApiResponse<DocumentSummary>>(
+      `${environment.apiUrl}/${this.baseUrl}/${registrationId}/insurance`,
+      formData,
+    );
+  }
+
   getSharedDocuments(editionYear: string): Observable<ApiResponse<SharedDocumentItem[]>> {
     return this.http.get<ApiResponse<SharedDocumentItem[]>>(
       `${environment.apiUrl}/editions/${editionYear}/shared-documents`,

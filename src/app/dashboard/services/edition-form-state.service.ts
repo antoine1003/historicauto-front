@@ -105,6 +105,10 @@ export class EditionFormStateService {
   readonly isReadOnly = computed(() => this.state()?.readOnly ?? false);
   readonly isEditionClosed = computed(() => this.state()?.editionClosed ?? false);
   readonly editionYear = computed(() => this.state()?.editionYear ?? null);
+  /** Assurance RC courante de l'inscription, ou null si l'exposant n'en a pas encore déposé. */
+  readonly insuranceDocument = computed(
+    () => this.state()?.documents.find((doc) => doc.kind === 'insurance') ?? null,
+  );
 
   /**
    * TODO: - Ajouter le bouton pour télécharger les documents et le devis
@@ -760,8 +764,61 @@ export class EditionFormStateService {
     });
   }
 
+  /**
+   * Téléverse ou remplace l'assurance RC. Le back renvoie le document à jour, qu'on fusionne dans
+   * l'état sans recharger toute la liste.
+   *
+   * La garde est `isEditionClosed()` et non `isReadOnly()` : ce dernier passe à true dès que le
+   * statut quitte DRAFT, ce qui interdirait le téléversement précisément à partir de l'étape
+   * Documents, qui suppose une inscription confirmée.
+   */
   uploadInsuranceDocument(file: File): void {
-    void file; // no-op (front only, étape 4 hors périmètre)
+    const reg = this.state();
+    if (!reg || this.isEditionClosed()) {
+      return;
+    }
+
+    this.documentService.uploadInsurance(reg.id, file).subscribe({
+      next: (response) => {
+        const uploaded = response.data;
+        this.state.update((current) => {
+          if (!current) {
+            return current;
+          }
+          const others = current.documents.filter((doc) => doc.kind !== 'insurance');
+          return {
+            ...current,
+            documents: [
+              ...others,
+              {
+                id: uploaded.id,
+                kind: uploaded.type,
+                label: uploaded.label,
+                visible: true,
+                fileUrl: uploaded.fileUrl ? toAbsoluteUrl(uploaded.fileUrl) : null,
+                signingUrl: uploaded.signingUrl,
+                signatureStatus: uploaded.signatureStatus,
+                uploadedAt: new Date(uploaded.uploadedAt),
+              },
+            ],
+          };
+        });
+        this.messageService.add({
+          severity: 'success',
+          summary: 'Assurance RC enregistrée',
+          detail: 'Votre attestation a bien été enregistrée.',
+        });
+      },
+      error: (err: HttpErrorResponse) => {
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Échec',
+          detail: typeof err.error?.message === 'string'
+            ? err.error.message
+            : "Votre assurance n'a pas pu être enregistrée.",
+        });
+      },
+    });
   }
 
   private scheduleEntityAutosave(): void {
