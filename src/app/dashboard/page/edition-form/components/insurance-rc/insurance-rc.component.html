@@ -1,0 +1,42 @@
+<div class="ef-field">
+  <label class="ef-label">Contrat d'assurance RC</label>
+  <p class="ef-help-text mb-2">
+    Il doit être valide à la date du salon. Vous avez la possibilité de nous le faire parvenir plus
+    tard, et de le remplacer à tout moment tant que l'édition est ouverte. Formats acceptés : PDF,
+    Word, Excel, JPG, PNG. 10 Mo maximum.
+  </p>
+
+  @if (formState.insuranceDocument(); as insurance) {
+    <div class="ef-document-row">
+      <div class="flex items-center gap-3">
+        <i class="pi pi-shield text-[#B8860B]"></i>
+        <div>
+          <p class="text-sm font-semibold text-[#1A1714]">{{ insurance.label }}</p>
+          @if (insurance.uploadedAt) {
+            <p class="ef-help-text">Déposée le {{ insurance.uploadedAt | date: 'dd/MM/yyyy' }}</p>
+          }
+        </div>
+      </div>
+      <p-button
+        label="Télécharger"
+        icon="pi pi-download"
+        [text]="true"
+        [disabled]="!insurance.fileUrl"
+        (onClick)="download()"
+      />
+    </div>
+  } @else if (formState.isEditionClosed()) {
+    <p class="ef-help-text">Aucune attestation n'a été déposée pour cette édition.</p>
+  }
+
+  @if (!formState.isEditionClosed()) {
+    <p-fileupload
+      mode="basic"
+      chooseLabel="Téléverser votre assurance RC"
+      accept="application/pdf,.doc,.docx,.xls,.xlsx,image/jpeg,image/png"
+      [auto]="true"
+      [customUpload]="true"
+      (uploadHandler)="onInsuranceUpload($event)"
+    />
+  }
+</div>

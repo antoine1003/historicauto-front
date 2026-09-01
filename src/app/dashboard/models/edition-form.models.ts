@@ -1,4 +1,4 @@
-import { SignatureStatus } from '@app/core/models/document.model';
+import { DocumentType, SignatureStatus } from '@app/core/models/document.model';
 
 /**
  * Miroir front des enums Symfony (App\Enum\ExhibitorType, ClubType, RegistrationStatus).
@@ -172,11 +172,9 @@ export interface ConfirmationStepState {
   confirmedAt: Date | null;
 }
 
-export type DocumentKind = 'quote' | 'invoice' | 'insurance' | 'supplier_list' | 'ticket';
-
 export interface DocumentItem {
   id: string;
-  kind: DocumentKind;
+  kind: DocumentType;
   label: string;
   /** Un document n'est affiché à l'exposant que si HA l'a rendu visible dans le dashboard. */
   visible: boolean;

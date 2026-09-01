@@ -1,5 +1,6 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { AuthService } from '@app/core/services/auth.service';
 import { environment } from '../../../environments/environment';
 
 @Component({
@@ -23,8 +24,10 @@ import { environment } from '../../../environments/environment';
             <p class="pub-footer-title">Espace exposant</p>
             <a routerLink="/" class="pub-footer-link">Accueil</a>
             <a routerLink="/contact" class="pub-footer-link">Contact</a>
-            <a routerLink="/login" class="pub-footer-link">Connexion</a>
-            <a routerLink="/register" class="pub-footer-link">Créer un compte</a>
+            @if (auth.isInitialized() && !auth.isAuthenticated()) {
+              <a routerLink="/login" class="pub-footer-link">Connexion</a>
+              <a routerLink="/register" class="pub-footer-link">Créer un compte</a>
+            }
           </div>
 
           <div>
@@ -47,6 +50,7 @@ import { environment } from '../../../environments/environment';
   `,
 })
 export class PublicFooterComponent {
+  protected readonly auth = inject(AuthService);
   protected readonly contactEmail = environment.contactEmail;
   protected readonly currentYear = new Date().getFullYear();
 }

@@ -1,7 +1,7 @@
 /**
  * Reflète App\DTO\Registration\DocumentSummaryDto côté API.
  */
-export type DocumentType = 'quote' | 'invoice' | 'ticket' | 'other';
+export type DocumentType = 'quote' | 'invoice' | 'ticket' | 'other' | 'insurance';
 export type SignatureStatus = 'pending' | 'signed' | 'declined';
 
 export interface DocumentSummary {
@@ -15,6 +15,8 @@ export interface DocumentSummary {
   amountTtc: string | null;
   depositPercent: string | null;
   notifiedAt: string | null;
+  /** Date du dernier dépôt du fichier (updatedAt côté back) — toujours présente. */
+  uploadedAt: string;
 }
 
 /**

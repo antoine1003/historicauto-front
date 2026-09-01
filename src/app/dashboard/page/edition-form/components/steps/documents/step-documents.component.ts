@@ -2,29 +2,34 @@ import { Component, computed, inject, OnDestroy, OnInit } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { ButtonModule } from 'primeng/button';
 import { TagModule } from 'primeng/tag';
-import { FileUploadModule } from 'primeng/fileupload';
 import { EditionFormStateService } from '@app/dashboard/services/edition-form-state.service';
-import { DocumentItem, DocumentKind, RegistrationStatus } from '@app/dashboard/models/edition-form.models';
+import { DocumentItem, RegistrationStatus } from '@app/dashboard/models/edition-form.models';
+import { DocumentType } from '@app/core/models/document.model';
+import { InsuranceRcComponent } from '@app/dashboard/page/edition-form/components/insurance-rc/insurance-rc.component';
+import { downloadDocumentFile } from '@app/core/utils/document-download.util';
 
-const DOCUMENT_KIND_ICON: Record<DocumentKind, string> = {
+const DOCUMENT_TYPE_ICON: Record<DocumentType, string> = {
   quote: 'pi pi-file-edit',
   invoice: 'pi pi-receipt',
   insurance: 'pi pi-shield',
-  supplier_list: 'pi pi-list',
   ticket: 'pi pi-ticket',
+  other: 'pi pi-file',
 };
 
 @Component({
   selector: 'app-step-documents',
   standalone: true,
-  imports: [DatePipe, ButtonModule, TagModule, FileUploadModule],
+  imports: [DatePipe, ButtonModule, TagModule, InsuranceRcComponent],
   templateUrl: './step-documents.component.html',
 })
 export class StepDocumentsComponent implements OnInit, OnDestroy {
   protected readonly formState = inject(EditionFormStateService);
 
   protected readonly visibleDocuments = computed(
-    () => this.formState.registration()?.documents.filter((doc) => doc.visible) ?? [],
+    () =>
+      this.formState
+        .registration()
+        ?.documents.filter((doc) => doc.visible && doc.kind !== 'insurance') ?? [],
   );
 
   protected readonly sharedDocuments = this.formState.sharedDocuments;
@@ -45,32 +50,16 @@ export class StepDocumentsComponent implements OnInit, OnDestroy {
   }
 
   protected iconFor(doc: DocumentItem): string {
-    return DOCUMENT_KIND_ICON[doc.kind];
+    return DOCUMENT_TYPE_ICON[doc.kind];
   }
 
   protected signQuote(doc: DocumentItem): void {
     this.formState.signQuote(doc.id);
   }
 
-  protected onInsuranceUpload(event: { files: File[] }): void {
-    const file = event.files[0];
-    if (file) {
-      this.formState.uploadInsuranceDocument(file);
-    }
-  }
-
   protected downloadDocument(doc: { label: string; fileUrl: string | null }) {
     if (doc.fileUrl) {
-      const a = document.createElement('a');
-      let label = doc.label;
-      // if it does not have extension, add .pdf
-      if (!label.includes('.')) {
-        label += '.pdf';
-      }
-      a.href = doc.fileUrl;
-      a.download = label;
-      a.target = '_blank';
-      a.click();
+      downloadDocumentFile(doc.fileUrl, doc.label);
     }
   }
 }

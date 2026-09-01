@@ -7,7 +7,6 @@ import { environment } from '../../../environments/environment';
 import {
   AutosaveStatus,
   DocumentItem,
-  DocumentKind,
   EditionRegistrationState,
   EntityStepPayload,
   EntityStepState,
@@ -73,7 +72,7 @@ export class EditionFormStateService {
    * condition de déverrouillage de PAYMENT dans isStepUnlocked) soient chargés en état — sinon
    * goToStep(PAYMENT) échoue silencieusement au retour de Stripe (cf. revue finale). Positionné
    * uniquement dans loadForEditionYear() côté retour de paiement, consommé dans
-   * mergeRealQuoteDocuments() quel que soit l'appelant (loadRealQuoteDocuments/confirmRegistration/refreshDocuments).
+   * mergeRealDocuments() quel que soit l'appelant (loadRealQuoteDocuments/confirmRegistration/refreshDocuments).
    */
   private pendingPaymentStep = false;
 
@@ -106,6 +105,10 @@ export class EditionFormStateService {
   readonly isReadOnly = computed(() => this.state()?.readOnly ?? false);
   readonly isEditionClosed = computed(() => this.state()?.editionClosed ?? false);
   readonly editionYear = computed(() => this.state()?.editionYear ?? null);
+  /** Assurance RC courante de l'inscription, ou null si l'exposant n'en a pas encore déposé. */
+  readonly insuranceDocument = computed(
+    () => this.state()?.documents.find((doc) => doc.kind === 'insurance') ?? null,
+  );
 
   /**
    * TODO: - Ajouter le bouton pour télécharger les documents et le devis
@@ -282,7 +285,7 @@ export class EditionFormStateService {
         if (paymentReturnStatus) {
           // Ne PAS naviguer ici : à cet instant reg.documents === [] (mock hardcodé dans
           // toEditionRegistrationState), donc isStepUnlocked(PAYMENT) est encore false — le devis
-          // signé n'arrive qu'après via loadRealQuoteDocuments() → mergeRealQuoteDocuments(),
+          // signé n'arrive qu'après via loadRealQuoteDocuments() → mergeRealDocuments(),
           // asynchrone. On diffère la navigation jusqu'à ce que ce merge ait réellement eu lieu.
           this.pendingPaymentStep = true;
           this.messageService.add(
@@ -330,7 +333,7 @@ export class EditionFormStateService {
         );
 
         this.documentService.getDocuments(match.id).subscribe({
-          next: (docsResponse) => this.mergeRealQuoteDocuments(docsResponse.data),
+          next: (docsResponse) => this.mergeRealDocuments(docsResponse.data),
           error: (err) => {
             console.warn('[EditionFormStateService] Échec du chargement des documents réels :', err);
             this.pendingPaymentStep = false;
@@ -344,28 +347,27 @@ export class EditionFormStateService {
     });
   }
 
-  private mergeRealQuoteDocuments(documents: DocumentSummary[]): void {
-    const quoteItems: DocumentItem[] = documents
-      .filter((doc) => doc.type === 'quote')
-      .map((doc) => ({
-        id: doc.id,
-        kind: 'quote' as DocumentKind,
-        label: doc.label,
-        visible: true,
-        fileUrl: doc.fileUrl ? toAbsoluteUrl(doc.fileUrl) : null,
-        signingUrl: doc.signingUrl,
-        signatureStatus: doc.signatureStatus,
-        uploadedAt: doc.notifiedAt ? new Date(doc.notifiedAt) : null,
-      }));
+  /**
+   * Remplace la liste des documents de l'état par celle renvoyée par l'API.
+   *
+   * Aucun filtre de type : l'état local ne porte plus de documents mockés (`documents: []` à
+   * l'initialisation), la réponse de l'API est donc la seule source. Filtrer sur 'quote' — ce que
+   * faisait la version précédente — jetait silencieusement factures, e-billets, documents libres et
+   * assurance RC.
+   */
+  private mergeRealDocuments(documents: DocumentSummary[]): void {
+    const items: DocumentItem[] = documents.map((doc) => ({
+      id: doc.id,
+      kind: doc.type,
+      label: doc.label,
+      visible: true,
+      fileUrl: doc.fileUrl ? toAbsoluteUrl(doc.fileUrl) : null,
+      signingUrl: doc.signingUrl,
+      signatureStatus: doc.signatureStatus,
+      uploadedAt: new Date(doc.uploadedAt),
+    }));
 
-    this.state.update((reg) => {
-      if (!reg) {
-        return reg;
-      }
-      const otherDocuments = reg.documents.filter((doc) => doc.kind !== 'quote');
-
-      return { ...reg, documents: [...otherDocuments, ...quoteItems] };
-    });
+    this.state.update((reg) => (reg ? { ...reg, documents: items } : reg));
 
     if (this.pendingPaymentStep) {
       this.pendingPaymentStep = false;
@@ -718,7 +720,7 @@ export class EditionFormStateService {
           this.confirmStatusSignal.set('idle');
 
           this.documentService.getDocuments(reg.id).subscribe({
-            next: (docsResponse) => this.mergeRealQuoteDocuments(docsResponse.data),
+            next: (docsResponse) => this.mergeRealDocuments(docsResponse.data),
             error: (err) => console.warn('[EditionFormStateService] Échec du rechargement des documents après confirmation :', err),
           });
 
@@ -757,13 +759,47 @@ export class EditionFormStateService {
       return;
     }
     this.documentService.getDocuments(registrationId).subscribe({
-      next: (response) => this.mergeRealQuoteDocuments(response.data),
+      next: (response) => this.mergeRealDocuments(response.data),
       error: (err) => console.warn('[EditionFormStateService] Échec du rafraîchissement des documents :', err),
     });
   }
 
+  /**
+   * Téléverse ou remplace l'assurance RC. Le back renvoie le document à jour, qu'on fusionne dans
+   * l'état sans recharger toute la liste.
+   *
+   * La garde est `isEditionClosed()` et non `isReadOnly()` : ce dernier passe à true dès que le
+   * statut quitte DRAFT, ce qui interdirait le téléversement précisément à partir de l'étape
+   * Documents, qui suppose une inscription confirmée.
+   */
   uploadInsuranceDocument(file: File): void {
-    void file; // no-op (front only, étape 4 hors périmètre)
+    const reg = this.state();
+    if (!reg || this.isEditionClosed()) {
+      return;
+    }
+
+    this.documentService.uploadInsurance(reg.id, file).subscribe({
+      next: () => {
+        // Le serveur est la seule autorité sur `state.documents` : on recharge la liste complète
+        // plutôt que d'y injecter l'entrée manuellement, pour ne jamais perdre à une réponse GET
+        // concurrente (déclenchée par le retour de focus fenêtre, cf. revue finale — défaut n°3).
+        this.refreshDocuments();
+        this.messageService.add({
+          severity: 'success',
+          summary: 'Assurance RC enregistrée',
+          detail: 'Votre attestation a bien été enregistrée.',
+        });
+      },
+      error: (err: HttpErrorResponse) => {
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Échec',
+          detail: typeof err.error?.message === 'string'
+            ? err.error.message
+            : "Votre assurance n'a pas pu être enregistrée.",
+        });
+      },
+    });
   }
 
   private scheduleEntityAutosave(): void {

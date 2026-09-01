@@ -1,18 +1,10 @@
 <div class="auth-shell !min-h-100! p-0 items-start justify-start">
   <div class="w-full max-w-3xl mx-auto px-4 py-8 sm:py-10">
 
-    <header class="flex items-center justify-between gap-3 flex-wrap mb-8">
+    <header class="mb-8">
       <h1 class="font-serif font-semibold text-2xl sm:text-[2.2rem] text-[#1A1714]">
         Mon Espace
       </h1>
-
-      <a
-        class="inline-flex items-center gap-2 text-sm font-semibold no-underline text-[#B8860B] hover:text-[#9A7009]"
-        [href]="'mailto:' + contactEmail"
-      >
-        <i class="pi pi-envelope"></i>
-        Nous contacter
-      </a>
     </header>
 
     @if (loading()) {
