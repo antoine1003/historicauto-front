@@ -2,11 +2,36 @@
   <div class="ef-panel">
     <h2 class="ef-section-title">Récapitulatif financier</h2>
 
-    <p-message
-      severity="warn"
-      text="Votre inscription ne sera définitive qu'après versement de l'acompte."
-      styleClass="w-full mb-5"
-    />
+    @switch (paymentState()) {
+      @case ('unpaid') {
+        <p-message
+          severity="warn"
+          text="Votre inscription ne sera définitive qu'après versement de l'acompte."
+          styleClass="w-full mb-5"
+        />
+      }
+      @case ('partial') {
+        <p-message severity="warn" styleClass="w-full mb-5">
+          Votre inscription ne sera définitive qu'après versement de l'acompte.
+          {{ formState.paymentsTotalTtc() | number: '1.0-2' }} € TTC déjà versés sur un acompte de
+          {{ depositDueTtc() | number: '1.0-2' }} € TTC.
+        </p-message>
+      }
+      @case ('deposit') {
+        <p-message severity="success" styleClass="w-full mb-5">
+          Votre acompte a bien été reçu, votre inscription est confirmée. Il reste
+          {{ formState.balanceDueTtc() | number: '1.0-2' }} € TTC à régler
+          @if (registration.payment.balanceDueDate) {
+            avant le {{ registration.payment.balanceDueDate | date: 'dd/MM/yyyy' }}
+          }.
+        </p-message>
+      }
+      @case ('settled') {
+        <p-message severity="success" styleClass="w-full mb-5">
+          Votre inscription est intégralement réglée. Merci !
+        </p-message>
+      }
+    }
 
     <app-options-recap
       title="Détail des options de votre stand"

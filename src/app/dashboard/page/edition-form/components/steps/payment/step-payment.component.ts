@@ -13,6 +13,12 @@ const PAYMENT_METHOD_LABELS: Record<string, string> = {
   cash: 'Espèces',
 };
 
+/**
+ * Tolérance sur les comparaisons de montants. Les totaux sont recalculés en flottant à partir de
+ * pourcentages ; sans elle, un acompte exactement payé peut se lire comme 0,000000001 € manquant.
+ */
+const EPSILON = 0.005;
+
 @Component({
   selector: 'app-step-payment',
   standalone: true,
@@ -40,6 +46,25 @@ export class StepPaymentComponent {
   protected readonly depositDueTtc = computed(() => {
     const reg = this.formState.registration();
     return reg ? this.orderTotalTtc() * (reg.payment.depositRatePercent / 100) : 0;
+  });
+
+  /**
+   * L'ordre des tests compte. `settled` est évalué avant `deposit` pour qu'un solde nul l'emporte,
+   * et le retour anticipé sur un total payé nul écarte le cas dégénéré d'une commande à 0 €, qui
+   * serait sinon annoncée « intégralement réglée » avant tout paiement.
+   */
+  protected readonly paymentState = computed<'unpaid' | 'partial' | 'deposit' | 'settled'>(() => {
+    const paid = this.formState.paymentsTotalTtc();
+
+    if (paid <= EPSILON) {
+      return 'unpaid';
+    }
+
+    if (this.formState.balanceDueTtc() <= EPSILON) {
+      return 'settled';
+    }
+
+    return paid + EPSILON >= this.depositDueTtc() ? 'deposit' : 'partial';
   });
 
   protected methodLabel(method: string): string {
