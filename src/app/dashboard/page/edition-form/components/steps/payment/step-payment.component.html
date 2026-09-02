@@ -4,26 +4,53 @@
 
     @switch (paymentState()) {
       @case ('unpaid') {
-        <p-message
-          severity="warn"
-          text="Votre inscription ne sera définitive qu'après versement de l'acompte."
-          styleClass="w-full mb-5"
-        />
+        @if (isRegistrationConfirmed()) {
+          <p-message severity="warn" styleClass="w-full mb-5">
+            Votre inscription est confirmée.
+            @if (registration.payment.balanceDueDate) {
+              Il reste {{ formState.balanceDueTtc() | number: '1.0-2' }} € TTC à régler avant le
+              {{ registration.payment.balanceDueDate | date: 'dd/MM/yyyy' }}.
+            } @else {
+              Il reste {{ formState.balanceDueTtc() | number: '1.0-2' }} € TTC à régler.
+            }
+          </p-message>
+        } @else {
+          <p-message
+            severity="warn"
+            text="Votre inscription ne sera définitive qu'après versement de l'acompte."
+            styleClass="w-full mb-5"
+          />
+        }
       }
       @case ('partial') {
-        <p-message severity="warn" styleClass="w-full mb-5">
-          Votre inscription ne sera définitive qu'après versement de l'acompte.
-          {{ formState.paymentsTotalTtc() | number: '1.0-2' }} € TTC déjà versés sur un acompte de
-          {{ depositDueTtc() | number: '1.0-2' }} € TTC.
-        </p-message>
+        @if (isRegistrationConfirmed()) {
+          <p-message severity="warn" styleClass="w-full mb-5">
+            Votre inscription est confirmée.
+            {{ formState.paymentsTotalTtc() | number: '1.0-2' }} € TTC déjà versés ;
+            @if (registration.payment.balanceDueDate) {
+              il reste {{ formState.balanceDueTtc() | number: '1.0-2' }} € TTC à régler avant le
+              {{ registration.payment.balanceDueDate | date: 'dd/MM/yyyy' }}.
+            } @else {
+              il reste {{ formState.balanceDueTtc() | number: '1.0-2' }} € TTC à régler.
+            }
+          </p-message>
+        } @else {
+          <p-message severity="warn" styleClass="w-full mb-5">
+            Votre inscription ne sera définitive qu'après versement de l'acompte.
+            {{ formState.paymentsTotalTtc() | number: '1.0-2' }} € TTC déjà versés sur un acompte de
+            {{ depositDueTtc() | number: '1.0-2' }} € TTC.
+          </p-message>
+        }
       }
       @case ('deposit') {
         <p-message severity="success" styleClass="w-full mb-5">
-          Votre acompte a bien été reçu, votre inscription est confirmée. Il reste
-          {{ formState.balanceDueTtc() | number: '1.0-2' }} € TTC à régler
+          Votre acompte a bien été reçu, votre inscription est confirmée.
           @if (registration.payment.balanceDueDate) {
-            avant le {{ registration.payment.balanceDueDate | date: 'dd/MM/yyyy' }}
-          }.
+            Il reste {{ formState.balanceDueTtc() | number: '1.0-2' }} € TTC à régler avant le
+            {{ registration.payment.balanceDueDate | date: 'dd/MM/yyyy' }}.
+          } @else {
+            Il reste {{ formState.balanceDueTtc() | number: '1.0-2' }} € TTC à régler.
+          }
         </p-message>
       }
       @case ('settled') {
@@ -135,7 +162,7 @@
     }
   </div>
 
-  @if (formState.balanceDueTtc() > 0) {
+  @if (paymentState() !== 'settled') {
     <div class="ef-panel mt-6">
       <h2 class="ef-section-title">Régler en ligne</h2>
       <p class="ef-help-text mb-3">

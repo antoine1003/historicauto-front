@@ -5,6 +5,7 @@ import { TableModule } from 'primeng/table';
 import { MessageModule } from 'primeng/message';
 import { EditionFormStateService } from '@app/dashboard/services/edition-form-state.service';
 import { OptionsRecapComponent } from '@app/dashboard/components/options-recap/options-recap.component';
+import { RegistrationStatus } from '@app/dashboard/models/edition-form.models';
 
 const PAYMENT_METHOD_LABELS: Record<string, string> = {
   card: 'Carte bancaire',
@@ -55,6 +56,19 @@ export class StepPaymentComponent {
   protected readonly depositDueTtc = computed(() => {
     const reg = this.formState.registration();
     return reg ? this.orderTotalTtc() * (reg.payment.depositRatePercent / 100) : 0;
+  });
+
+  /**
+   * Une fois `CONFIRMED` (ou `COMPLETED`, atteint après), l'inscription ne redevient jamais
+   * "pas définitive" : `isConfirmationEditable` (edition-form-state.service.ts) montre que le
+   * statut ne régresse pas depuis CONFIRMED. Signal choisi plutôt que `confirmation.confirmedAt`
+   * car c'est directement le concept métier "confirmé" nommé partout ailleurs dans ce service
+   * (isStepUnlocked, isConfirmationEditable) ; en pratique les deux coïncident puisque
+   * `confirmedAt` n'est renseigné qu'au moment où le statut passe CONFIRMED.
+   */
+  protected readonly isRegistrationConfirmed = computed(() => {
+    const status = this.formState.registration()?.status;
+    return status === RegistrationStatus.CONFIRMED || status === RegistrationStatus.COMPLETED;
   });
 
   /**

@@ -101,7 +101,8 @@ export interface PaymentStepApiDto {
   discountPercent: number;
   fileFeeTtc: number;
   depositRatePercent: number;
-  extraOptions: ExtraOptionApiDto[];
+  /** Optionnel tant que la branche back de ce chantier n'est pas fusionnée : la clé peut être absente. */
+  extraOptions?: ExtraOptionApiDto[];
   balanceDueDate: string | null;
   bankIban: string | null;
   bankBic: string | null;
