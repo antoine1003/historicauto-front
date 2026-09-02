@@ -59,16 +59,21 @@ export class StepPaymentComponent {
   });
 
   /**
-   * Une fois `CONFIRMED` (ou `COMPLETED`, atteint après), l'inscription ne redevient jamais
-   * "pas définitive" : `isConfirmationEditable` (edition-form-state.service.ts) montre que le
-   * statut ne régresse pas depuis CONFIRMED. Signal choisi plutôt que `confirmation.confirmedAt`
-   * car c'est directement le concept métier "confirmé" nommé partout ailleurs dans ce service
-   * (isStepUnlocked, isConfirmationEditable) ; en pratique les deux coïncident puisque
-   * `confirmedAt` n'est renseigné qu'au moment où le statut passe CONFIRMED.
+   * Deux signaux indépendants sont acceptés, comme pour PAYMENT dans
+   * `EditionFormStateService.isStepUnlocked()` : `status` est synchronisé de façon asynchrone
+   * depuis le serveur et peut accuser un retard sur la signature du devis, reçue par son propre
+   * webhook. Un exposant peut donc légitimement se trouver sur cette étape, devis signé, alors
+   * que `status` n'est pas encore passé à CONFIRMED. Cet écran ne doit jamais annoncer à un
+   * exposant confirmé que son inscription n'est pas définitive.
    */
   protected readonly isRegistrationConfirmed = computed(() => {
-    const status = this.formState.registration()?.status;
-    return status === RegistrationStatus.CONFIRMED || status === RegistrationStatus.COMPLETED;
+    const reg = this.formState.registration();
+    const status = reg?.status;
+    return (
+      status === RegistrationStatus.CONFIRMED ||
+      status === RegistrationStatus.COMPLETED ||
+      reg?.confirmation.confirmedAt != null
+    );
   });
 
   /**
