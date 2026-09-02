@@ -5,10 +5,6 @@
   @apply min-h-screen bg-[#F7F5F0];
 }
 
-.ef-header {
-  @apply bg-white border-b border-[#D4C9A8] px-4 py-5 sm:px-8;
-}
-
 .ef-header-edition-link {
   @apply text-sm text-[#B8860B] font-semibold hover:underline;
 }

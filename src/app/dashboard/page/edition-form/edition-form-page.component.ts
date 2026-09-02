@@ -59,6 +59,10 @@ import { environment } from '../../../../environments/environment';
         border: none;
         padding: 0;
       }
+
+      .ef-page-heading {
+        margin-bottom: 2rem;
+      }
     `,
   ],
   templateUrl: './edition-form-page.component.html',

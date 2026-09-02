@@ -27,59 +27,59 @@
       </p>
     </div>
   } @else if (formState.registration(); as registration) {
-    <header class="ef-header">
-      <div class="flex items-start justify-between gap-4 flex-wrap">
-        <div>
-          <p class="ef-muted text-sm">Mon espace exposant</p>
-          <h1 class="ef-header-title">Formulaire d'inscription {{ registration.editionYear }}</h1>
+    <div class="ef-content">
+      <div class="ef-page-heading">
+        <div class="flex items-start justify-between gap-4 flex-wrap">
+          <div>
+            <p class="ef-muted text-sm">Mon espace exposant</p>
+            <h1 class="ef-header-title">Formulaire d'inscription {{ registration.editionYear }}</h1>
+          </div>
+
+          @if (!registration.readOnly) {
+            <div
+              class="ef-autosave-indicator"
+              [class.ef-autosave-indicator--error]="currentAutosaveStatus() === 'error' || currentAutosaveStatus() === 'pending'"
+            >
+              @switch (currentAutosaveStatus()) {
+                @case ('saving') {
+                  <i class="pi pi-spin pi-spinner"></i>
+                  <span>Enregistrement...</span>
+                }
+                @case ('saved') {
+                  <i class="pi pi-check"></i>
+                  <span>Enregistré</span>
+                }
+                @case ('error') {
+                  <i class="pi pi-exclamation-triangle"></i>
+                  <span>Échec de la sauvegarde</span>
+                }
+                @case ('pending') {
+                  <i class="pi pi-exclamation-triangle"></i>
+                  <span>Cloisons incomplètes — vos modifications ne sont pas encore enregistrées</span>
+                }
+              }
+            </div>
+          }
         </div>
 
-        @if (!registration.readOnly) {
-          <div
-            class="ef-autosave-indicator"
-            [class.ef-autosave-indicator--error]="currentAutosaveStatus() === 'error' || currentAutosaveStatus() === 'pending'"
-          >
-            @switch (currentAutosaveStatus()) {
-              @case ('saving') {
-                <i class="pi pi-spin pi-spinner"></i>
-                <span>Enregistrement...</span>
-              }
-              @case ('saved') {
-                <i class="pi pi-check"></i>
-                <span>Enregistré</span>
-              }
-              @case ('error') {
-                <i class="pi pi-exclamation-triangle"></i>
-                <span>Échec de la sauvegarde</span>
-              }
-              @case ('pending') {
-                <i class="pi pi-exclamation-triangle"></i>
-                <span>Cloisons incomplètes — vos modifications ne sont pas encore enregistrées</span>
-              }
-            }
+        @if (registration.editionClosed) {
+          <div class="ef-readonly-banner">
+            <i class="pi pi-lock"></i>
+            <span>
+              Édition passée — ce formulaire est affiché à titre d'historique et n'est plus modifiable.
+            </span>
+          </div>
+        } @else if (registration.readOnly) {
+          <div class="ef-readonly-banner">
+            <i class="pi pi-lock"></i>
+            <span>
+              Votre demande a été envoyée et n'est plus modifiable. Contactez-nous à
+              <a [href]="'mailto:' + contactEmail">{{ contactEmail }}</a> pour toute modification.
+            </span>
           </div>
         }
       </div>
 
-      @if (registration.editionClosed) {
-        <div class="ef-readonly-banner">
-          <i class="pi pi-lock"></i>
-          <span>
-            Édition passée — ce formulaire est affiché à titre d'historique et n'est plus modifiable.
-          </span>
-        </div>
-      } @else if (registration.readOnly) {
-        <div class="ef-readonly-banner">
-          <i class="pi pi-lock"></i>
-          <span>
-            Votre demande a été envoyée et n'est plus modifiable. Contactez-nous à
-            <a [href]="'mailto:' + contactEmail">{{ contactEmail }}</a> pour toute modification.
-          </span>
-        </div>
-      }
-    </header>
-
-    <div class="ef-content">
       <div class="ef-stepper-wrapper">
         <p-stepper [value]="formState.activeStep()" (valueChange)="onStepChange($event)">
           <p-step-list>
