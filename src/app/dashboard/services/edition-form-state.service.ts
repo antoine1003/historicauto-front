@@ -199,7 +199,9 @@ export class EditionFormStateService {
       return 0;
     }
     const discounted = reg.payment.standTotalTtc * (1 - reg.payment.discountPercent / 100);
-    const orderTotal = discounted + reg.payment.fileFeeTtc;
+    const extras = reg.payment.extraOptions.reduce((sum, extra) => sum + extra.lineTotalTtc, 0);
+    // Les prestations s'ajoutent APRÈS la remise, comme dans Registration::getOrderTotalTtc().
+    const orderTotal = discounted + reg.payment.fileFeeTtc + extras;
 
     return orderTotal - this.paymentsTotalTtc();
   });
@@ -932,6 +934,13 @@ export class EditionFormStateService {
         discountPercent: dto.payment.discountPercent,
         fileFeeTtc: dto.payment.fileFeeTtc,
         depositRatePercent: dto.payment.depositRatePercent,
+        extraOptions: (dto.payment.extraOptions ?? []).map((e) => ({
+          id: e.id,
+          label: e.label,
+          quantity: e.quantity,
+          unitPriceTtc: e.unitPriceTtc,
+          lineTotalTtc: e.lineTotalTtc,
+        })),
         balanceDueDate: dto.payment.balanceDueDate ? new Date(dto.payment.balanceDueDate) : null,
         bankIban: dto.payment.bankIban,
         bankBic: dto.payment.bankBic,

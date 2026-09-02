@@ -64,6 +64,28 @@
         <span>{{ registration.payment.fileFeeTtc | number: '1.0-2' }} € TTC</span>
       </div>
 
+      @if (registration.payment.extraOptions.length > 0) {
+        <div class="ef-summary-row">
+          <span class="ef-muted text-sm font-semibold uppercase tracking-wide">
+            Prestations supplémentaires
+          </span>
+          <span></span>
+        </div>
+        @for (extra of registration.payment.extraOptions; track extra.id) {
+          <div class="ef-summary-row">
+            <span>
+              {{ extra.label }}
+              @if (extra.quantity !== 1) {
+                <span class="ef-muted">
+                  — {{ extra.quantity | number: '1.0-2' }} × {{ extra.unitPriceTtc | number: '1.0-2' }} €
+                </span>
+              }
+            </span>
+            <span>{{ extra.lineTotalTtc | number: '1.0-2' }} € TTC</span>
+          </div>
+        }
+      }
+
       <div class="ef-summary-row ef-summary-row--total">
         <span>Total de la commande</span>
         <span>{{ orderTotalTtc() | number: '1.0-2' }} € TTC</span>

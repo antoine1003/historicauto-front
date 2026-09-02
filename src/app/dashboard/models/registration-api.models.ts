@@ -88,11 +88,20 @@ export interface PaymentEntryApiDto {
   label: string | null;
 }
 
+export interface ExtraOptionApiDto {
+  id: string;
+  label: string;
+  quantity: number;
+  unitPriceTtc: number;
+  lineTotalTtc: number;
+}
+
 export interface PaymentStepApiDto {
   standTotalTtc: number;
   discountPercent: number;
   fileFeeTtc: number;
   depositRatePercent: number;
+  extraOptions: ExtraOptionApiDto[];
   balanceDueDate: string | null;
   bankIban: string | null;
   bankBic: string | null;

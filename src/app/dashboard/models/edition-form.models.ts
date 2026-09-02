@@ -193,11 +193,24 @@ export interface PaymentItem {
   label: string | null;
 }
 
+/**
+ * Prestation facturée en supplément, saisie par HA en administration. Affichée uniquement dans le
+ * récapitulatif de l'étape Paiement, jamais dans le récapitulatif des options du stand.
+ */
+export interface ExtraOptionItem {
+  id: string;
+  label: string;
+  quantity: number;
+  unitPriceTtc: number;
+  lineTotalTtc: number;
+}
+
 export interface PaymentSummary {
   standTotalTtc: number;
   discountPercent: number;
   fileFeeTtc: number;
   depositRatePercent: number;
+  extraOptions: ExtraOptionItem[];
   balanceDueDate: Date | null;
   bankIban: string | null;
   bankBic: string | null;

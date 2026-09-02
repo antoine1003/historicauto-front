@@ -38,9 +38,18 @@ export class StepPaymentComponent {
     return reg.payment.standTotalTtc * (1 - reg.payment.discountPercent / 100);
   });
 
+  protected readonly extraOptionsTotalTtc = computed(() => {
+    const reg = this.formState.registration();
+    return reg
+      ? reg.payment.extraOptions.reduce((sum, extra) => sum + extra.lineTotalTtc, 0)
+      : 0;
+  });
+
   protected readonly orderTotalTtc = computed(() => {
     const reg = this.formState.registration();
-    return reg ? this.discountedTotalTtc() + reg.payment.fileFeeTtc : 0;
+    // Même formule que Registration::getOrderTotalTtc() et que balanceDueTtc() du service : les
+    // prestations s'ajoutent après la remise. Les trois doivent rester d'accord.
+    return reg ? this.discountedTotalTtc() + reg.payment.fileFeeTtc + this.extraOptionsTotalTtc() : 0;
   });
 
   protected readonly depositDueTtc = computed(() => {
