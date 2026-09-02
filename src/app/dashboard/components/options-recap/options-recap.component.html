@@ -44,7 +44,13 @@
     </div>
 
     <div class="ef-summary-row">
-      <span>Acompte à verser</span>
+      <!--
+        Estimation portant sur le stand seul : StandStepDto calcule ce montant depuis
+        computeOptionsTotal(), sans les frais de dossier, la remise, ni les prestations
+        supplémentaires. L'acompte de référence est celui de l'étape Paiement, qui part du
+        total de la commande. Les deux diffèrent donc légitimement.
+      -->
+      <span>Acompte estimé sur le stand</span>
       <span>{{ depositTtc() | number: '1.0-2' }} € TTC</span>
     </div>
   }
