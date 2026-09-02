@@ -59,11 +59,14 @@ export class StepPaymentComponent {
   });
 
   /**
-   * Deux signaux indépendants sont acceptés, comme pour PAYMENT dans
-   * `EditionFormStateService.isStepUnlocked()` : `status` est synchronisé de façon asynchrone
-   * depuis le serveur et peut accuser un retard sur la signature du devis, reçue par son propre
-   * webhook. Un exposant peut donc légitimement se trouver sur cette étape, devis signé, alors
-   * que `status` n'est pas encore passé à CONFIRMED. Cet écran ne doit jamais annoncer à un
+   * Deux signaux indépendants sont acceptés. Le précédent est la branche CONFIRMATION de
+   * `EditionFormStateService.isStepUnlocked()`, qui traite déjà `confirmation.confirmedAt`
+   * comme un signal de confirmation à part entière, indépendant de `status`. La raison est la
+   * même ici : `status` est synchronisé de façon asynchrone depuis le serveur et peut accuser un
+   * retard sur la signature, reçue par son propre webhook — la branche PAYMENT du même
+   * `isStepUnlocked()` compose d'ailleurs avec ce décalage, en acceptant un devis signé à la
+   * place du statut. Un exposant peut donc légitimement se trouver sur cette étape, devis signé,
+   * alors que `status` n'est pas encore passé à CONFIRMED. Cet écran ne doit jamais annoncer à un
    * exposant confirmé que son inscription n'est pas définitive.
    */
   protected readonly isRegistrationConfirmed = computed(() => {
