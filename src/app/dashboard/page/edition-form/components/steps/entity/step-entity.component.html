@@ -42,17 +42,23 @@
           </div>
 
           <div class="ef-field">
-            <label class="ef-label" for="activityDomainId">Domaine d'activité *</label>
-            <p-select
-              inputId="activityDomainId"
-              formControlName="activityDomainId"
+            <label class="ef-label" for="activityDomainIds">Domaines d'activité *</label>
+            <p-multiselect
+              inputId="activityDomainIds"
+              formControlName="activityDomainIds"
               [options]="activityDomainOptions()"
               optionLabel="label"
               optionValue="id"
-              styleClass="w-full"
+              display="chip"
+              [maxSelectedLabels]="null"
+              placeholder="Sélectionnez un ou plusieurs domaines"
+              [filter]="true"
+              filterPlaceHolder="Rechercher un domaine"
+              [showToggleAll]="false"
+              styleClass="w-full ef-multiselect-wrap"
             />
-            @if (form.controls.activityDomainId.touched && form.controls.activityDomainId.invalid) {
-              <p class="ef-field-error">Le domaine d'activité est obligatoire pour un exposant professionnel.</p>
+            @if (form.controls.activityDomainIds.touched && form.controls.activityDomainIds.invalid) {
+              <p class="ef-field-error">Au moins un domaine d'activité est obligatoire pour un exposant professionnel.</p>
             }
           </div>
         </div>
@@ -72,6 +78,41 @@
           }
         </div>
       }
+
+      <div class="ef-field" formGroupName="entityManager">
+        <label class="ef-label">Responsable de l'entité</label>
+        <p class="ef-help-text mb-2">Il recevra, en plus du titulaire du compte, toutes les notifications liées à cette inscription.</p>
+        @let manager = form.controls.entityManager.controls;
+        <div class="ef-grid-2 !mb-0">
+          <div class="ef-field">
+            <label class="ef-label" for="entityManagerFirstName">Prénom *</label>
+            <input pInputText id="entityManagerFirstName" class="w-full" formControlName="firstName" maxlength="100" autocomplete="given-name" />
+            @if (manager.firstName.touched && manager.firstName.invalid) {
+              <p class="ef-field-error">Le prénom du responsable est obligatoire.</p>
+            }
+          </div>
+          <div class="ef-field">
+            <label class="ef-label" for="entityManagerLastName">Nom *</label>
+            <input pInputText id="entityManagerLastName" class="w-full" formControlName="lastName" maxlength="100" autocomplete="family-name" />
+            @if (manager.lastName.touched && manager.lastName.invalid) {
+              <p class="ef-field-error">Le nom du responsable est obligatoire.</p>
+            }
+          </div>
+          <div class="ef-field">
+            <label class="ef-label" for="entityManagerPhone">Téléphone</label>
+            <input pInputText id="entityManagerPhone" type="tel" class="w-full" formControlName="phone" maxlength="20" autocomplete="tel" />
+          </div>
+          <div class="ef-field">
+            <label class="ef-label" for="entityManagerEmail">Email *</label>
+            <input pInputText id="entityManagerEmail" type="email" class="w-full" formControlName="email" maxlength="180" autocomplete="email" />
+            @if (manager.email.touched && manager.email.hasError('required')) {
+              <p class="ef-field-error">L'email du responsable est obligatoire.</p>
+            } @else if (manager.email.touched && manager.email.invalid) {
+              <p class="ef-field-error">L'email du responsable n'est pas valide.</p>
+            }
+          </div>
+        </div>
+      </div>
 
       <div class="ef-field">
         <label class="ef-label">Visuel à faire figurer dans la liste des exposants</label>
@@ -130,6 +171,42 @@
         </div>
         <p-button label="Ajouter un responsable" icon="pi pi-plus" (onClick)="addManager()" />
       </div>
+    }
+  </div>
+
+  <div class="ef-panel mt-6">
+    <h2 class="ef-section-title">Vous étiez présent en *</h2>
+    <p class="ef-help-text mb-3">Cochez les éditions auxquelles vous avez participé, ou « Aucun ».</p>
+
+    @let previousEditions = form.controls.previousEditions;
+    <div class="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-6" role="group" aria-label="Éditions auxquelles vous étiez présent">
+      @for (year of previousEditionYears(); track year) {
+        <div class="flex items-center gap-2">
+          <p-checkbox
+            [inputId]="'previous-edition-' + year"
+            [binary]="true"
+            [ngModel]="isYearChecked(year)"
+            (ngModelChange)="onYearChange(year, $event)"
+            [disabled]="previousEditions.disabled"
+          />
+          <label [for]="'previous-edition-' + year" class="text-sm text-[#1A1714]">{{ year }}</label>
+        </div>
+      }
+    </div>
+
+    <div class="flex items-center gap-2" [class.mt-4]="previousEditionYears().length > 0">
+      <p-checkbox
+        inputId="previous-edition-none"
+        [binary]="true"
+        [ngModel]="isNoneChecked()"
+        (ngModelChange)="onNoneChange($event)"
+        [disabled]="previousEditions.disabled"
+      />
+      <label for="previous-edition-none" class="text-sm text-[#1A1714]">Aucun</label>
+    </div>
+
+    @if (previousEditions.touched && previousEditions.invalid) {
+      <p class="ef-field-error">Cochez au moins une année, ou « Aucun ».</p>
     }
   </div>
 }

@@ -120,3 +120,8 @@
 .ef-autosave-indicator--error {
   @apply text-red-600;
 }
+
+/* Multiselect en mode chip : les puces passent à la ligne au lieu d'être tronquées. */
+.ef-multiselect-wrap .p-multiselect-label {
+  @apply flex-wrap whitespace-normal;
+}

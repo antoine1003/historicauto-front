@@ -80,16 +80,27 @@ export interface StandManagerForm {
   email: string;
 }
 
+/** Responsable de l'entité : un seul par inscription, prénom, nom et email obligatoires. */
+export interface EntityManagerForm {
+  firstName: string;
+  lastName: string;
+  phone: string;
+  email: string;
+}
+
 export interface EntityStepState {
   exhibitorType: ExhibitorType;
   companyName: string;
   /** Uniquement pertinent si exhibitorType === PRO. */
   siret: string | null;
-  /** Uniquement pertinent si exhibitorType === PRO. UUID d'ActivityDomain, résolu via ActivityDomainService. */
-  activityDomainId: string | null;
+  /** Uniquement pertinent si exhibitorType === PRO. UUIDs d'ActivityDomain, résolus via ActivityDomainService. */
+  activityDomainIds: string[];
   /** Uniquement pertinent si exhibitorType === CLUB. */
   clubType: ClubType | null;
   visualUrl: string | null;
+  entityManager: EntityManagerForm;
+  /** « Vous étiez présent en » : `null` = pas encore répondu, `[]` = « Aucun ». */
+  previousEditions: string[] | null;
   managers: StandManagerForm[];
 }
 
@@ -245,8 +256,10 @@ export interface EntityStepPayload {
   exhibitorType: ExhibitorType;
   companyName: string;
   siret: string | null;
-  activityDomainId: string | null;
+  activityDomainIds: string[];
   clubType: ClubType | null;
+  entityManager: EntityManagerForm;
+  previousEditions: string[] | null;
 }
 
 export interface StandStepPayload {

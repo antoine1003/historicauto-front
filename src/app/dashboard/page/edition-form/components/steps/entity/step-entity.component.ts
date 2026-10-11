@@ -1,17 +1,28 @@
-import { Component, DestroyRef, effect, inject, OnInit } from '@angular/core';
-import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Component, computed, DestroyRef, effect, inject, OnInit } from '@angular/core';
+import { AbstractControl, FormBuilder, FormsModule, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { SelectModule } from 'primeng/select';
+import { MultiSelectModule } from 'primeng/multiselect';
+import { CheckboxModule } from 'primeng/checkbox';
 import { FileUploadModule } from 'primeng/fileupload';
 import { InputMaskDirective } from 'primeng/inputmask';
-import { ClubType, ExhibitorType, StandManagerForm } from '@app/dashboard/models/edition-form.models';
+import { ClubType, EntityManagerForm, ExhibitorType, StandManagerForm } from '@app/dashboard/models/edition-form.models';
 import { ValidatableFormStep } from '@app/dashboard/models/validatable-form-step';
 import { EditionFormStateService } from '@app/dashboard/services/edition-form-state.service';
 import { ActivityDomainService } from '@app/dashboard/services/activity-domain.service';
+import { PastEditionService } from '@app/dashboard/services/past-edition.service';
 import { ActivityDomainApiDto } from '@app/dashboard/models/registration-api.models';
 import { InsuranceRcComponent } from '@app/dashboard/page/edition-form/components/insurance-rc/insurance-rc.component';
+
+/**
+ * « Vous étiez présent en » est obligatoire, mais `[]` (« Aucun ») est une réponse valide : seul
+ * `null` (pas encore répondu) est refusé, ce que `Validators.required` ne sait pas exprimer.
+ */
+function answeredValidator(control: AbstractControl): ValidationErrors | null {
+  return control.value === null ? { required: true } : null;
+}
 
 interface ClubTypeOption {
   label: string;
@@ -19,16 +30,18 @@ interface ClubTypeOption {
 }
 
 /**
- * Formulaire typé de l'étape Entité. `siret`/`activityDomainId`/`clubType` sont nullable au niveau
- * du type car leur validator (`required`) n'est appliqué que conditionnellement selon
+ * Formulaire typé de l'étape Entité. `siret`/`clubType` sont nullable (et `activityDomainIds` peut
+ * être vide) car leur validator (`required`) n'est appliqué que conditionnellement selon
  * `exhibitorType` — cf. `applyExhibitorTypeValidators()`.
  */
 interface EntityFormControls {
   exhibitorType: ExhibitorType;
   companyName: string;
   siret: string | null;
-  activityDomainId: string | null;
+  activityDomainIds: string[];
   clubType: ClubType | null;
+  entityManager: EntityManagerForm;
+  previousEditions: string[] | null;
 }
 
 @Component({
@@ -40,6 +53,8 @@ interface EntityFormControls {
     ButtonModule,
     InputTextModule,
     SelectModule,
+    MultiSelectModule,
+    CheckboxModule,
     FileUploadModule,
     InputMaskDirective,
     InsuranceRcComponent,
@@ -49,6 +64,7 @@ interface EntityFormControls {
 export class StepEntityComponent implements OnInit, ValidatableFormStep {
   protected readonly formState = inject(EditionFormStateService);
   private readonly activityDomainService = inject(ActivityDomainService);
+  private readonly pastEditionService = inject(PastEditionService);
   private readonly fb = inject(FormBuilder);
   private readonly destroyRef = inject(DestroyRef);
 
@@ -63,12 +79,32 @@ export class StepEntityComponent implements OnInit, ValidatableFormStep {
     initialValue: [] as ActivityDomainApiDto[],
   });
 
+  private readonly pastEditionOptions = toSignal(this.pastEditionService.getAll(), { initialValue: [] as string[] });
+
+  /**
+   * Années à cocher : celles proposées par l'admin, plus celles déjà enregistrées sur l'inscription
+   * mais désactivées depuis, pour que l'exposant voie toujours ce qu'il a coché.
+   */
+  protected readonly previousEditionYears = computed(() =>
+    [...new Set([...this.pastEditionOptions(), ...(this.formState.registration()?.entity.previousEditions ?? [])])].sort(),
+  );
+
   protected readonly form = this.fb.group({
     exhibitorType: this.fb.nonNullable.control<ExhibitorType>(ExhibitorType.PRO),
     companyName: this.fb.nonNullable.control('', Validators.required),
     siret: this.fb.control<string | null>(null),
-    activityDomainId: this.fb.control<string | null>(null),
+    activityDomainIds: this.fb.nonNullable.control<string[]>([]),
     clubType: this.fb.control<ClubType | null>(null),
+    /** Responsable de l'entité : exigé quel que soit le type d'exposant, contrairement aux champs ci-dessus. */
+    entityManager: this.fb.nonNullable.group({
+      firstName: ['', Validators.required],
+      lastName: ['', Validators.required],
+      phone: [''],
+      // `pattern` en plus de `email` : ce dernier accepte « a@b », que le back refuse à la soumission.
+      email: ['', [Validators.required, Validators.email, Validators.pattern(/^[^@\s]+@[^@\s]+\.[^@\s]+$/)]],
+    }),
+    /** `null` = pas répondu, `[]` = « Aucun ». Piloté par les cases de la carte « Vous étiez présent en ». */
+    previousEditions: this.fb.control<string[] | null>(null, answeredValidator),
   });
 
   protected newManager: Omit<StandManagerForm, 'id'> = {
@@ -106,28 +142,28 @@ export class StepEntityComponent implements OnInit, ValidatableFormStep {
   }
 
   /**
-   * `siret`/`activityDomainId` ne sont requis que pour un exposant PRO, `clubType` que pour un
+   * `siret`/`activityDomainIds` ne sont requis que pour un exposant PRO, `clubType` que pour un
    * CLUB. On efface aussi la valeur du champ qui devient non pertinent pour ne pas garder de
    * donnée fantôme envoyée au back (ex: SIRET conservé après bascule PRO → CLUB).
    */
   private applyExhibitorTypeValidators(type: ExhibitorType): void {
-    const { siret, activityDomainId, clubType } = this.form.controls;
+    const { siret, activityDomainIds, clubType } = this.form.controls;
 
     if (type === ExhibitorType.PRO) {
       siret.setValidators(Validators.required);
-      activityDomainId.setValidators(Validators.required);
+      activityDomainIds.setValidators(Validators.required);
       clubType.clearValidators();
       clubType.setValue(null, { emitEvent: false });
     } else {
       siret.clearValidators();
-      activityDomainId.clearValidators();
+      activityDomainIds.clearValidators();
       siret.setValue(null, { emitEvent: false });
-      activityDomainId.setValue(null, { emitEvent: false });
+      activityDomainIds.setValue([], { emitEvent: false });
       clubType.setValidators(Validators.required);
     }
 
     siret.updateValueAndValidity({ emitEvent: false });
-    activityDomainId.updateValueAndValidity({ emitEvent: false });
+    activityDomainIds.updateValueAndValidity({ emitEvent: false });
     clubType.updateValueAndValidity({ emitEvent: false });
   }
 
@@ -139,6 +175,35 @@ export class StepEntityComponent implements OnInit, ValidatableFormStep {
   validateAndTouch(): boolean {
     this.form.markAllAsTouched();
     return this.form.valid;
+  }
+
+  protected isYearChecked(year: string): boolean {
+    return this.form.controls.previousEditions.value?.includes(year) ?? false;
+  }
+
+  protected isNoneChecked(): boolean {
+    return this.form.controls.previousEditions.value?.length === 0;
+  }
+
+  /**
+   * Cocher une année décoche « Aucun ». Décocher la dernière année repasse à `null` et non à `[]`,
+   * sans quoi l'exposant se retrouverait à avoir répondu « Aucun » sans l'avoir choisi.
+   */
+  protected onYearChange(year: string, checked: boolean): void {
+    const current = this.form.controls.previousEditions.value ?? [];
+    const next = checked ? [...new Set([...current, year])].sort() : current.filter((y) => y !== year);
+    this.setPreviousEditions(next.length > 0 ? next : null);
+  }
+
+  /** « Aucun » est exclusif : le cocher efface les années, le décocher repasse à « pas répondu ». */
+  protected onNoneChange(checked: boolean): void {
+    this.setPreviousEditions(checked ? [] : null);
+  }
+
+  private setPreviousEditions(value: string[] | null): void {
+    const control = this.form.controls.previousEditions;
+    control.setValue(value);
+    control.markAsTouched();
   }
 
   protected addManager(): void {
