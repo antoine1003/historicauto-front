@@ -19,6 +19,7 @@ import {
   PARTITION_SEGMENT_COUNTS,
   PartitionDetailForm,
   PartitionLayout,
+  STAND_COMMENT_MAX_LENGTH,
 } from '@app/dashboard/models/edition-form.models';
 
 @Component({
@@ -46,6 +47,7 @@ export class StepStandComponent implements ValidatableFormStep {
   protected readonly OptionGroupBehaviour = OptionGroupBehaviour;
   protected readonly partitionLayouts = Object.values(PartitionLayout);
   protected readonly layoutLabels = PARTITION_LAYOUT_LABELS;
+  protected readonly commentMaxLength = STAND_COMMENT_MAX_LENGTH;
 
   /** Les erreurs ne s'affichent qu'après une tentative de navigation ou d'envoi. */
   private readonly validationRevealed = signal(false);

@@ -593,6 +593,12 @@ export class EditionFormStateService {
     this.scheduleStandAutosave();
   }
 
+  /** Commentaire libre de l'exposant sur sa demande, envoyé avec le reste de l'étape Stand. */
+  setStandComment(comment: string): void {
+    this.patchLocalState((reg) => ({ stand: { ...reg.stand, comment: comment.trim() === '' ? null : comment } }));
+    this.scheduleStandAutosave();
+  }
+
   updateConfirmationChecklist(patch: Partial<EditionRegistrationState['confirmation']['checklist']>): void {
     if (!this.isConfirmationEditable()) {
       return;
@@ -616,6 +622,18 @@ export class EditionFormStateService {
   submitRegistrationOptions(): void {
     const reg = this.state();
     if (!reg || this.missingRequiredGroups().length > 0) {
+      return;
+    }
+
+    // Une sauvegarde de l'étape Stand encore en attente (debounce) est envoyée avant la
+    // soumission : sans cela, un commentaire tapé juste avant « Envoyer ma demande » partirait
+    // après la soumission, voire jamais. En cas d'échec, le toast de saveStandNow() s'affiche et
+    // la soumission n'a pas lieu.
+    if (this.standAutosaveTimer) {
+      clearTimeout(this.standAutosaveTimer);
+      this.standAutosaveTimer = null;
+      this.saveStandNow(() => this.submitRegistrationOptions());
+
       return;
     }
 
@@ -855,59 +873,69 @@ export class EditionFormStateService {
     }
     this.standAutosaveStatusSignal.set('saving');
     this.standAutosaveTimer = setTimeout(() => {
-      const reg = this.state();
-      if (!reg) {
-        return;
-      }
-      // Tant que le bloc cloison est incomplet, on n'envoie rien : le serveur rejette en 400 une
-      // disposition sans longueurs, et une saisie en cours n'a pas à faire remonter une erreur à
-      // l'exposant. La sauvegarde repart d'elle-même à la modification suivante.
-      if (!this.isStandPayloadSendable(reg.stand)) {
-        this.standAutosaveStatusSignal.set('pending');
-
-        return;
-      }
-
-      const payload: StandStepPayload = {
-        selections: reg.stand.selections,
-        partition: reg.stand.partition,
-      };
-      this.registrationService.patchStand(reg.id, payload).subscribe({
-        next: (response) => {
-          // On ne remplace QUE les champs dérivés côté serveur (lignes/totaux) : `selections` et
-          // `partition` restent sous contrôle local, car l'exposant peut avoir continué à modifier
-          // ces champs pendant l'aller-retour réseau (debounce + latence) — un écho serveur qui
-          // remplacerait tout écraserait silencieusement une saisie en cours (cf. revue finale).
-          this.state.update((current) => {
-            if (!current) {
-              return current;
-            }
-            const dto = this.toStandStepState(response.data);
-
-            return {
-              ...current,
-              stand: {
-                ...current.stand,
-                lines: dto.lines,
-                totalTtc: dto.totalTtc,
-                totalVat: dto.totalVat,
-                depositTtc: dto.depositTtc,
-              },
-            };
-          });
-          this.standAutosaveStatusSignal.set('saved');
-        },
-        error: () => {
-          this.standAutosaveStatusSignal.set('error');
-          this.messageService.add({
-            severity: 'error',
-            summary: 'Échec de la sauvegarde',
-            detail: "Vos options de stand n'ont pas pu être enregistrées. Nouvel essai à la prochaine modification.",
-          });
-        },
-      });
       this.standAutosaveTimer = null;
+      this.saveStandNow();
     }, AUTOSAVE_DEBOUNCE_MS);
+  }
+
+  /**
+   * Envoie immédiatement l'état local de l'étape Stand. `onSaved` n'est appelé qu'en cas de
+   * succès (utilisé par submitRegistrationOptions() pour soumettre après la dernière sauvegarde).
+   */
+  private saveStandNow(onSaved?: () => void): void {
+    const reg = this.state();
+    if (!reg) {
+      return;
+    }
+    // Tant que le bloc cloison est incomplet, on n'envoie rien : le serveur rejette en 400 une
+    // disposition sans longueurs, et une saisie en cours n'a pas à faire remonter une erreur à
+    // l'exposant. La sauvegarde repart d'elle-même à la modification suivante.
+    if (!this.isStandPayloadSendable(reg.stand)) {
+      this.standAutosaveStatusSignal.set('pending');
+
+      return;
+    }
+
+    const payload: StandStepPayload = {
+      selections: reg.stand.selections,
+      partition: reg.stand.partition,
+      comment: reg.stand.comment,
+    };
+    this.registrationService.patchStand(reg.id, payload).subscribe({
+      next: (response) => {
+        // On ne remplace QUE les champs dérivés côté serveur (lignes/totaux) : `selections` et
+        // `partition` restent sous contrôle local, car l'exposant peut avoir continué à modifier
+        // ces champs pendant l'aller-retour réseau (debounce + latence) — un écho serveur qui
+        // remplacerait tout écraserait silencieusement une saisie en cours (cf. revue finale).
+        this.state.update((current) => {
+          if (!current) {
+            return current;
+          }
+          const dto = this.toStandStepState(response.data);
+
+          return {
+            ...current,
+            stand: {
+              ...current.stand,
+              lines: dto.lines,
+              totalTtc: dto.totalTtc,
+              totalVat: dto.totalVat,
+              depositTtc: dto.depositTtc,
+            },
+          };
+        });
+        this.standAutosaveStatusSignal.set('saved');
+        onSaved?.();
+      },
+      error: () => {
+        this.standAutosaveStatusSignal.set('error');
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Échec de la sauvegarde',
+          detail: "Vos options de stand n'ont pas pu être enregistrées. Nouvel essai à la prochaine modification.",
+        });
+      },
+    });
   }
 
   // ---------------------------------------------------------------------------------------------
@@ -991,6 +1019,7 @@ export class EditionFormStateService {
       totalTtc: dto.totalTtc,
       totalVat: dto.totalVat,
       depositTtc: dto.depositTtc,
+      comment: dto.comment ?? null,
     };
   }
 
