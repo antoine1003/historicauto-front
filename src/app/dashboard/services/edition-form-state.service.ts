@@ -823,6 +823,7 @@ export class EditionFormStateService {
         siret: reg.entity.siret,
         activityDomainIds: reg.entity.activityDomainIds,
         clubType: reg.entity.clubType,
+        entityManager: reg.entity.entityManager,
       };
       this.registrationService.patchEntity(reg.id, payload).subscribe({
         next: (response) => {
@@ -964,6 +965,12 @@ export class EditionFormStateService {
       activityDomainIds: dto.activityDomainIds ?? [],
       clubType: dto.clubType as EditionRegistrationState['entity']['clubType'],
       visualUrl: dto.visualUrl ? toAbsoluteUrl(dto.visualUrl) : null,
+      entityManager: {
+        firstName: dto.entityManager?.firstName ?? '',
+        lastName: dto.entityManager?.lastName ?? '',
+        phone: dto.entityManager?.phone ?? '',
+        email: dto.entityManager?.email ?? '',
+      },
       managers: dto.managers.map((m) => ({
         id: m.id,
         firstName: m.firstName,

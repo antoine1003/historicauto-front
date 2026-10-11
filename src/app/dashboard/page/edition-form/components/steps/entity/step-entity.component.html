@@ -79,6 +79,41 @@
         </div>
       }
 
+      <div class="ef-field" formGroupName="entityManager">
+        <label class="ef-label">Responsable de l'entité</label>
+        <p class="ef-help-text mb-2">Il recevra, en plus du titulaire du compte, toutes les notifications liées à cette inscription.</p>
+        @let manager = form.controls.entityManager.controls;
+        <div class="ef-grid-2 !mb-0">
+          <div class="ef-field">
+            <label class="ef-label" for="entityManagerFirstName">Prénom *</label>
+            <input pInputText id="entityManagerFirstName" class="w-full" formControlName="firstName" maxlength="100" autocomplete="given-name" />
+            @if (manager.firstName.touched && manager.firstName.invalid) {
+              <p class="ef-field-error">Le prénom du responsable est obligatoire.</p>
+            }
+          </div>
+          <div class="ef-field">
+            <label class="ef-label" for="entityManagerLastName">Nom *</label>
+            <input pInputText id="entityManagerLastName" class="w-full" formControlName="lastName" maxlength="100" autocomplete="family-name" />
+            @if (manager.lastName.touched && manager.lastName.invalid) {
+              <p class="ef-field-error">Le nom du responsable est obligatoire.</p>
+            }
+          </div>
+          <div class="ef-field">
+            <label class="ef-label" for="entityManagerPhone">Téléphone</label>
+            <input pInputText id="entityManagerPhone" type="tel" class="w-full" formControlName="phone" maxlength="20" autocomplete="tel" />
+          </div>
+          <div class="ef-field">
+            <label class="ef-label" for="entityManagerEmail">Email *</label>
+            <input pInputText id="entityManagerEmail" type="email" class="w-full" formControlName="email" maxlength="180" autocomplete="email" />
+            @if (manager.email.touched && manager.email.hasError('required')) {
+              <p class="ef-field-error">L'email du responsable est obligatoire.</p>
+            } @else if (manager.email.touched && manager.email.invalid) {
+              <p class="ef-field-error">L'email du responsable n'est pas valide.</p>
+            }
+          </div>
+        </div>
+      </div>
+
       <div class="ef-field">
         <label class="ef-label">Visuel à faire figurer dans la liste des exposants</label>
         @if (registration.entity.visualUrl) {

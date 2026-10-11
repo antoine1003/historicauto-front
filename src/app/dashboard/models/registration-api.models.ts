@@ -12,6 +12,13 @@ export interface StandManagerApiDto {
   email: string;
 }
 
+export interface EntityManagerApiDto {
+  firstName: string;
+  lastName: string;
+  phone: string | null;
+  email: string | null;
+}
+
 export interface EntityStepApiDto {
   exhibitorType: string;
   companyName: string;
@@ -19,6 +26,7 @@ export interface EntityStepApiDto {
   activityDomainIds: string[];
   clubType: string | null;
   visualUrl: string | null;
+  entityManager: EntityManagerApiDto;
   managers: StandManagerApiDto[];
 }
 

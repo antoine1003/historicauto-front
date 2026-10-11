@@ -7,7 +7,7 @@ import { SelectModule } from 'primeng/select';
 import { MultiSelectModule } from 'primeng/multiselect';
 import { FileUploadModule } from 'primeng/fileupload';
 import { InputMaskDirective } from 'primeng/inputmask';
-import { ClubType, ExhibitorType, StandManagerForm } from '@app/dashboard/models/edition-form.models';
+import { ClubType, EntityManagerForm, ExhibitorType, StandManagerForm } from '@app/dashboard/models/edition-form.models';
 import { ValidatableFormStep } from '@app/dashboard/models/validatable-form-step';
 import { EditionFormStateService } from '@app/dashboard/services/edition-form-state.service';
 import { ActivityDomainService } from '@app/dashboard/services/activity-domain.service';
@@ -30,6 +30,7 @@ interface EntityFormControls {
   siret: string | null;
   activityDomainIds: string[];
   clubType: ClubType | null;
+  entityManager: EntityManagerForm;
 }
 
 @Component({
@@ -71,6 +72,14 @@ export class StepEntityComponent implements OnInit, ValidatableFormStep {
     siret: this.fb.control<string | null>(null),
     activityDomainIds: this.fb.nonNullable.control<string[]>([]),
     clubType: this.fb.control<ClubType | null>(null),
+    /** Responsable de l'entité : exigé quel que soit le type d'exposant, contrairement aux champs ci-dessus. */
+    entityManager: this.fb.nonNullable.group({
+      firstName: ['', Validators.required],
+      lastName: ['', Validators.required],
+      phone: [''],
+      // `pattern` en plus de `email` : ce dernier accepte « a@b », que le back refuse à la soumission.
+      email: ['', [Validators.required, Validators.email, Validators.pattern(/^[^@\s]+@[^@\s]+\.[^@\s]+$/)]],
+    }),
   });
 
   protected newManager: Omit<StandManagerForm, 'id'> = {

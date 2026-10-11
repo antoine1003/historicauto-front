@@ -80,6 +80,14 @@ export interface StandManagerForm {
   email: string;
 }
 
+/** Responsable de l'entité : un seul par inscription, prénom, nom et email obligatoires. */
+export interface EntityManagerForm {
+  firstName: string;
+  lastName: string;
+  phone: string;
+  email: string;
+}
+
 export interface EntityStepState {
   exhibitorType: ExhibitorType;
   companyName: string;
@@ -90,6 +98,7 @@ export interface EntityStepState {
   /** Uniquement pertinent si exhibitorType === CLUB. */
   clubType: ClubType | null;
   visualUrl: string | null;
+  entityManager: EntityManagerForm;
   managers: StandManagerForm[];
 }
 
@@ -247,6 +256,7 @@ export interface EntityStepPayload {
   siret: string | null;
   activityDomainIds: string[];
   clubType: ClubType | null;
+  entityManager: EntityManagerForm;
 }
 
 export interface StandStepPayload {
