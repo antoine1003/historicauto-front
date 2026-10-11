@@ -27,6 +27,7 @@ export interface EntityStepApiDto {
   clubType: string | null;
   visualUrl: string | null;
   entityManager: EntityManagerApiDto;
+  previousEditions: string[] | null;
   managers: StandManagerApiDto[];
 }
 

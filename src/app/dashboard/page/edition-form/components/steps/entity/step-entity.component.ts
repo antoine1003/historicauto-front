@@ -1,18 +1,28 @@
-import { Component, DestroyRef, effect, inject, OnInit } from '@angular/core';
-import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Component, computed, DestroyRef, effect, inject, OnInit } from '@angular/core';
+import { AbstractControl, FormBuilder, FormsModule, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { SelectModule } from 'primeng/select';
 import { MultiSelectModule } from 'primeng/multiselect';
+import { CheckboxModule } from 'primeng/checkbox';
 import { FileUploadModule } from 'primeng/fileupload';
 import { InputMaskDirective } from 'primeng/inputmask';
 import { ClubType, EntityManagerForm, ExhibitorType, StandManagerForm } from '@app/dashboard/models/edition-form.models';
 import { ValidatableFormStep } from '@app/dashboard/models/validatable-form-step';
 import { EditionFormStateService } from '@app/dashboard/services/edition-form-state.service';
 import { ActivityDomainService } from '@app/dashboard/services/activity-domain.service';
+import { PastEditionService } from '@app/dashboard/services/past-edition.service';
 import { ActivityDomainApiDto } from '@app/dashboard/models/registration-api.models';
 import { InsuranceRcComponent } from '@app/dashboard/page/edition-form/components/insurance-rc/insurance-rc.component';
+
+/**
+ * « Vous étiez présent en » est obligatoire, mais `[]` (« Aucun ») est une réponse valide : seul
+ * `null` (pas encore répondu) est refusé, ce que `Validators.required` ne sait pas exprimer.
+ */
+function answeredValidator(control: AbstractControl): ValidationErrors | null {
+  return control.value === null ? { required: true } : null;
+}
 
 interface ClubTypeOption {
   label: string;
@@ -31,6 +41,7 @@ interface EntityFormControls {
   activityDomainIds: string[];
   clubType: ClubType | null;
   entityManager: EntityManagerForm;
+  previousEditions: string[] | null;
 }
 
 @Component({
@@ -43,6 +54,7 @@ interface EntityFormControls {
     InputTextModule,
     SelectModule,
     MultiSelectModule,
+    CheckboxModule,
     FileUploadModule,
     InputMaskDirective,
     InsuranceRcComponent,
@@ -52,6 +64,7 @@ interface EntityFormControls {
 export class StepEntityComponent implements OnInit, ValidatableFormStep {
   protected readonly formState = inject(EditionFormStateService);
   private readonly activityDomainService = inject(ActivityDomainService);
+  private readonly pastEditionService = inject(PastEditionService);
   private readonly fb = inject(FormBuilder);
   private readonly destroyRef = inject(DestroyRef);
 
@@ -65,6 +78,16 @@ export class StepEntityComponent implements OnInit, ValidatableFormStep {
   protected readonly activityDomainOptions = toSignal(this.activityDomainService.getAll(), {
     initialValue: [] as ActivityDomainApiDto[],
   });
+
+  private readonly pastEditionOptions = toSignal(this.pastEditionService.getAll(), { initialValue: [] as string[] });
+
+  /**
+   * Années à cocher : celles proposées par l'admin, plus celles déjà enregistrées sur l'inscription
+   * mais désactivées depuis, pour que l'exposant voie toujours ce qu'il a coché.
+   */
+  protected readonly previousEditionYears = computed(() =>
+    [...new Set([...this.pastEditionOptions(), ...(this.formState.registration()?.entity.previousEditions ?? [])])].sort(),
+  );
 
   protected readonly form = this.fb.group({
     exhibitorType: this.fb.nonNullable.control<ExhibitorType>(ExhibitorType.PRO),
@@ -80,6 +103,8 @@ export class StepEntityComponent implements OnInit, ValidatableFormStep {
       // `pattern` en plus de `email` : ce dernier accepte « a@b », que le back refuse à la soumission.
       email: ['', [Validators.required, Validators.email, Validators.pattern(/^[^@\s]+@[^@\s]+\.[^@\s]+$/)]],
     }),
+    /** `null` = pas répondu, `[]` = « Aucun ». Piloté par les cases de la carte « Vous étiez présent en ». */
+    previousEditions: this.fb.control<string[] | null>(null, answeredValidator),
   });
 
   protected newManager: Omit<StandManagerForm, 'id'> = {
@@ -150,6 +175,35 @@ export class StepEntityComponent implements OnInit, ValidatableFormStep {
   validateAndTouch(): boolean {
     this.form.markAllAsTouched();
     return this.form.valid;
+  }
+
+  protected isYearChecked(year: string): boolean {
+    return this.form.controls.previousEditions.value?.includes(year) ?? false;
+  }
+
+  protected isNoneChecked(): boolean {
+    return this.form.controls.previousEditions.value?.length === 0;
+  }
+
+  /**
+   * Cocher une année décoche « Aucun ». Décocher la dernière année repasse à `null` et non à `[]`,
+   * sans quoi l'exposant se retrouverait à avoir répondu « Aucun » sans l'avoir choisi.
+   */
+  protected onYearChange(year: string, checked: boolean): void {
+    const current = this.form.controls.previousEditions.value ?? [];
+    const next = checked ? [...new Set([...current, year])].sort() : current.filter((y) => y !== year);
+    this.setPreviousEditions(next.length > 0 ? next : null);
+  }
+
+  /** « Aucun » est exclusif : le cocher efface les années, le décocher repasse à « pas répondu ». */
+  protected onNoneChange(checked: boolean): void {
+    this.setPreviousEditions(checked ? [] : null);
+  }
+
+  private setPreviousEditions(value: string[] | null): void {
+    const control = this.form.controls.previousEditions;
+    control.setValue(value);
+    control.markAsTouched();
   }
 
   protected addManager(): void {

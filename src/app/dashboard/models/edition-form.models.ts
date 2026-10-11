@@ -99,6 +99,8 @@ export interface EntityStepState {
   clubType: ClubType | null;
   visualUrl: string | null;
   entityManager: EntityManagerForm;
+  /** « Vous étiez présent en » : `null` = pas encore répondu, `[]` = « Aucun ». */
+  previousEditions: string[] | null;
   managers: StandManagerForm[];
 }
 
@@ -257,6 +259,7 @@ export interface EntityStepPayload {
   activityDomainIds: string[];
   clubType: ClubType | null;
   entityManager: EntityManagerForm;
+  previousEditions: string[] | null;
 }
 
 export interface StandStepPayload {

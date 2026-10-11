@@ -173,4 +173,40 @@
       </div>
     }
   </div>
+
+  <div class="ef-panel mt-6">
+    <h2 class="ef-section-title">Vous étiez présent en *</h2>
+    <p class="ef-help-text mb-3">Cochez les éditions auxquelles vous avez participé, ou « Aucun ».</p>
+
+    @let previousEditions = form.controls.previousEditions;
+    <div class="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-6" role="group" aria-label="Éditions auxquelles vous étiez présent">
+      @for (year of previousEditionYears(); track year) {
+        <div class="flex items-center gap-2">
+          <p-checkbox
+            [inputId]="'previous-edition-' + year"
+            [binary]="true"
+            [ngModel]="isYearChecked(year)"
+            (ngModelChange)="onYearChange(year, $event)"
+            [disabled]="previousEditions.disabled"
+          />
+          <label [for]="'previous-edition-' + year" class="text-sm text-[#1A1714]">{{ year }}</label>
+        </div>
+      }
+    </div>
+
+    <div class="flex items-center gap-2" [class.mt-4]="previousEditionYears().length > 0">
+      <p-checkbox
+        inputId="previous-edition-none"
+        [binary]="true"
+        [ngModel]="isNoneChecked()"
+        (ngModelChange)="onNoneChange($event)"
+        [disabled]="previousEditions.disabled"
+      />
+      <label for="previous-edition-none" class="text-sm text-[#1A1714]">Aucun</label>
+    </div>
+
+    @if (previousEditions.touched && previousEditions.invalid) {
+      <p class="ef-field-error">Cochez au moins une année, ou « Aucun ».</p>
+    }
+  </div>
 }

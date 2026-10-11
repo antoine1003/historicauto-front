@@ -824,6 +824,7 @@ export class EditionFormStateService {
         activityDomainIds: reg.entity.activityDomainIds,
         clubType: reg.entity.clubType,
         entityManager: reg.entity.entityManager,
+        previousEditions: reg.entity.previousEditions,
       };
       this.registrationService.patchEntity(reg.id, payload).subscribe({
         next: (response) => {
@@ -971,6 +972,7 @@ export class EditionFormStateService {
         phone: dto.entityManager?.phone ?? '',
         email: dto.entityManager?.email ?? '',
       },
+      previousEditions: dto.previousEditions ?? null,
       managers: dto.managers.map((m) => ({
         id: m.id,
         firstName: m.firstName,
