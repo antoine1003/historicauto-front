@@ -4,6 +4,7 @@ import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { SelectModule } from 'primeng/select';
+import { MultiSelectModule } from 'primeng/multiselect';
 import { FileUploadModule } from 'primeng/fileupload';
 import { InputMaskDirective } from 'primeng/inputmask';
 import { ClubType, ExhibitorType, StandManagerForm } from '@app/dashboard/models/edition-form.models';
@@ -19,15 +20,15 @@ interface ClubTypeOption {
 }
 
 /**
- * Formulaire typé de l'étape Entité. `siret`/`activityDomainId`/`clubType` sont nullable au niveau
- * du type car leur validator (`required`) n'est appliqué que conditionnellement selon
+ * Formulaire typé de l'étape Entité. `siret`/`clubType` sont nullable (et `activityDomainIds` peut
+ * être vide) car leur validator (`required`) n'est appliqué que conditionnellement selon
  * `exhibitorType` — cf. `applyExhibitorTypeValidators()`.
  */
 interface EntityFormControls {
   exhibitorType: ExhibitorType;
   companyName: string;
   siret: string | null;
-  activityDomainId: string | null;
+  activityDomainIds: string[];
   clubType: ClubType | null;
 }
 
@@ -40,6 +41,7 @@ interface EntityFormControls {
     ButtonModule,
     InputTextModule,
     SelectModule,
+    MultiSelectModule,
     FileUploadModule,
     InputMaskDirective,
     InsuranceRcComponent,
@@ -67,7 +69,7 @@ export class StepEntityComponent implements OnInit, ValidatableFormStep {
     exhibitorType: this.fb.nonNullable.control<ExhibitorType>(ExhibitorType.PRO),
     companyName: this.fb.nonNullable.control('', Validators.required),
     siret: this.fb.control<string | null>(null),
-    activityDomainId: this.fb.control<string | null>(null),
+    activityDomainIds: this.fb.nonNullable.control<string[]>([]),
     clubType: this.fb.control<ClubType | null>(null),
   });
 
@@ -106,28 +108,28 @@ export class StepEntityComponent implements OnInit, ValidatableFormStep {
   }
 
   /**
-   * `siret`/`activityDomainId` ne sont requis que pour un exposant PRO, `clubType` que pour un
+   * `siret`/`activityDomainIds` ne sont requis que pour un exposant PRO, `clubType` que pour un
    * CLUB. On efface aussi la valeur du champ qui devient non pertinent pour ne pas garder de
    * donnée fantôme envoyée au back (ex: SIRET conservé après bascule PRO → CLUB).
    */
   private applyExhibitorTypeValidators(type: ExhibitorType): void {
-    const { siret, activityDomainId, clubType } = this.form.controls;
+    const { siret, activityDomainIds, clubType } = this.form.controls;
 
     if (type === ExhibitorType.PRO) {
       siret.setValidators(Validators.required);
-      activityDomainId.setValidators(Validators.required);
+      activityDomainIds.setValidators(Validators.required);
       clubType.clearValidators();
       clubType.setValue(null, { emitEvent: false });
     } else {
       siret.clearValidators();
-      activityDomainId.clearValidators();
+      activityDomainIds.clearValidators();
       siret.setValue(null, { emitEvent: false });
-      activityDomainId.setValue(null, { emitEvent: false });
+      activityDomainIds.setValue([], { emitEvent: false });
       clubType.setValidators(Validators.required);
     }
 
     siret.updateValueAndValidity({ emitEvent: false });
-    activityDomainId.updateValueAndValidity({ emitEvent: false });
+    activityDomainIds.updateValueAndValidity({ emitEvent: false });
     clubType.updateValueAndValidity({ emitEvent: false });
   }
 

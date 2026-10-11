@@ -85,8 +85,8 @@ export interface EntityStepState {
   companyName: string;
   /** Uniquement pertinent si exhibitorType === PRO. */
   siret: string | null;
-  /** Uniquement pertinent si exhibitorType === PRO. UUID d'ActivityDomain, résolu via ActivityDomainService. */
-  activityDomainId: string | null;
+  /** Uniquement pertinent si exhibitorType === PRO. UUIDs d'ActivityDomain, résolus via ActivityDomainService. */
+  activityDomainIds: string[];
   /** Uniquement pertinent si exhibitorType === CLUB. */
   clubType: ClubType | null;
   visualUrl: string | null;
@@ -245,7 +245,7 @@ export interface EntityStepPayload {
   exhibitorType: ExhibitorType;
   companyName: string;
   siret: string | null;
-  activityDomainId: string | null;
+  activityDomainIds: string[];
   clubType: ClubType | null;
 }
 

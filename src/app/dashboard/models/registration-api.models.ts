@@ -16,7 +16,7 @@ export interface EntityStepApiDto {
   exhibitorType: string;
   companyName: string;
   siret: string | null;
-  activityDomainId: string | null;
+  activityDomainIds: string[];
   clubType: string | null;
   visualUrl: string | null;
   managers: StandManagerApiDto[];

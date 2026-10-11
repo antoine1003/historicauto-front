@@ -42,17 +42,23 @@
           </div>
 
           <div class="ef-field">
-            <label class="ef-label" for="activityDomainId">Domaine d'activité *</label>
-            <p-select
-              inputId="activityDomainId"
-              formControlName="activityDomainId"
+            <label class="ef-label" for="activityDomainIds">Domaines d'activité *</label>
+            <p-multiselect
+              inputId="activityDomainIds"
+              formControlName="activityDomainIds"
               [options]="activityDomainOptions()"
               optionLabel="label"
               optionValue="id"
-              styleClass="w-full"
+              display="chip"
+              [maxSelectedLabels]="null"
+              placeholder="Sélectionnez un ou plusieurs domaines"
+              [filter]="true"
+              filterPlaceHolder="Rechercher un domaine"
+              [showToggleAll]="false"
+              styleClass="w-full ef-multiselect-wrap"
             />
-            @if (form.controls.activityDomainId.touched && form.controls.activityDomainId.invalid) {
-              <p class="ef-field-error">Le domaine d'activité est obligatoire pour un exposant professionnel.</p>
+            @if (form.controls.activityDomainIds.touched && form.controls.activityDomainIds.invalid) {
+              <p class="ef-field-error">Au moins un domaine d'activité est obligatoire pour un exposant professionnel.</p>
             }
           </div>
         </div>

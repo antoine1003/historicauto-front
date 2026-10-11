@@ -821,7 +821,7 @@ export class EditionFormStateService {
         exhibitorType: reg.entity.exhibitorType,
         companyName: reg.entity.companyName,
         siret: reg.entity.siret,
-        activityDomainId: reg.entity.activityDomainId,
+        activityDomainIds: reg.entity.activityDomainIds,
         clubType: reg.entity.clubType,
       };
       this.registrationService.patchEntity(reg.id, payload).subscribe({
@@ -961,7 +961,7 @@ export class EditionFormStateService {
       exhibitorType: dto.exhibitorType as EditionRegistrationState['entity']['exhibitorType'],
       companyName: dto.companyName,
       siret: dto.siret,
-      activityDomainId: dto.activityDomainId,
+      activityDomainIds: dto.activityDomainIds ?? [],
       clubType: dto.clubType as EditionRegistrationState['entity']['clubType'],
       visualUrl: dto.visualUrl ? toAbsoluteUrl(dto.visualUrl) : null,
       managers: dto.managers.map((m) => ({
