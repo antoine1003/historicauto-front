@@ -231,6 +231,25 @@
       </div>
     }
 
+    <div class="mt-6 flex flex-col gap-1">
+      <label for="standComment" class="ef-label">Commentaire sur votre demande</label>
+      <p class="ef-help-text">Une précision pour l'organisation : emplacement souhaité, contrainte particulière, question…</p>
+      <textarea
+        pTextarea
+        id="standComment"
+        rows="4"
+        class="w-full"
+        [maxlength]="commentMaxLength"
+        [ngModel]="registration.stand.comment ?? ''"
+        [ngModelOptions]="{ standalone: true }"
+        (ngModelChange)="formState.setStandComment($event)"
+        [disabled]="formState.isReadOnly()"
+      ></textarea>
+      @if ((registration.stand.comment?.length ?? 0) > commentMaxLength * 0.9) {
+        <p class="ef-help-text text-right">{{ registration.stand.comment?.length ?? 0 }} / {{ commentMaxLength }}</p>
+      }
+    </div>
+
     <div class="mt-6">
       <app-options-recap
         [lines]="registration.stand.lines"

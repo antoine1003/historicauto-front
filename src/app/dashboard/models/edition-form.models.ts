@@ -163,7 +163,12 @@ export interface StandStepState {
   totalTtc: number;
   totalVat: number;
   depositTtc: number;
+  /** Commentaire libre de l'exposant sur sa demande (`null` si vide). */
+  comment: string | null;
 }
+
+/** Longueur maximale du commentaire, miroir de Registration::EXHIBITOR_COMMENT_MAX_LENGTH. */
+export const STAND_COMMENT_MAX_LENGTH = 2000;
 
 export interface ConfirmationChecklistState {
   acknowledgedQuoteAndPricing: boolean;
@@ -266,6 +271,7 @@ export interface StandStepPayload {
   /** `null` pour les groupes à quantité dérivée : le serveur la recalcule de toute façon. */
   selections: Record<string, number | null>;
   partition: PartitionDetailForm | null;
+  comment: string | null;
 }
 
 export interface NewManagerPayload {

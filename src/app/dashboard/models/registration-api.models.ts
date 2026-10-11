@@ -57,6 +57,7 @@ export interface StandStepApiDto {
   totalTtc: number;
   totalVat: number;
   depositTtc: number;
+  comment: string | null;
 }
 
 export interface ConfirmationStepApiDto {
