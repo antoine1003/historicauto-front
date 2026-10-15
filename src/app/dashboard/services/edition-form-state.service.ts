@@ -1,7 +1,7 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Router } from '@angular/router';
-import { catchError, of } from 'rxjs';
+import { catchError, concatMap, from, map, of } from 'rxjs';
 import { MessageService } from 'primeng/api';
 import { environment } from '../../../environments/environment';
 import {
@@ -20,11 +20,13 @@ import {
   StandManagerForm,
   StandStepPayload,
   StandStepState,
+  STRUCTURE_MAX_ATTACHMENTS,
+  StructureAttachment,
 } from '../models/edition-form.models';
 import { RegistrationService } from '@app/shared/services/registration.service';
 import { DocumentService } from '@app/shared/services/document.service';
 import { DocumentSummary, SharedDocumentItem } from '@app/core/models/document.model';
-import { EntityStepApiDto, RegistrationDetailApiDto, StandStepApiDto, } from '../models/registration-api.models';
+import { EntityStepApiDto, RegistrationDetailApiDto, StandStepApiDto, StructureAttachmentApiDto, } from '../models/registration-api.models';
 import { OptionsCatalogService } from '@app/dashboard/services/options-catalog.service';
 
 /** Délai avant déclenchement de la sauvegarde auto après la dernière modification (ms). */
@@ -66,6 +68,11 @@ export class EditionFormStateService {
   private readonly confirmStatusSignal = signal<'idle' | 'submitting' | 'error'>('idle');
   private entityAutosaveTimer: ReturnType<typeof setTimeout> | null = null;
   private standAutosaveTimer: ReturnType<typeof setTimeout> | null = null;
+  private standSaveInFlight = false;
+  /** Actions en attente de la fin de la sauvegarde du stand (cf. whenStandSaved()). */
+  private standSaveWaiters: Array<{ done: () => void; failed: () => void }> = [];
+  private readonly structureUploadingSignal = signal(false);
+  private readonly structureUploadErrorsSignal = signal<string[]>([]);
   private readonly checkoutInProgressSignal = signal(false);
   /**
    * Navigation vers l'Étape 5 différée jusqu'à ce que les documents réels (dont le devis signé,
@@ -96,6 +103,8 @@ export class EditionFormStateService {
   readonly activeStep = this.activeStepSignal.asReadonly();
   readonly entityAutosaveStatus = this.entityAutosaveStatusSignal.asReadonly();
   readonly standAutosaveStatus = this.standAutosaveStatusSignal.asReadonly();
+  readonly structureUploading = this.structureUploadingSignal.asReadonly();
+  readonly structureUploadErrors = this.structureUploadErrorsSignal.asReadonly();
   readonly loading = this.loadingSignal.asReadonly();
   readonly loadError = this.loadErrorSignal.asReadonly();
   readonly submitStatus = this.submitStatusSignal.asReadonly();
@@ -599,6 +608,96 @@ export class EditionFormStateService {
     this.scheduleStandAutosave();
   }
 
+  setStructureCharacteristics(characteristics: string): void {
+    this.patchLocalState((reg) => ({
+      stand: {
+        ...reg.stand,
+        structure: {
+          characteristics: characteristics.trim() === '' ? null : characteristics,
+          attachments: reg.stand.structure?.attachments ?? [],
+        },
+      },
+    }));
+    this.scheduleStandAutosave();
+  }
+
+  /**
+   * Vide l'état local du barnum après décochage. Pas d'autosave ici : le décochage en a déjà
+   * programmé un, et c'est le serveur qui supprime détail et fichiers avec la ligne.
+   */
+  clearStructureDetail(): void {
+    this.patchLocalState((reg) => ({ stand: { ...reg.stand, structure: null } }));
+    this.structureUploadErrorsSignal.set([]);
+  }
+
+  uploadStructureAttachments(files: File[]): void {
+    const reg = this.state();
+    if (!reg || this.isReadOnly() || files.length === 0) {
+      return;
+    }
+    if (!this.isStandPayloadSendable(reg.stand)) {
+      this.structureUploadErrorsSignal.set([
+        "Complétez d'abord le détail de vos cloisons : vos options de stand ne sont pas encore enregistrées.",
+      ]);
+
+      return;
+    }
+
+    const remaining = Math.max(0, STRUCTURE_MAX_ATTACHMENTS - (reg.stand.structure?.attachments.length ?? 0));
+    const accepted = files.slice(0, remaining);
+    this.structureUploadErrorsSignal.set(
+      files.slice(remaining).map((file) => `${file.name} : ${STRUCTURE_MAX_ATTACHMENTS} fichiers maximum.`),
+    );
+    if (accepted.length === 0) {
+      return;
+    }
+
+    this.structureUploadingSignal.set(true);
+    this.whenStandSaved(
+      () => this.uploadStructureFilesSequentially(reg.id, accepted),
+      () => {
+        this.structureUploadingSignal.set(false);
+        this.structureUploadErrorsSignal.update((errors) => [
+          ...errors,
+          "Vos options de stand n'ont pas pu être enregistrées : réessayez l'envoi.",
+        ]);
+      },
+    );
+  }
+
+  removeStructureAttachment(attachmentId: string): void {
+    const reg = this.state();
+    if (!reg || this.isReadOnly()) {
+      return;
+    }
+
+    this.registrationService.deleteStructureAttachment(reg.id, attachmentId).subscribe({
+      next: () => {
+        this.state.update((current) => {
+          const structure = current?.stand.structure;
+          if (!current || !structure) {
+            return current;
+          }
+
+          return {
+            ...current,
+            stand: {
+              ...current.stand,
+              structure: { ...structure, attachments: structure.attachments.filter((a) => a.id !== attachmentId) },
+            },
+          };
+        });
+      },
+      error: (err: HttpErrorResponse) => {
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Échec',
+          detail: typeof err.error?.message === 'string' ? err.error.message : "Le fichier n'a pas pu être retiré.",
+        });
+      },
+    });
+  }
+
   updateConfirmationChecklist(patch: Partial<EditionRegistrationState['confirmation']['checklist']>): void {
     if (!this.isConfirmationEditable()) {
       return;
@@ -892,6 +991,7 @@ export class EditionFormStateService {
     // l'exposant. La sauvegarde repart d'elle-même à la modification suivante.
     if (!this.isStandPayloadSendable(reg.stand)) {
       this.standAutosaveStatusSignal.set('pending');
+      this.settleStandSaveWaiters(false);
 
       return;
     }
@@ -899,12 +999,14 @@ export class EditionFormStateService {
     const payload: StandStepPayload = {
       selections: reg.stand.selections,
       partition: reg.stand.partition,
+      structure: reg.stand.structure ? { characteristics: reg.stand.structure.characteristics } : null,
       comment: reg.stand.comment,
     };
+    this.standSaveInFlight = true;
     this.registrationService.patchStand(reg.id, payload).subscribe({
       next: (response) => {
-        // On ne remplace QUE les champs dérivés côté serveur (lignes/totaux) : `selections` et
-        // `partition` restent sous contrôle local, car l'exposant peut avoir continué à modifier
+        // On ne remplace QUE les champs dérivés côté serveur (lignes/totaux) : `selections`,
+        // `partition` et `structure` restent sous contrôle local, car l'exposant peut avoir continué à modifier
         // ces champs pendant l'aller-retour réseau (debounce + latence) — un écho serveur qui
         // remplacerait tout écraserait silencieusement une saisie en cours (cf. revue finale).
         this.state.update((current) => {
@@ -925,17 +1027,108 @@ export class EditionFormStateService {
           };
         });
         this.standAutosaveStatusSignal.set('saved');
+        this.standSaveInFlight = false;
         onSaved?.();
+        this.settleStandSaveWaiters(true);
       },
       error: () => {
+        this.standSaveInFlight = false;
         this.standAutosaveStatusSignal.set('error');
         this.messageService.add({
           severity: 'error',
           summary: 'Échec de la sauvegarde',
           detail: "Vos options de stand n'ont pas pu être enregistrées. Nouvel essai à la prochaine modification.",
         });
+        this.settleStandSaveWaiters(false);
       },
     });
+  }
+
+  /**
+   * Exécute `done` une fois l'étape Stand persistée côté serveur. Nécessaire avant tout envoi de
+   * fichier barnum : la ligne d'option n'existe côté serveur qu'après l'autosave, et l'exposant
+   * peut choisir ses fichiers dans les 800 ms qui suivent la coche.
+   */
+  private whenStandSaved(done: () => void, failed: () => void): void {
+    const status = this.standAutosaveStatusSignal();
+    if (this.standAutosaveTimer || status === 'pending' || status === 'error') {
+      if (this.standAutosaveTimer) {
+        clearTimeout(this.standAutosaveTimer);
+        this.standAutosaveTimer = null;
+      }
+      this.standSaveWaiters.push({ done, failed });
+      if (!this.standSaveInFlight) {
+        this.saveStandNow();
+      }
+
+      return;
+    }
+    if (this.standSaveInFlight) {
+      this.standSaveWaiters.push({ done, failed });
+
+      return;
+    }
+    done();
+  }
+
+  private settleStandSaveWaiters(saved: boolean): void {
+    const waiters = this.standSaveWaiters;
+    this.standSaveWaiters = [];
+    waiters.forEach((waiter) => (saved ? waiter.done() : waiter.failed()));
+  }
+
+  /** Un fichier à la fois : un refus (format, taille) n'empêche pas l'envoi des suivants. */
+  private uploadStructureFilesSequentially(registrationId: string, files: File[]): void {
+    from(files)
+      .pipe(
+        concatMap((file) =>
+          this.registrationService.uploadStructureAttachment(registrationId, file).pipe(
+            map((response) => ({ file, attachment: this.toStructureAttachment(response.data), error: null as string | null })),
+            catchError((err: HttpErrorResponse) =>
+              of({
+                file,
+                attachment: null,
+                error: typeof err.error?.message === 'string' ? err.error.message : "envoi impossible.",
+              }),
+            ),
+          ),
+        ),
+      )
+      .subscribe({
+        next: ({ file, attachment, error }) => {
+          if (attachment === null) {
+            this.structureUploadErrorsSignal.update((errors) => [...errors, `${file.name} : ${error}`]);
+
+            return;
+          }
+          this.state.update((current) =>
+            current
+              ? {
+                  ...current,
+                  stand: {
+                    ...current.stand,
+                    structure: {
+                      characteristics: current.stand.structure?.characteristics ?? null,
+                      attachments: [...(current.stand.structure?.attachments ?? []), attachment],
+                    },
+                  },
+                }
+              : current,
+          );
+        },
+        complete: () => this.structureUploadingSignal.set(false),
+      });
+  }
+
+  private toStructureAttachment(dto: StructureAttachmentApiDto): StructureAttachment {
+    return {
+      id: dto.id,
+      originalName: dto.originalName,
+      mimeType: dto.mimeType,
+      fileSize: dto.fileSize,
+      url: dto.url ? toAbsoluteUrl(dto.url) : '',
+      createdAt: new Date(dto.createdAt),
+    };
   }
 
   // ---------------------------------------------------------------------------------------------
@@ -1015,6 +1208,12 @@ export class EditionFormStateService {
     return {
       selections: dto.selections,
       partition: dto.partition as StandStepState['partition'],
+      structure: dto.structure
+        ? {
+            characteristics: dto.structure.characteristics,
+            attachments: dto.structure.attachments.map((attachment) => this.toStructureAttachment(attachment)),
+          }
+        : null,
       lines: dto.lines as StandStepState['lines'],
       totalTtc: dto.totalTtc,
       totalVat: dto.totalVat,

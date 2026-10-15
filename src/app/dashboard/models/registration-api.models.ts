@@ -37,6 +37,20 @@ export interface PartitionDetailApiDto {
   usageNotes: string | null;
 }
 
+export interface StructureAttachmentApiDto {
+  id: string;
+  originalName: string;
+  mimeType: string | null;
+  fileSize: number;
+  url: string | null;
+  createdAt: string;
+}
+
+export interface StructureDetailApiDto {
+  characteristics: string | null;
+  attachments: StructureAttachmentApiDto[];
+}
+
 export interface StandLineApiDto {
   optionId: string;
   groupCode: string;
@@ -48,11 +62,13 @@ export interface StandLineApiDto {
   lineTotalTtc: number;
   vatRate: number;
   partition: PartitionDetailApiDto | null;
+  structure: StructureDetailApiDto | null;
 }
 
 export interface StandStepApiDto {
   selections: Record<string, number>;
   partition: PartitionDetailApiDto | null;
+  structure: StructureDetailApiDto | null;
   lines: StandLineApiDto[];
   totalTtc: number;
   totalVat: number;
