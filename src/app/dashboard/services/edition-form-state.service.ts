@@ -21,6 +21,7 @@ import {
   StandStepPayload,
   StandStepState,
   STRUCTURE_MAX_ATTACHMENTS,
+  STRUCTURE_MAX_FILE_SIZE_BYTES,
   StructureAttachment,
 } from '../models/edition-form.models';
 import { RegistrationService } from '@app/shared/services/registration.service';
@@ -79,6 +80,8 @@ export class EditionFormStateService {
   private standSaveWaiters: Array<{ requiredSeq: number; done: () => void; failed: () => void }> = [];
   private readonly structureUploadingSignal = signal(false);
   private readonly structureUploadErrorsSignal = signal<string[]>([]);
+  /** Pièces jointes dont la suppression est en cours (évite le double envoi au double-clic). */
+  private readonly structureRemovingIdsSignal = signal<ReadonlySet<string>>(new Set());
   private readonly checkoutInProgressSignal = signal(false);
   /**
    * Navigation vers l'Étape 5 différée jusqu'à ce que les documents réels (dont le devis signé,
@@ -252,6 +255,13 @@ export class EditionFormStateService {
     this.standAutosaveStatusSignal.set('idle');
     this.sharedDocumentsSignal.set([]);
     this.catalogLoadFailedSignal.set(false);
+    // État d'envoi du stand lié à l'inscription précédente : sans cela, un spinner ou une
+    // sauvegarde en attente survivraient au changement d'édition.
+    this.standSaveWaiters = [];
+    this.standResendQueued = false;
+    this.structureUploadingSignal.set(false);
+    this.structureUploadErrorsSignal.set([]);
+    this.structureRemovingIdsSignal.set(new Set());
 
     this.optionsCatalogService.getForEdition(year).subscribe({
       next: (groups) => {
@@ -636,24 +646,44 @@ export class EditionFormStateService {
     this.structureUploadErrorsSignal.set([]);
   }
 
-  uploadStructureAttachments(files: File[]): void {
+  /**
+   * Signale les fichiers refusés par le sélecteur (format hors liste) : remplace la liste d'erreurs
+   * de la sélection en cours, avant que uploadStructureAttachments() n'y ajoute les siennes.
+   */
+  reportRejectedStructureFiles(names: string[]): void {
+    this.structureUploadErrorsSignal.set(names.map((name) => `${name} : formats acceptés : JPG, PNG, WebP, PDF.`));
+  }
+
+  isRemovingStructureAttachment(attachmentId: string): boolean {
+    return this.structureRemovingIdsSignal().has(attachmentId);
+  }
+
+  uploadStructureAttachments(allFiles: File[]): void {
     const reg = this.state();
-    if (!reg || this.isReadOnly() || files.length === 0 || this.structureUploadingSignal()) {
+    if (!reg || this.isReadOnly() || allFiles.length === 0 || this.structureUploadingSignal()) {
       return;
     }
+    // Les erreurs de format de la même sélection (reportRejectedStructureFiles) sont déjà dans le
+    // signal : on y ajoute, on ne les écrase pas.
     if (!this.isStandPayloadSendable(reg.stand)) {
-      this.structureUploadErrorsSignal.set([
+      this.structureUploadErrorsSignal.update((errors) => [
+        ...errors,
         "Complétez d'abord le détail de vos cloisons : vos options de stand ne sont pas encore enregistrées.",
       ]);
 
       return;
     }
 
+    const oversized = allFiles.filter((file) => file.size > STRUCTURE_MAX_FILE_SIZE_BYTES);
+    const files = allFiles.filter((file) => file.size <= STRUCTURE_MAX_FILE_SIZE_BYTES);
+
     const remaining = Math.max(0, STRUCTURE_MAX_ATTACHMENTS - (reg.stand.structure?.attachments.length ?? 0));
     const accepted = files.slice(0, remaining);
-    this.structureUploadErrorsSignal.set(
-      files.slice(remaining).map((file) => `${file.name} : ${STRUCTURE_MAX_ATTACHMENTS} fichiers maximum.`),
-    );
+    this.structureUploadErrorsSignal.update((errors) => [
+      ...errors,
+      ...oversized.map((file) => `${file.name} : 10 Mo maximum.`),
+      ...files.slice(remaining).map((file) => `${file.name} : ${STRUCTURE_MAX_ATTACHMENTS} fichiers maximum.`),
+    ]);
     if (accepted.length === 0) {
       return;
     }
@@ -673,15 +703,29 @@ export class EditionFormStateService {
 
   removeStructureAttachment(attachmentId: string): void {
     const reg = this.state();
-    if (!reg || this.isReadOnly()) {
+    if (!reg || this.isReadOnly() || this.structureRemovingIdsSignal().has(attachmentId)) {
       return;
     }
 
-    this.registrationService.deleteStructureAttachment(reg.id, attachmentId).subscribe({
+    const registrationId = reg.id;
+    const setRemoving = (removing: boolean): void =>
+      this.structureRemovingIdsSignal.update((ids) => {
+        const next = new Set(ids);
+        if (removing) {
+          next.add(attachmentId);
+        } else {
+          next.delete(attachmentId);
+        }
+
+        return next;
+      });
+    setRemoving(true);
+    this.registrationService.deleteStructureAttachment(registrationId, attachmentId).subscribe({
       next: () => {
+        setRemoving(false);
         this.state.update((current) => {
           const structure = current?.stand.structure;
-          if (!current || !structure) {
+          if (!current || current.id !== registrationId || !structure) {
             return current;
           }
 
@@ -695,6 +739,7 @@ export class EditionFormStateService {
         });
       },
       error: (err: HttpErrorResponse) => {
+        setRemoving(false);
         this.messageService.add({
           severity: 'error',
           summary: 'Échec',
@@ -984,6 +1029,21 @@ export class EditionFormStateService {
   }
 
   /**
+   * Force l'envoi immédiat d'une sauvegarde de stand en attente (debounce en cours), sans attendre
+   * le délai d'autosave. Sans effet en lecture seule.
+   */
+  flushStandSave(): void {
+    if (this.isReadOnly()) {
+      return;
+    }
+    if (this.standAutosaveTimer) {
+      clearTimeout(this.standAutosaveTimer);
+      this.standAutosaveTimer = null;
+    }
+    this.saveStandNow();
+  }
+
+  /**
    * Envoie immédiatement l'état local de l'étape Stand. `onSaved` n'est appelé qu'en cas de
    * succès (utilisé par submitRegistrationOptions() pour soumettre après la dernière sauvegarde).
    * Retourne `true` si une requête a été envoyée.
@@ -991,6 +1051,10 @@ export class EditionFormStateService {
   private saveStandNow(onSaved?: () => void, isResend = false): boolean {
     const reg = this.state();
     if (!reg) {
+      if (isResend) {
+        this.settleStandSaveWaiters(false, (waiter) => waiter.requiredSeq > this.standSavedSeq);
+      }
+
       return false;
     }
     // Tant que le bloc cloison est incomplet, on n'envoie rien : le serveur rejette en 400 une
@@ -1143,7 +1207,7 @@ export class EditionFormStateService {
             return;
           }
           this.state.update((current) =>
-            current && (current.stand.structure !== null || this.isStructureSelected(current.stand))
+            current && current.id === registrationId && (current.stand.structure !== null || this.isStructureSelected(current.stand))
               ? {
                   ...current,
                   stand: {

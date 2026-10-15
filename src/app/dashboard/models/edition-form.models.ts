@@ -161,6 +161,9 @@ export interface StructureDetailForm {
 /** Miroir de RegistrationStructureDetail::MAX_ATTACHMENTS. */
 export const STRUCTURE_MAX_ATTACHMENTS = 10;
 
+/** Miroir de RegistrationStructureAttachment::MAX_SIZE_BYTES. */
+export const STRUCTURE_MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024;
+
 /** Miroir de RegistrationStructureAttachment::ALLOWED_MIME_TYPES. */
 export const STRUCTURE_ACCEPTED_MIME_TYPES = 'image/jpeg,image/png,image/webp,application/pdf';
 

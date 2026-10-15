@@ -252,6 +252,7 @@
                               severity="danger"
                               size="small"
                               [text]="true"
+                              [disabled]="formState.isRemovingStructureAttachment(attachment.id)"
                               [ariaLabel]="'Retirer ' + attachment.originalName"
                               (onClick)="formState.removeStructureAttachment(attachment.id)"
                             />
@@ -274,6 +275,7 @@
                     [auto]="true"
                     [customUpload]="true"
                     [disabled]="formState.structureUploading()"
+                    (onSelect)="onStructureSelect($event)"
                     (uploadHandler)="onStructureUpload($event, structureUploader)"
                   />
                 }

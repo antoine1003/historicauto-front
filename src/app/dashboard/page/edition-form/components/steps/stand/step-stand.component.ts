@@ -197,6 +197,12 @@ export class StepStandComponent implements ValidatableFormStep {
     return detail !== null && (detail.attachments.length > 0 || !!detail.characteristics);
   }
 
+  /** Les fichiers refusés par `accept` n'arrivent jamais à l'envoi : on les signale ici, en français. */
+  protected onStructureSelect(event: { files: File[] | FileList; currentFiles: File[] }): void {
+    const rejected = Array.from(event.files).filter((file) => !event.currentFiles.includes(file));
+    this.formState.reportRejectedStructureFiles(rejected.map((file) => file.name));
+  }
+
   protected onStructureUpload(event: { files: File[] }, uploader: FileUpload): void {
     this.formState.uploadStructureAttachments([...event.files]);
     uploader.clear();
@@ -285,7 +291,12 @@ export class StepStandComponent implements ValidatableFormStep {
         rejectLabel: 'Annuler',
         acceptButtonProps: { severity: 'danger' },
         rejectButtonProps: { outlined: true },
-        accept: () => this.formState.toggleOption(optionId, false),
+        accept: () => {
+          this.formState.toggleOption(optionId, false);
+          // Envoi immédiat : un recochage dans le délai d'autosave ferait sinon disparaître la
+          // suppression (les fichiers confirmés partis) de ce qui est envoyé au serveur.
+          this.formState.flushStandSave();
+        },
         reject: () => checkbox.writeValue(true),
       });
 
