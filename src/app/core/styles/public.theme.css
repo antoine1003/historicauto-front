@@ -45,6 +45,41 @@
   @apply hidden md:flex items-center gap-5;
 }
 
+/* Email du compte connecté : une ligne discrète tronquée dans l'en-tête, un bloc libellé dans le
+   menu mobile. Le même gabarit sert aux deux, seul le conteneur change. */
+.pub-user {
+  @apply flex items-center gap-2 min-w-0 text-[0.9rem] text-[#6B6560];
+}
+
+.pub-user-email {
+  @apply truncate;
+}
+
+.pub-header-actions .pub-user {
+  @apply max-w-[16rem];
+}
+
+.pub-header-actions .pub-user-label {
+  @apply sr-only;
+}
+
+.pub-mobile-menu .pub-user {
+  @apply flex-col items-start gap-0.5 w-full max-w-full pt-4 border-t border-[#D4C9A8];
+}
+
+/* `!` : la règle `.pi` de PrimeIcons, hors couche, l'emporte sinon sur cette feuille. */
+.pub-mobile-menu .pub-user .pi {
+  @apply hidden!;
+}
+
+.pub-mobile-menu .pub-user-label {
+  @apply text-[0.8rem];
+}
+
+.pub-mobile-menu .pub-user-email {
+  @apply max-w-full text-[#1A1714];
+}
+
 .pub-burger {
   @apply md:hidden w-10 h-10 flex items-center justify-center
   bg-transparent border border-[#D4C9A8] rounded-sm text-[#1A1714] cursor-pointer;
