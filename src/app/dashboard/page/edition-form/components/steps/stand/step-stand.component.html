@@ -1,3 +1,5 @@
+<p-confirmDialog />
+
 @if (formState.registration(); as registration) {
   @if (formState.catalogLoadFailed()) {
     <p-message
@@ -66,10 +68,11 @@
                     />
                   } @else if (group.inputType === OptionInputType.CHECKBOX) {
                     <p-checkbox
+                      #optionCheckbox
                       [inputId]="option.id"
                       [binary]="true"
                       [ngModel]="isSelected(option.id)"
-                      (ngModelChange)="onCheckboxChange(group, option.id, $event)"
+                      (ngModelChange)="onCheckboxChange(group, option.id, $event, optionCheckbox)"
                       [disabled]="formState.isReadOnly()"
                     />
                   }
@@ -215,6 +218,96 @@
                 }
               </div>
             }
+
+            @if (group.behaviour === OptionGroupBehaviour.STRUCTURE && structureSelected()) {
+              <div class="mt-4 border-l-2 border-[#1A1714]/20 pl-4">
+                <p class="ef-help-text mb-3">
+                  Joignez au moins une photo ou un plan de votre structure (JPG, PNG, WebP ou PDF,
+                  10 Mo maximum par fichier, {{ structureMaxAttachments }} fichiers au plus).
+                </p>
+
+                @if (structureAttachments().length > 0) {
+                  <ul class="mb-3 flex flex-col gap-2">
+                    @for (attachment of structureAttachments(); track attachment.id) {
+                      <li class="flex items-center justify-between gap-3">
+                        <a
+                          [href]="attachment.url"
+                          target="_blank"
+                          rel="noopener"
+                          class="flex min-w-0 items-center gap-2 underline"
+                        >
+                          <i
+                            class="pi"
+                            [class.pi-file-pdf]="attachment.mimeType === 'application/pdf'"
+                            [class.pi-image]="attachment.mimeType !== 'application/pdf'"
+                            aria-hidden="true"
+                          ></i>
+                          <span class="truncate">{{ attachment.originalName }}</span>
+                        </a>
+                        <span class="flex shrink-0 items-center gap-2">
+                          <span class="ef-muted text-sm">{{ formatFileSize(attachment.fileSize) }}</span>
+                          @if (!formState.isReadOnly()) {
+                            <p-button
+                              icon="pi pi-trash"
+                              severity="danger"
+                              size="small"
+                              [text]="true"
+                              [ariaLabel]="'Retirer ' + attachment.originalName"
+                              (onClick)="formState.removeStructureAttachment(attachment.id)"
+                            />
+                          }
+                        </span>
+                      </li>
+                    }
+                  </ul>
+                } @else if (formState.isReadOnly()) {
+                  <p class="ef-muted mb-3">Aucun fichier fourni.</p>
+                }
+
+                @if (!formState.isReadOnly() && structureAttachments().length < structureMaxAttachments) {
+                  <p-fileupload
+                    #structureUploader
+                    mode="basic"
+                    chooseLabel="Ajouter des photos ou plans"
+                    [multiple]="true"
+                    [accept]="structureAcceptedTypes"
+                    [auto]="true"
+                    [customUpload]="true"
+                    [disabled]="formState.structureUploading()"
+                    (uploadHandler)="onStructureUpload($event, structureUploader)"
+                  />
+                }
+                @if (formState.structureUploading()) {
+                  <p class="ef-help-text mt-2">Envoi en cours…</p>
+                }
+                @for (error of formState.structureUploadErrors(); track $index) {
+                  <p class="ef-field-error mt-2">{{ error }}</p>
+                }
+
+                <div class="mt-4 flex flex-col gap-1">
+                  <label for="structureCharacteristics" class="text-sm">
+                    Caractéristiques (dimensions, matériaux, montage…)
+                  </label>
+                  <textarea
+                    pTextarea
+                    id="structureCharacteristics"
+                    rows="3"
+                    class="w-full"
+                    [maxlength]="commentMaxLength"
+                    [ngModel]="structure()?.characteristics ?? ''"
+                    [ngModelOptions]="{ standalone: true }"
+                    (ngModelChange)="formState.setStructureCharacteristics($event)"
+                    [disabled]="formState.isReadOnly()"
+                  ></textarea>
+                </div>
+
+                @if (showErrors()) {
+                  @for (error of structureErrors(); track error) {
+                    <p class="ef-field-error mt-2">{{ error }}</p>
+                  }
+                }
+              </div>
+            }
           </p-accordion-content>
         </p-accordion-panel>
       }
@@ -261,6 +354,9 @@
 
     @if (showErrors()) {
       @for (error of partitionErrors(); track error) {
+        <p class="ef-field-error mt-2">{{ error }}</p>
+      }
+      @for (error of structureErrors(); track error) {
         <p class="ef-field-error mt-2">{{ error }}</p>
       }
       @for (group of formState.missingRequiredGroups(); track group.code) {
