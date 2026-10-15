@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { AuthService } from '@app/core/services/auth.service';
+import { APP_VERSION } from '@app/core/app-version';
 import { environment } from '../../../environments/environment';
 
 @Component({
@@ -44,7 +45,7 @@ import { environment } from '../../../environments/environment';
           </div>
         </div>
 
-        <p class="pub-footer-bottom">© {{ currentYear }} Historic Auto — Espace exposant</p>
+        <p class="pub-footer-bottom">© {{ currentYear }} Historic Auto — Espace exposant · v{{ appVersion }}</p>
       </div>
     </footer>
   `,
@@ -53,4 +54,5 @@ export class PublicFooterComponent {
   protected readonly auth = inject(AuthService);
   protected readonly contactEmail = environment.contactEmail;
   protected readonly currentYear = new Date().getFullYear();
+  protected readonly appVersion = APP_VERSION;
 }
