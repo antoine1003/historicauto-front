@@ -53,6 +53,13 @@
 <ng-template #ctaLinks>
   @if (auth.isInitialized()) {
     @if (auth.isAuthenticated()) {
+      @if (auth.currentUser()?.email; as email) {
+        <span class="pub-user" [title]="email">
+          <i class="pi pi-user" aria-hidden="true"></i>
+          <span class="pub-user-label">Connecté en tant que</span>
+          <span class="pub-user-email">{{ email }}</span>
+        </span>
+      }
       <a routerLink="/dashboard" class="pub-btn pub-btn--primary" (click)="closeMenu()">Mon Espace</a>
       <button type="button" class="pub-nav-link" (click)="logout()">Déconnexion</button>
     } @else {
