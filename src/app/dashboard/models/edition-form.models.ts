@@ -31,6 +31,7 @@ export enum OptionGroupBehaviour {
   NONE = 'none',
   SURFACE = 'surface',
   PARTITION = 'partition',
+  STRUCTURE = 'structure',
 }
 
 export enum PartitionLayout {
@@ -141,6 +142,31 @@ export interface PartitionDetailForm {
   usageNotes: string | null;
 }
 
+/** Photo ou plan de barnum / structure déjà enregistré côté serveur. */
+export interface StructureAttachment {
+  id: string;
+  originalName: string;
+  mimeType: string | null;
+  fileSize: number;
+  /** URL absolue, ouverte dans un nouvel onglet. */
+  url: string;
+  createdAt: Date;
+}
+
+export interface StructureDetailForm {
+  characteristics: string | null;
+  attachments: StructureAttachment[];
+}
+
+/** Miroir de RegistrationStructureDetail::MAX_ATTACHMENTS. */
+export const STRUCTURE_MAX_ATTACHMENTS = 10;
+
+/** Miroir de RegistrationStructureAttachment::MAX_SIZE_BYTES. */
+export const STRUCTURE_MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024;
+
+/** Miroir de RegistrationStructureAttachment::ALLOWED_MIME_TYPES. */
+export const STRUCTURE_ACCEPTED_MIME_TYPES = 'image/jpeg,image/png,image/webp,application/pdf';
+
 /** Ligne de commande déjà chiffrée par le serveur — le front n'effectue aucun calcul de prix. */
 export interface StandLine {
   optionId: string;
@@ -159,6 +185,8 @@ export interface StandStepState {
   /** Quantité retenue par identifiant d'option. Une option absente n'est pas commandée. */
   selections: Record<string, number>;
   partition: PartitionDetailForm | null;
+  /** `null` tant que l'exposant n'a rien saisi pour le barnum, ou s'il ne l'a pas coché. */
+  structure: StructureDetailForm | null;
   lines: StandLine[];
   totalTtc: number;
   totalVat: number;
@@ -271,6 +299,7 @@ export interface StandStepPayload {
   /** `null` pour les groupes à quantité dérivée : le serveur la recalcule de toute façon. */
   selections: Record<string, number | null>;
   partition: PartitionDetailForm | null;
+  structure: { characteristics: string | null } | null;
   comment: string | null;
 }
 

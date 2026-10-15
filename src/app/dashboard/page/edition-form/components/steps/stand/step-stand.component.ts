@@ -4,7 +4,10 @@ import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { AccordionModule } from 'primeng/accordion';
 import { RadioButtonModule } from 'primeng/radiobutton';
-import { CheckboxModule } from 'primeng/checkbox';
+import { ConfirmationService } from 'primeng/api';
+import { Checkbox, CheckboxModule } from 'primeng/checkbox';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { FileUpload, FileUploadModule } from 'primeng/fileupload';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { TextareaModule } from 'primeng/textarea';
 import { MessageModule } from 'primeng/message';
@@ -20,6 +23,9 @@ import {
   PartitionDetailForm,
   PartitionLayout,
   STAND_COMMENT_MAX_LENGTH,
+  STRUCTURE_ACCEPTED_MIME_TYPES,
+  STRUCTURE_MAX_ATTACHMENTS,
+  StructureDetailForm,
 } from '@app/dashboard/models/edition-form.models';
 
 @Component({
@@ -35,12 +41,16 @@ import {
     InputNumberModule,
     TextareaModule,
     MessageModule,
+    FileUploadModule,
+    ConfirmDialogModule,
     OptionsRecapComponent,
   ],
   templateUrl: './step-stand.component.html',
+  providers: [ConfirmationService],
 })
 export class StepStandComponent implements ValidatableFormStep {
   protected readonly formState = inject(EditionFormStateService);
+  private readonly confirmationService = inject(ConfirmationService);
 
   /** Exposés au gabarit pour comparer les valeurs d'enum sans les dupliquer en chaînes. */
   protected readonly OptionInputType = OptionInputType;
@@ -110,10 +120,36 @@ export class StepStandComponent implements ValidatableFormStep {
     return errors;
   });
 
+  protected readonly structureMaxAttachments = STRUCTURE_MAX_ATTACHMENTS;
+  protected readonly structureAcceptedTypes = STRUCTURE_ACCEPTED_MIME_TYPES;
+
+  protected readonly structureGroup = computed<OptionGroupDefinition | null>(
+    () =>
+      this.formState
+        .optionGroups()
+        .find((group) => group.behaviour === OptionGroupBehaviour.STRUCTURE) ?? null,
+  );
+
+  protected readonly structureSelected = computed<boolean>(() => {
+    const group = this.structureGroup();
+
+    return group !== null && group.options.some((option) => this.isSelected(option.id));
+  });
+
+  protected readonly structureAttachments = computed(() => this.structure()?.attachments ?? []);
+
+  /** Miroir de la règle d'envoi serveur (RegistrationSubmissionController). */
+  protected readonly structureErrors = computed<string[]>(() =>
+    this.structureSelected() && this.structureAttachments().length === 0
+      ? ['Ajoutez au moins une photo ou un plan de votre barnum / structure.']
+      : [],
+  );
+
   protected readonly isValid = computed<boolean>(
     () =>
       this.formState.missingRequiredGroups().length === 0 &&
       this.partitionErrors().length === 0 &&
+      this.structureErrors().length === 0 &&
       !this.formState.catalogLoadFailed(),
   );
 
@@ -123,6 +159,14 @@ export class StepStandComponent implements ValidatableFormStep {
     effect(() => {
       if (this.partitionGroup() !== null && !this.partitionSelected() && this.partition() !== null) {
         this.formState.setPartitionDetail(null);
+      }
+    });
+
+    // Décocher le barnum (après confirmation) vide l'état local ; le serveur supprime détail et
+    // fichiers avec la ligne au prochain autosave.
+    effect(() => {
+      if (this.structureGroup() !== null && !this.structureSelected() && this.structure() !== null) {
+        this.formState.clearStructureDetail();
       }
     });
   }
@@ -141,6 +185,33 @@ export class StepStandComponent implements ValidatableFormStep {
 
   protected partition(): PartitionDetailForm | null {
     return this.formState.registration()?.stand.partition ?? null;
+  }
+
+  protected structure(): StructureDetailForm | null {
+    return this.formState.registration()?.stand.structure ?? null;
+  }
+
+  private hasStructureContent(): boolean {
+    const detail = this.structure();
+
+    return detail !== null && (detail.attachments.length > 0 || !!detail.characteristics);
+  }
+
+  /** Les fichiers refusés par `accept` n'arrivent jamais à l'envoi : on les signale ici, en français. */
+  protected onStructureSelect(event: { files: File[] | FileList; currentFiles: File[] }): void {
+    const rejected = Array.from(event.files).filter((file) => !event.currentFiles.includes(file));
+    this.formState.reportRejectedStructureFiles(rejected.map((file) => file.name));
+  }
+
+  protected onStructureUpload(event: { files: File[] }, uploader: FileUpload): void {
+    this.formState.uploadStructureAttachments([...event.files]);
+    uploader.clear();
+  }
+
+  protected formatFileSize(bytes: number): string {
+    return bytes >= 1024 * 1024
+      ? `${(bytes / 1024 / 1024).toFixed(1).replace('.', ',')} Mo`
+      : `${Math.max(1, Math.round(bytes / 1024))} Ko`;
   }
 
   protected segmentAt(index: number): number {
@@ -199,10 +270,39 @@ export class StepStandComponent implements ValidatableFormStep {
   }
 
   /**
-   * Point d'entrée unique des cases à cocher, pour que le gabarit n'ait pas à choisir entre deux
-   * méthodes selon la section.
+   * Point d'entrée unique des cases à cocher. Décocher un barnum déjà renseigné passe par une
+   * confirmation, car le serveur supprimera fichiers et caractéristiques avec la ligne. À
+   * l'annulation, la case a déjà été décochée visuellement par PrimeNG alors que l'état n'a pas
+   * bougé : `writeValue(true)` (ControlValueAccessor, public via BaseEditableHolder) la recoche,
+   * l'entrée `[ngModel]` n'ayant pas changé de valeur.
    */
-  protected onCheckboxChange(group: OptionGroupDefinition, optionId: string, selected: boolean): void {
+  protected onCheckboxChange(
+    group: OptionGroupDefinition,
+    optionId: string,
+    selected: boolean,
+    checkbox: Checkbox,
+  ): void {
+    if (!selected && group.behaviour === OptionGroupBehaviour.STRUCTURE && this.hasStructureContent()) {
+      this.confirmationService.confirm({
+        header: 'Retirer le barnum / structure ?',
+        message: 'Les fichiers envoyés et les caractéristiques saisies seront supprimés.',
+        icon: 'pi pi-exclamation-triangle',
+        acceptLabel: 'Retirer',
+        rejectLabel: 'Annuler',
+        acceptButtonProps: { severity: 'danger' },
+        rejectButtonProps: { outlined: true },
+        accept: () => {
+          this.formState.toggleOption(optionId, false);
+          // Envoi immédiat : un recochage dans le délai d'autosave ferait sinon disparaître la
+          // suppression (les fichiers confirmés partis) de ce qui est envoyé au serveur.
+          this.formState.flushStandSave();
+        },
+        reject: () => checkbox.writeValue(true),
+      });
+
+      return;
+    }
+
     this.formState.toggleOption(optionId, selected);
 
     if (group.behaviour === OptionGroupBehaviour.PARTITION && selected) {

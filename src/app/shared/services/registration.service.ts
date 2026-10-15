@@ -11,6 +11,7 @@ import {
   RegistrationDetailApiDto,
   StandManagerApiDto,
   StandStepApiDto,
+  StructureAttachmentApiDto,
 } from '@app/dashboard/models/registration-api.models';
 import {
   EntityStepPayload,
@@ -74,6 +75,22 @@ export class RegistrationService {
     return this.http.post<ApiResponse<{ url: string }>>(
       `${environment.apiUrl}/${this.baseUrl}/${id}/logo`,
       formData,
+    );
+  }
+
+  uploadStructureAttachment(id: string, file: File): Observable<ApiResponse<StructureAttachmentApiDto>> {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    return this.http.post<ApiResponse<StructureAttachmentApiDto>>(
+      `${environment.apiUrl}/${this.baseUrl}/${id}/structure/attachments`,
+      formData,
+    );
+  }
+
+  deleteStructureAttachment(id: string, attachmentId: string): Observable<void> {
+    return this.http.delete<void>(
+      `${environment.apiUrl}/${this.baseUrl}/${id}/structure/attachments/${attachmentId}`,
     );
   }
 
