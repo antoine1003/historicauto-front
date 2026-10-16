@@ -14,9 +14,9 @@ import { PublicFooterComponent } from '@app/public/layout/public-footer.componen
   imports: [RouterOutlet, PublicHeaderComponent, PublicFooterComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="pub-shell">
+    <div class="ha-shell">
       <app-public-header />
-      <main class="pub-main">
+      <main class="ha-main">
         <router-outlet />
       </main>
       <app-public-footer />

@@ -7,7 +7,7 @@ import { PublicFooterComponent } from '@app/public/layout/public-footer.componen
  * Enveloppe des routes d'authentification. Compose les mêmes briques que PublicLayoutComponent et
  * DashboardLayoutComponent : ces pages faisaient jusqu'ici exception, sans en-tête ni pied de page.
  *
- * `pub-main` reçoit `flex` pour que le `flex-1` de `.auth-shell` ait un axe où s'étirer, et que la
+ * `ha-main` reçoit `flex` pour que le `flex-1` de `.auth-shell` ait un axe où s'étirer, et que la
  * carte se centre dans la hauteur restante plutôt que de pousser le pied de page hors de l'écran.
  */
 @Component({
@@ -16,9 +16,9 @@ import { PublicFooterComponent } from '@app/public/layout/public-footer.componen
   imports: [RouterOutlet, PublicHeaderComponent, PublicFooterComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="pub-shell">
+    <div class="ha-shell">
       <app-public-header />
-      <main class="pub-main flex">
+      <main class="ha-main flex">
         <div class="auth-shell">
           <router-outlet />
         </div>

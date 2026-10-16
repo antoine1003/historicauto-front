@@ -90,7 +90,7 @@ Le `**` est un ajout : aujourd'hui une URL inconnue n'affiche rien.
 
 ### Style
 
-`src/app/core/styles/public.theme.css`, calqué sur `auth.theme.css` et `edition-form.theme.css` : `@reference "tailwindcss"` en tête, classes `@apply` préfixées `.pub-*`, importée dans `src/styles.scss` à l'intérieur de `@layer components`.
+`src/app/core/styles/public.theme.css`, calqué sur `auth.theme.css` et `edition-form.theme.css` : `@reference "tailwindcss"` en tête, classes `@apply` préfixées `.ha-*`, importée dans `src/styles.scss` à l'intérieur de `@layer components`.
 
 Jetons imposés, repris tels quels : crème `#F7F5F0`, or `#B8860B` (hover `#9A7009`), sable `#D4C9A8`, encre `#1A1714`, gris `#6B6560`, blanc cassé `#FAFAF7`. Serif Cormorant Garamond via `font-serif`, sans-serif DM Sans, `rounded-sm`, filet or de 4px à gauche des blocs saillants.
 
@@ -144,7 +144,7 @@ Les intitulés d'étapes correspondent au stepper réel de `edition-form-page.co
 
 ### Emplacements image
 
-Classe `.pub-image-slot` : aplat sable, filet or, libellé centré indiquant le fichier attendu et le ratio. Deux emplacements :
+Classe `.ha-image-slot` : aplat sable, filet or, libellé centré indiquant le fichier attendu et le ratio. Deux emplacements :
 
 - `public/images/hero.jpg`, ratio 4:3, colonne droite du hero ;
 - `public/images/salon.jpg`, ratio 3:1, bande pleine largeur.

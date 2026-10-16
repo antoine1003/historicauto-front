@@ -1,24 +1,24 @@
-<section class="pub-container pub-section">
-  <p class="pub-eyebrow">Contact</p>
-  <h1 class="pub-h1">Nous contacter</h1>
-  <p class="pub-lead">
+<section class="ha-container ha-section">
+  <p class="ha-eyebrow">Contact</p>
+  <h1 class="ha-h1">Nous contacter</h1>
+  <p class="ha-lead">
     Une question sur votre demande de stand, sur les options ou sur votre facturation ?
     Écrivez-nous, nous vous répondons par email.
   </p>
 
-  <div class="pub-contact-grid">
-    <div class="pub-panel" tabindex="-1" #panel>
+  <div class="ha-contact-grid">
+    <div class="ha-panel" tabindex="-1" #panel>
       @if (sent()) {
-        <div class="pub-success" role="status">
-          <div class="pub-success-icon">
+        <div class="ha-success" role="status">
+          <div class="ha-success-icon">
             <i class="pi pi-check" aria-hidden="true"></i>
           </div>
-          <h2 class="pub-section-title" tabindex="-1" #successTitle>Message envoyé</h2>
-          <p class="pub-lead text-center">
+          <h2 class="ha-section-title" tabindex="-1" #successTitle>Message envoyé</h2>
+          <p class="ha-lead text-center">
             Merci, votre message est parti. Nous vous répondrons à l’adresse
             <strong>{{ replyToEmail() }}</strong>.
           </p>
-          <button type="button" class="pub-btn pub-btn--ghost" (click)="reset()">
+          <button type="button" class="ha-btn ha-btn--ghost" (click)="reset()">
             Écrire un autre message
           </button>
         </div>
@@ -29,11 +29,11 @@
 
         @if (authResolved()) {
           @if (knownUser(); as user) {
-            <p class="pub-identity">
+            <p class="ha-identity">
               <i class="pi pi-user" aria-hidden="true"></i>
               <span>
                 Vous écrivez en tant que
-                <span class="pub-identity-name">{{ user.email }}</span>
+                <span class="ha-identity-name">{{ user.email }}</span>
               </span>
             </p>
           } @else {
@@ -122,7 +122,7 @@
           <label class="auth-label" for="contact-message">Message</label>
           <textarea
             id="contact-message"
-            class="pub-textarea"
+            class="ha-textarea"
             placeholder="Décrivez votre demande en quelques lignes."
             required
             aria-required="true"
@@ -151,15 +151,15 @@
       }
     </div>
 
-    <aside class="pub-aside">
+    <aside class="ha-aside">
       <div>
-        <p class="pub-aside-title">Nous écrire</p>
+        <p class="ha-aside-title">Nous écrire</p>
         <a [href]="'mailto:' + contactEmail" class="auth-link">{{ contactEmail }}</a>
       </div>
 
       <div>
-        <p class="pub-aside-title">Adresse</p>
-        <address class="pub-aside-text">
+        <p class="ha-aside-title">Adresse</p>
+        <address class="ha-aside-text">
           HISTORIC AUTO<br />
           5 bis avenue de l’Europe<br />
           44260 La Montagne
@@ -167,7 +167,7 @@
       </div>
 
       <div>
-        <p class="pub-aside-title">Le salon</p>
+        <p class="ha-aside-title">Le salon</p>
         <a href="https://www.historic-auto.com" target="_blank" rel="noopener" class="auth-link">
           historic-auto.com
         </a>

@@ -19,7 +19,7 @@
 - **Typographie :** `font-serif` (Cormorant Garamond) pour tous les titres, sans-serif (DM Sans) pour le corps. Les deux polices sont déjà chargées par `src/index.html`.
 - **Signature visuelle des blocs saillants :** `border border-[#D4C9A8] border-l-4 border-l-[#B8860B]`, comme `.auth-card`.
 - **Classes existantes à réutiliser sans les redéfinir :** `.auth-logo-mark`, `.auth-logo-text`, `.auth-btn-primary`, `.auth-link`, `.auth-input`, `.auth-input--error`, `.auth-field`, `.auth-label`, `.auth-field-error`, `.auth-error-banner`. Elles vivent dans `src/app/core/styles/auth.theme.css` — ne pas les modifier.
-- **Écart assumé par rapport au spec :** `.auth-btn-primary` est `w-full h-[54px]`, donc inutilisable pour les boutons en ligne de l'en-tête et du hero. Une famille `.pub-btn` / `.pub-btn--primary` / `.pub-btn--ghost` est créée pour ces cas. `.auth-btn-primary` reste utilisée telle quelle pour le bouton d'envoi du formulaire de contact, qui est bien pleine largeur.
+- **Écart assumé par rapport au spec :** `.auth-btn-primary` est `w-full h-[54px]`, donc inutilisable pour les boutons en ligne de l'en-tête et du hero. Une famille `.ha-btn` / `.ha-btn--primary` / `.ha-btn--ghost` est créée pour ces cas. `.auth-btn-primary` reste utilisée telle quelle pour le bouton d'envoi du formulaire de contact, qui est bien pleine largeur.
 - **Faits sur le salon — n'en inventez aucun autre :** 6e édition, février 2028, Parc des Expositions de Nantes, salon du véhicule de collection, 40 000 visiteurs, 330 exposants, 27 000 m², 30 expositions thématiques, `info@historic-auto.com`, HISTORIC AUTO / 5 bis avenue de l'Europe / 44260 La Montagne, site officiel `https://www.historic-auto.com`. Aucun tarif, aucune date limite, aucun horaire, aucun numéro de téléphone : ces informations n'ont pas de source.
 - **Adresse email :** toujours via `environment.contactEmail`, jamais en dur.
 - **Serveur de vérification :** configuration `front-main` de `HistoricAuto/.claude/launch.json`, port 4200. **Ne pas utiliser `frontend-dev` (port 4201)** : elle pointe vers le worktree obsolète `registration-form-frontend-integration`. Si le chantier est mené dans un worktree dédié, ajoutez-y une nouvelle configuration plutôt que d'en réutiliser une.
@@ -31,7 +31,7 @@
 
 | Fichier | Responsabilité |
 |---|---|
-| `src/app/core/styles/public.theme.css` | **Créé.** Toutes les classes `.pub-*`. Seul endroit où vivent les styles publics. |
+| `src/app/core/styles/public.theme.css` | **Créé.** Toutes les classes `.ha-*`. Seul endroit où vivent les styles publics. |
 | `src/styles.scss` | **Modifié.** Ajout de l'import du thème public dans `@layer components`. |
 | `src/index.html` | **Modifié.** `lang="fr"` et titre par défaut. |
 | `src/app/public/public.routes.ts` | **Créé.** Déclare `PUBLIC_ROUTES`. |
@@ -71,7 +71,7 @@ Cette tâche lève le seul risque structurel du chantier avant d'écrire la moin
 
 **Interfaces:**
 - Consumes : `AuthService` (`isInitialized(): Signal<boolean>`, `isAuthenticated(): Signal<boolean>`, `currentUser(): Signal<AuthUser | null>`) depuis `@app/core/services/auth.service` ; `environment.contactEmail: string`.
-- Produces : `PUBLIC_ROUTES: Routes`, `PublicLayoutComponent`, `PublicHeaderComponent` (sélecteur `app-public-header`), `PublicFooterComponent` (sélecteur `app-public-footer`), `HomeComponent` (sélecteur `app-home`), `ContactComponent` (sélecteur `app-contact`). Les classes CSS `.pub-*` listées à l'étape 1 sont consommées par les Tasks 2 à 5.
+- Produces : `PUBLIC_ROUTES: Routes`, `PublicLayoutComponent`, `PublicHeaderComponent` (sélecteur `app-public-header`), `PublicFooterComponent` (sélecteur `app-public-footer`), `HomeComponent` (sélecteur `app-home`), `ContactComponent` (sélecteur `app-contact`). Les classes CSS `.ha-*` listées à l'étape 1 sont consommées par les Tasks 2 à 5.
 
 - [ ] **Step 1 : Créer le thème public**
 
@@ -83,249 +83,249 @@ Créer `src/app/core/styles/public.theme.css`. Ce fichier contient l'intégralit
 
 /* ── Coquille ── */
 
-.pub-shell {
+.ha-shell {
   @apply min-h-screen flex flex-col bg-[#F7F5F0] text-[#1A1714];
 }
 
-.pub-main {
+.ha-main {
   @apply flex-1;
 }
 
-.pub-container {
+.ha-container {
   @apply w-full max-w-5xl mx-auto px-5 sm:px-8;
 }
 
 /* ── En-tête ── */
 
-.pub-header {
+.ha-header {
   @apply sticky top-0 z-30 bg-[#F7F5F0] border-b border-[#D4C9A8];
 }
 
-.pub-header-inner {
+.ha-header-inner {
   @apply flex items-center justify-between gap-4 h-[72px];
 }
 
-.pub-brand {
+.ha-brand {
   @apply flex items-center gap-3 no-underline;
 }
 
-.pub-nav {
+.ha-nav {
   @apply hidden md:flex items-center gap-7;
 }
 
-.pub-nav-link {
+.ha-nav-link {
   @apply text-[0.95rem] no-underline text-[#6B6560] hover:text-[#1A1714] transition-colors;
 }
 
-.pub-nav-link--active {
+.ha-nav-link--active {
   @apply text-[#1A1714] font-semibold;
 }
 
-.pub-header-actions {
+.ha-header-actions {
   @apply hidden md:flex items-center gap-5;
 }
 
-.pub-burger {
+.ha-burger {
   @apply md:hidden w-10 h-10 flex items-center justify-center
   bg-transparent border border-[#D4C9A8] rounded-sm text-[#1A1714] cursor-pointer;
 }
 
-.pub-mobile-menu {
+.ha-mobile-menu {
   @apply md:hidden flex flex-col items-start gap-4 border-t border-[#D4C9A8] py-5;
 }
 
 /* ── Boutons ── */
 
-.pub-btn {
+.ha-btn {
   @apply inline-flex items-center justify-center h-[44px] px-5
   text-[0.95rem] font-semibold tracking-wide rounded-sm
   no-underline cursor-pointer transition-colors;
 }
 
-.pub-btn--primary {
+.ha-btn--primary {
   @apply bg-[#B8860B] hover:bg-[#9A7009] text-white border-none;
 }
 
-.pub-btn--ghost {
+.ha-btn--ghost {
   @apply bg-transparent text-[#B8860B] border border-[#B8860B] hover:bg-[#B8860B]/10;
 }
 
 /* ── Sections ── */
 
-.pub-section {
+.ha-section {
   @apply py-14 sm:py-16;
 }
 
-.pub-eyebrow {
+.ha-eyebrow {
   @apply text-[0.78rem] font-semibold uppercase tracking-[0.22em] text-[#B8860B] mb-4;
 }
 
-.pub-h1 {
+.ha-h1 {
   @apply font-serif font-semibold text-[2.6rem] sm:text-[3.4rem] leading-[1.08] text-[#1A1714] mb-5;
 }
 
-.pub-lead {
+.ha-lead {
   @apply text-[1.05rem] leading-relaxed text-[#6B6560] mb-8 max-w-xl;
 }
 
-.pub-section-title {
+.ha-section-title {
   @apply font-serif font-semibold text-[2rem] sm:text-[2.4rem] leading-tight text-[#1A1714] mb-3;
 }
 
-.pub-section-lead {
+.ha-section-lead {
   @apply text-[1rem] leading-relaxed text-[#6B6560] mb-10 max-w-2xl;
 }
 
 /* ── Hero ── */
 
-.pub-hero {
+.ha-hero {
   @apply py-14 sm:py-20 grid gap-10 md:grid-cols-[1.15fr_1fr] md:items-center;
 }
 
-.pub-hero-actions {
+.ha-hero-actions {
   @apply flex flex-wrap items-center gap-6;
 }
 
 /* ── Bandeau salon ── */
 
-.pub-band {
+.ha-band {
   @apply border-y border-[#D4C9A8] bg-[#FAFAF7];
 }
 
-.pub-band-meta {
+.ha-band-meta {
   @apply flex flex-wrap items-center justify-center gap-x-3 gap-y-1
   py-8 text-[0.95rem] text-[#6B6560] text-center;
 }
 
-.pub-band-meta-strong {
+.ha-band-meta-strong {
   @apply font-serif font-semibold text-[1.15rem] text-[#1A1714];
 }
 
-.pub-stats {
+.ha-stats {
   @apply grid grid-cols-2 md:grid-cols-4 gap-4 pb-12;
 }
 
-.pub-stat {
+.ha-stat {
   @apply bg-white border border-[#D4C9A8] border-l-4 border-l-[#B8860B] px-4 py-6 text-center;
 }
 
-.pub-stat-value {
+.ha-stat-value {
   @apply font-serif font-semibold text-[2rem] leading-none text-[#1A1714] mb-2;
 }
 
-.pub-stat-label {
+.ha-stat-label {
   @apply text-[0.8rem] uppercase tracking-[0.12em] text-[#6B6560];
 }
 
 /* ── Emplacements image ── */
 
-.pub-image-slot {
+.ha-image-slot {
   @apply w-full flex flex-col items-center justify-center gap-2 text-center
   bg-[#EFEADD] border border-[#D4C9A8] border-l-4 border-l-[#B8860B] text-[#6B6560];
 }
 
-.pub-image-slot--hero {
+.ha-image-slot--hero {
   @apply aspect-[4/3];
 }
 
-.pub-image-slot--band {
+.ha-image-slot--band {
   @apply aspect-[3/1];
 }
 
-.pub-image-slot-label {
+.ha-image-slot-label {
   @apply text-[0.85rem] font-semibold text-[#1A1714];
 }
 
-.pub-image-slot-hint {
+.ha-image-slot-hint {
   @apply text-[0.75rem];
 }
 
 /* ── Étapes ── */
 
-.pub-steps {
+.ha-steps {
   @apply grid gap-5 sm:grid-cols-2 lg:grid-cols-3;
 }
 
-.pub-step {
+.ha-step {
   @apply bg-white border border-[#D4C9A8] border-l-4 border-l-[#B8860B] px-6 py-6;
 }
 
-.pub-step-index {
+.ha-step-index {
   @apply block font-serif font-semibold text-[1.1rem] text-[#B8860B] mb-2;
 }
 
-.pub-step-title {
+.ha-step-title {
   @apply font-serif font-semibold text-[1.3rem] text-[#1A1714] mb-2;
 }
 
-.pub-step-text {
+.ha-step-text {
   @apply text-[0.95rem] leading-relaxed text-[#6B6560];
 }
 
 /* ── Appel à l'action de clôture ── */
 
-.pub-cta {
+.ha-cta {
   @apply bg-[#1A1714] text-[#F7F5F0] px-8 py-12 sm:px-14 sm:py-16 text-center;
 }
 
-.pub-cta-title {
+.ha-cta-title {
   @apply font-serif font-semibold text-[2rem] sm:text-[2.4rem] leading-tight mb-4;
 }
 
-.pub-cta-text {
+.ha-cta-text {
   @apply text-[1rem] leading-relaxed text-[#C9C2B8] mb-8 max-w-xl mx-auto;
 }
 
-.pub-cta-link {
+.ha-cta-link {
   @apply text-[#DCB54C] font-semibold no-underline hover:underline;
 }
 
 /* ── Pied de page ── */
 
-.pub-footer {
+.ha-footer {
   @apply border-t border-[#D4C9A8] bg-[#FAFAF7];
 }
 
-.pub-footer-grid {
+.ha-footer-grid {
   @apply grid gap-8 sm:grid-cols-3 py-12;
 }
 
-.pub-footer-title {
+.ha-footer-title {
   @apply text-[0.78rem] font-semibold uppercase tracking-[0.18em] text-[#B8860B] mb-3;
 }
 
-.pub-footer-text {
+.ha-footer-text {
   @apply text-[0.9rem] leading-relaxed text-[#6B6560] not-italic;
 }
 
-.pub-footer-link {
+.ha-footer-link {
   @apply block text-[0.9rem] no-underline text-[#6B6560] hover:text-[#B8860B] transition-colors py-0.5;
 }
 
-.pub-footer-bottom {
+.ha-footer-bottom {
   @apply border-t border-[#D4C9A8] py-5 text-[0.82rem] text-[#6B6560] text-center;
 }
 
 /* ── Page de contact ── */
 
-.pub-contact-grid {
+.ha-contact-grid {
   @apply grid gap-10 lg:grid-cols-[1.6fr_1fr] items-start;
 }
 
-.pub-panel {
+.ha-panel {
   @apply bg-white border border-[#D4C9A8] border-l-4 border-l-[#B8860B] px-6 py-7 sm:px-8 sm:py-8;
 }
 
-.pub-identity {
+.ha-identity {
   @apply flex items-center gap-3 bg-[#FAFAF7] border border-[#D4C9A8] rounded-sm
   px-4 py-3 mb-5 text-[0.9rem] text-[#6B6560];
 }
 
-.pub-identity-name {
+.ha-identity-name {
   @apply font-semibold text-[#1A1714];
 }
 
-.pub-textarea {
+.ha-textarea {
   @apply w-full min-h-[160px] px-4 py-3 text-base
   border-[1.5px] border-[#D4C9A8]
   bg-[#FAFAF7] text-[#1A1714]
@@ -334,24 +334,24 @@ Créer `src/app/core/styles/public.theme.css`. Ce fichier contient l'intégralit
   rounded-sm transition-colors resize-y;
 }
 
-.pub-success {
+.ha-success {
   @apply flex flex-col items-center text-center py-6;
 }
 
-.pub-success-icon {
+.ha-success-icon {
   @apply w-14 h-14 rounded-full flex items-center justify-center
   bg-[#B8860B]/10 border border-[#B8860B] text-[#B8860B] text-2xl mb-5;
 }
 
-.pub-aside {
+.ha-aside {
   @apply flex flex-col gap-7;
 }
 
-.pub-aside-title {
+.ha-aside-title {
   @apply text-[0.78rem] font-semibold uppercase tracking-[0.18em] text-[#B8860B] mb-2;
 }
 
-.pub-aside-text {
+.ha-aside-text {
   @apply text-[0.95rem] leading-relaxed text-[#6B6560] not-italic;
 }
 ```
@@ -389,40 +389,40 @@ import { environment } from '../../../environments/environment';
   imports: [RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <footer class="pub-footer">
-      <div class="pub-container">
-        <div class="pub-footer-grid">
+    <footer class="ha-footer">
+      <div class="ha-container">
+        <div class="ha-footer-grid">
           <div>
-            <p class="pub-footer-title">Historic Auto</p>
-            <address class="pub-footer-text">
+            <p class="ha-footer-title">Historic Auto</p>
+            <address class="ha-footer-text">
               5 bis avenue de l'Europe<br />
               44260 La Montagne
             </address>
           </div>
 
           <div>
-            <p class="pub-footer-title">Espace exposant</p>
-            <a routerLink="/" class="pub-footer-link">Accueil</a>
-            <a routerLink="/contact" class="pub-footer-link">Contact</a>
-            <a routerLink="/login" class="pub-footer-link">Connexion</a>
-            <a routerLink="/register" class="pub-footer-link">Créer un compte</a>
+            <p class="ha-footer-title">Espace exposant</p>
+            <a routerLink="/" class="ha-footer-link">Accueil</a>
+            <a routerLink="/contact" class="ha-footer-link">Contact</a>
+            <a routerLink="/login" class="ha-footer-link">Connexion</a>
+            <a routerLink="/register" class="ha-footer-link">Créer un compte</a>
           </div>
 
           <div>
-            <p class="pub-footer-title">Nous écrire</p>
-            <a [href]="'mailto:' + contactEmail" class="pub-footer-link">{{ contactEmail }}</a>
+            <p class="ha-footer-title">Nous écrire</p>
+            <a [href]="'mailto:' + contactEmail" class="ha-footer-link">{{ contactEmail }}</a>
             <a
               href="https://www.historic-auto.com"
               target="_blank"
               rel="noopener"
-              class="pub-footer-link"
+              class="ha-footer-link"
             >
               Site officiel du salon
             </a>
           </div>
         </div>
 
-        <p class="pub-footer-bottom">© {{ currentYear }} Historic Auto — Espace exposant</p>
+        <p class="ha-footer-bottom">© {{ currentYear }} Historic Auto — Espace exposant</p>
       </div>
     </footer>
   `,
@@ -468,45 +468,45 @@ export class PublicHeaderComponent {
 Créer `src/app/public/layout/public-header.component.html`. La zone de CTA est enveloppée dans `@if (auth.isInitialized())` : `AuthService` appelle `/me` au démarrage, et sans cette garde un exposant déjà connecté verrait « Connexion » clignoter avant « Mon Espace ».
 
 ```html
-<header class="pub-header">
-  <div class="pub-container">
-    <div class="pub-header-inner">
-      <a routerLink="/" class="pub-brand" (click)="closeMenu()">
+<header class="ha-header">
+  <div class="ha-container">
+    <div class="ha-header-inner">
+      <a routerLink="/" class="ha-brand" (click)="closeMenu()">
         <span class="auth-logo-mark">HA</span>
         <span class="auth-logo-text">Historic Auto</span>
       </a>
 
-      <nav class="pub-nav">
+      <nav class="ha-nav">
         <a
           routerLink="/"
-          class="pub-nav-link"
-          routerLinkActive="pub-nav-link--active"
+          class="ha-nav-link"
+          routerLinkActive="ha-nav-link--active"
           [routerLinkActiveOptions]="{ exact: true }"
         >
           Accueil
         </a>
-        <a routerLink="/contact" class="pub-nav-link" routerLinkActive="pub-nav-link--active">
+        <a routerLink="/contact" class="ha-nav-link" routerLinkActive="ha-nav-link--active">
           Contact
         </a>
       </nav>
 
-      <div class="pub-header-actions">
+      <div class="ha-header-actions">
         @if (auth.isInitialized()) {
           @if (auth.isAuthenticated()) {
-            <a routerLink="/dashboard" class="pub-btn pub-btn--primary">Mon Espace</a>
+            <a routerLink="/dashboard" class="ha-btn ha-btn--primary">Mon Espace</a>
           } @else {
-            <a routerLink="/login" class="pub-nav-link">Connexion</a>
-            <a routerLink="/register" class="pub-btn pub-btn--primary">Créer un compte</a>
+            <a routerLink="/login" class="ha-nav-link">Connexion</a>
+            <a routerLink="/register" class="ha-btn ha-btn--primary">Créer un compte</a>
           }
         }
       </div>
 
       <button
         type="button"
-        class="pub-burger"
+        class="ha-burger"
         (click)="toggleMenu()"
         [attr.aria-expanded]="menuOpen()"
-        aria-controls="pub-mobile-menu"
+        aria-controls="ha-mobile-menu"
         aria-label="Ouvrir le menu"
       >
         <i class="pi" [class.pi-bars]="!menuOpen()" [class.pi-times]="menuOpen()" aria-hidden="true"></i>
@@ -514,18 +514,18 @@ Créer `src/app/public/layout/public-header.component.html`. La zone de CTA est 
     </div>
 
     @if (menuOpen()) {
-      <nav id="pub-mobile-menu" class="pub-mobile-menu">
-        <a routerLink="/" class="pub-nav-link" (click)="closeMenu()">Accueil</a>
-        <a routerLink="/contact" class="pub-nav-link" (click)="closeMenu()">Contact</a>
+      <nav id="ha-mobile-menu" class="ha-mobile-menu">
+        <a routerLink="/" class="ha-nav-link" (click)="closeMenu()">Accueil</a>
+        <a routerLink="/contact" class="ha-nav-link" (click)="closeMenu()">Contact</a>
 
         @if (auth.isInitialized()) {
           @if (auth.isAuthenticated()) {
-            <a routerLink="/dashboard" class="pub-btn pub-btn--primary" (click)="closeMenu()">
+            <a routerLink="/dashboard" class="ha-btn ha-btn--primary" (click)="closeMenu()">
               Mon Espace
             </a>
           } @else {
-            <a routerLink="/login" class="pub-nav-link" (click)="closeMenu()">Connexion</a>
-            <a routerLink="/register" class="pub-btn pub-btn--primary" (click)="closeMenu()">
+            <a routerLink="/login" class="ha-nav-link" (click)="closeMenu()">Connexion</a>
+            <a routerLink="/register" class="ha-btn ha-btn--primary" (click)="closeMenu()">
               Créer un compte
             </a>
           }
@@ -552,9 +552,9 @@ import { PublicFooterComponent } from './public-footer.component';
   imports: [RouterOutlet, PublicHeaderComponent, PublicFooterComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="pub-shell">
+    <div class="ha-shell">
       <app-public-header />
-      <main class="pub-main">
+      <main class="ha-main">
         <router-outlet />
       </main>
       <app-public-footer />
@@ -585,8 +585,8 @@ export class HomeComponent {}
 Créer `src/app/public/pages/home/home.component.html` :
 
 ```html
-<section class="pub-container pub-section">
-  <h1 class="pub-h1">Accueil</h1>
+<section class="ha-container ha-section">
+  <h1 class="ha-h1">Accueil</h1>
 </section>
 ```
 
@@ -607,8 +607,8 @@ export class ContactComponent {}
 Créer `src/app/public/pages/contact/contact.component.html` :
 
 ```html
-<section class="pub-container pub-section">
-  <h1 class="pub-h1">Nous contacter</h1>
+<section class="ha-container ha-section">
+  <h1 class="ha-h1">Nous contacter</h1>
 </section>
 ```
 
@@ -730,7 +730,7 @@ git commit -m "feat(public): coquille publique, thème et routage des pages / et
 - Modify: `src/app/public/pages/home/home.component.html`
 
 **Interfaces:**
-- Consumes : `AuthService` (`isInitialized()`, `isAuthenticated()`), classes `.pub-hero`, `.pub-eyebrow`, `.pub-h1`, `.pub-lead`, `.pub-hero-actions`, `.pub-btn`, `.pub-btn--primary`, `.pub-image-slot`, `.pub-image-slot--hero`, `.pub-image-slot-label`, `.pub-image-slot-hint`, `.auth-link`.
+- Consumes : `AuthService` (`isInitialized()`, `isAuthenticated()`), classes `.ha-hero`, `.ha-eyebrow`, `.ha-h1`, `.ha-lead`, `.ha-hero-actions`, `.ha-btn`, `.ha-btn--primary`, `.ha-image-slot`, `.ha-image-slot--hero`, `.ha-image-slot-label`, `.ha-image-slot-hint`, `.auth-link`.
 - Produces : `HomeComponent.auth` (protégé, consommé par le template de la Task 3).
 
 - [ ] **Step 1 : Injecter AuthService dans HomeComponent**
@@ -764,25 +764,25 @@ Remplacer intégralement `src/app/public/pages/home/home.component.html` par :
 
 ```html
 <!-- ── Hero ── -->
-<section class="pub-container">
-  <div class="pub-hero">
+<section class="ha-container">
+  <div class="ha-hero">
     <div>
-      <p class="pub-eyebrow">Espace exposant</p>
+      <p class="ha-eyebrow">Espace exposant</p>
 
-      <h1 class="pub-h1">Réservez votre stand pour la 6<sup>e</sup> édition</h1>
+      <h1 class="ha-h1">Réservez votre stand pour la 6<sup>e</sup> édition</h1>
 
-      <p class="pub-lead">
+      <p class="ha-lead">
         Historic Auto ouvre son espace en ligne aux exposants. Constituez votre dossier à votre
         rythme — entité, stand et options, devis, documents, paiement — et suivez son avancement
         à tout moment.
       </p>
 
-      <div class="pub-hero-actions">
+      <div class="ha-hero-actions">
         @if (auth.isInitialized()) {
           @if (auth.isAuthenticated()) {
-            <a routerLink="/dashboard" class="pub-btn pub-btn--primary">Accéder à mon espace</a>
+            <a routerLink="/dashboard" class="ha-btn ha-btn--primary">Accéder à mon espace</a>
           } @else {
-            <a routerLink="/register" class="pub-btn pub-btn--primary">
+            <a routerLink="/register" class="ha-btn ha-btn--primary">
               Créer mon compte exposant
             </a>
             <a routerLink="/login" class="auth-link">J'ai déjà un compte</a>
@@ -793,7 +793,7 @@ Remplacer intégralement `src/app/public/pages/home/home.component.html` par :
 
     <!--
       Emplacement image. Pour le remplacer, déposer le fichier dans public/images/ puis
-      substituer le bloc .pub-image-slot ci-dessous par :
+      substituer le bloc .ha-image-slot ci-dessous par :
 
       <img
         src="/images/hero.jpg"
@@ -801,9 +801,9 @@ Remplacer intégralement `src/app/public/pages/home/home.component.html` par :
         class="w-full aspect-[4/3] object-cover border border-[#D4C9A8] border-l-4 border-l-[#B8860B]"
       />
     -->
-    <div class="pub-image-slot pub-image-slot--hero">
-      <span class="pub-image-slot-label">Photo à fournir</span>
-      <span class="pub-image-slot-hint">public/images/hero.jpg — ratio 4:3</span>
+    <div class="ha-image-slot ha-image-slot--hero">
+      <span class="ha-image-slot-label">Photo à fournir</span>
+      <span class="ha-image-slot-hint">public/images/hero.jpg — ratio 4:3</span>
     </div>
   </div>
 </section>
@@ -843,7 +843,7 @@ git commit -m "feat(public): hero de la page d'accueil"
 - Modify: `src/app/public/pages/home/home.component.html`
 
 **Interfaces:**
-- Consumes : `HomeComponent.auth` (Task 2), classes `.pub-band`, `.pub-band-meta`, `.pub-band-meta-strong`, `.pub-stats`, `.pub-stat`, `.pub-stat-value`, `.pub-stat-label`, `.pub-image-slot--band`, `.pub-section`, `.pub-section-title`, `.pub-section-lead`, `.pub-steps`, `.pub-step`, `.pub-step-index`, `.pub-step-title`, `.pub-step-text`, `.pub-cta`, `.pub-cta-title`, `.pub-cta-text`, `.pub-cta-link`.
+- Consumes : `HomeComponent.auth` (Task 2), classes `.ha-band`, `.ha-band-meta`, `.ha-band-meta-strong`, `.ha-stats`, `.ha-stat`, `.ha-stat-value`, `.ha-stat-label`, `.ha-image-slot--band`, `.ha-section`, `.ha-section-title`, `.ha-section-lead`, `.ha-steps`, `.ha-step`, `.ha-step-index`, `.ha-step-title`, `.ha-step-text`, `.ha-cta`, `.ha-cta-title`, `.ha-cta-text`, `.ha-cta-link`.
 - Produces : `HomeComponent.stats: readonly HomeStat[]`, `HomeComponent.steps: readonly HomeStep[]`.
 
 - [ ] **Step 1 : Ajouter les données de sections**
@@ -929,21 +929,21 @@ Ajouter le bloc suivant à la **fin** de `src/app/public/pages/home/home.compone
 
 ```html
 <!-- ── Bandeau salon ── -->
-<section class="pub-band">
-  <div class="pub-container">
-    <p class="pub-band-meta">
-      <span class="pub-band-meta-strong">Février 2028</span>
+<section class="ha-band">
+  <div class="ha-container">
+    <p class="ha-band-meta">
+      <span class="ha-band-meta-strong">Février 2028</span>
       <span aria-hidden="true">·</span>
-      <span class="pub-band-meta-strong">Nantes, Parc des Expositions</span>
+      <span class="ha-band-meta-strong">Nantes, Parc des Expositions</span>
       <span aria-hidden="true">·</span>
       <span>6<sup>e</sup> édition du salon du véhicule de collection</span>
     </p>
 
-    <div class="pub-stats">
+    <div class="ha-stats">
       @for (stat of stats; track stat.label) {
-        <div class="pub-stat">
-          <p class="pub-stat-value">{{ stat.value }}</p>
-          <p class="pub-stat-label">{{ stat.label }}</p>
+        <div class="ha-stat">
+          <p class="ha-stat-value">{{ stat.value }}</p>
+          <p class="ha-stat-label">{{ stat.label }}</p>
         </div>
       }
     </div>
@@ -951,10 +951,10 @@ Ajouter le bloc suivant à la **fin** de `src/app/public/pages/home/home.compone
 </section>
 
 <!-- ── Bande image ── -->
-<section class="pub-container pub-section">
+<section class="ha-container ha-section">
   <!--
     Emplacement image. Pour le remplacer, déposer le fichier dans public/images/ puis
-    substituer le bloc .pub-image-slot ci-dessous par :
+    substituer le bloc .ha-image-slot ci-dessous par :
 
     <img
       src="/images/salon.jpg"
@@ -962,51 +962,51 @@ Ajouter le bloc suivant à la **fin** de `src/app/public/pages/home/home.compone
       class="w-full aspect-[3/1] object-cover border border-[#D4C9A8] border-l-4 border-l-[#B8860B]"
     />
   -->
-  <div class="pub-image-slot pub-image-slot--band">
-    <span class="pub-image-slot-label">Photo à fournir</span>
-    <span class="pub-image-slot-hint">public/images/salon.jpg — ratio 3:1</span>
+  <div class="ha-image-slot ha-image-slot--band">
+    <span class="ha-image-slot-label">Photo à fournir</span>
+    <span class="ha-image-slot-hint">public/images/salon.jpg — ratio 3:1</span>
   </div>
 </section>
 
 <!-- ── Comment ça marche ── -->
-<section class="pub-container pub-section">
-  <h2 class="pub-section-title">Comment ça marche</h2>
-  <p class="pub-section-lead">
+<section class="ha-container ha-section">
+  <h2 class="ha-section-title">Comment ça marche</h2>
+  <p class="ha-section-lead">
     Votre demande de stand se construit en cinq étapes. Vous pouvez l'interrompre et la reprendre
     quand vous le souhaitez : votre saisie est enregistrée au fur et à mesure.
   </p>
 
-  <div class="pub-steps">
+  <div class="ha-steps">
     @for (step of steps; track step.index) {
-      <article class="pub-step">
-        <span class="pub-step-index">{{ step.index }}</span>
-        <h3 class="pub-step-title">{{ step.title }}</h3>
-        <p class="pub-step-text">{{ step.text }}</p>
+      <article class="ha-step">
+        <span class="ha-step-index">{{ step.index }}</span>
+        <h3 class="ha-step-title">{{ step.title }}</h3>
+        <p class="ha-step-text">{{ step.text }}</p>
       </article>
     }
   </div>
 </section>
 
 <!-- ── Appel à l'action de clôture ── -->
-<section class="pub-container pub-section">
-  <div class="pub-cta">
-    <h2 class="pub-cta-title">Prêt à déposer votre demande ?</h2>
+<section class="ha-container ha-section">
+  <div class="ha-cta">
+    <h2 class="ha-cta-title">Prêt à déposer votre demande ?</h2>
 
-    <p class="pub-cta-text">
+    <p class="ha-cta-text">
       La création de compte prend moins d'une minute. Vous pourrez ensuite commencer votre dossier
       et le compléter quand vous le souhaitez.
     </p>
 
     @if (auth.isInitialized()) {
       @if (auth.isAuthenticated()) {
-        <a routerLink="/dashboard" class="pub-btn pub-btn--primary">Accéder à mon espace</a>
+        <a routerLink="/dashboard" class="ha-btn ha-btn--primary">Accéder à mon espace</a>
       } @else {
-        <a routerLink="/register" class="pub-btn pub-btn--primary">Créer mon compte exposant</a>
+        <a routerLink="/register" class="ha-btn ha-btn--primary">Créer mon compte exposant</a>
       }
     }
 
-    <p class="pub-cta-text mt-8 mb-0">
-      Une question ? <a routerLink="/contact" class="pub-cta-link">Écrivez-nous</a>.
+    <p class="ha-cta-text mt-8 mb-0">
+      Une question ? <a routerLink="/contact" class="ha-cta-link">Écrivez-nous</a>.
     </p>
   </div>
 </section>
@@ -1120,7 +1120,7 @@ git commit -m "feat(public): modèle et service stub du formulaire de contact"
 - Modify: `src/app/public/pages/contact/contact.component.html`
 
 **Interfaces:**
-- Consumes : `ContactService.send(payload: ContactRequest): Observable<void>` et `ContactRequest` / `ContactSubject` (Task 4) ; `AuthService.isInitialized()`, `AuthService.currentUser()` retournant `AuthUser | null` avec `firstName: string` et `email: string` ; `environment.contactEmail` ; classes `.pub-contact-grid`, `.pub-panel`, `.pub-identity`, `.pub-identity-name`, `.pub-textarea`, `.pub-success`, `.pub-success-icon`, `.pub-aside`, `.pub-aside-title`, `.pub-aside-text`, plus `.auth-field`, `.auth-label`, `.auth-input`, `.auth-input--error`, `.auth-field-error`, `.auth-error-banner`, `.auth-btn-primary`, `.auth-link`.
+- Consumes : `ContactService.send(payload: ContactRequest): Observable<void>` et `ContactRequest` / `ContactSubject` (Task 4) ; `AuthService.isInitialized()`, `AuthService.currentUser()` retournant `AuthUser | null` avec `firstName: string` et `email: string` ; `environment.contactEmail` ; classes `.ha-contact-grid`, `.ha-panel`, `.ha-identity`, `.ha-identity-name`, `.ha-textarea`, `.ha-success`, `.ha-success-icon`, `.ha-aside`, `.ha-aside-title`, `.ha-aside-text`, plus `.auth-field`, `.auth-label`, `.auth-input`, `.auth-input--error`, `.auth-field-error`, `.auth-error-banner`, `.auth-btn-primary`, `.auth-link`.
 - Produces : rien pour les tâches suivantes.
 
 - [ ] **Step 1 : Écrire le composant**
@@ -1310,27 +1310,27 @@ export class ContactComponent {
 Remplacer intégralement `src/app/public/pages/contact/contact.component.html` par :
 
 ```html
-<section class="pub-container pub-section">
-  <p class="pub-eyebrow">Contact</p>
-  <h1 class="pub-h1">Nous contacter</h1>
-  <p class="pub-lead">
+<section class="ha-container ha-section">
+  <p class="ha-eyebrow">Contact</p>
+  <h1 class="ha-h1">Nous contacter</h1>
+  <p class="ha-lead">
     Une question sur votre demande de stand, sur les options ou sur votre facturation ?
     Écrivez-nous, nous vous répondons par email.
   </p>
 
-  <div class="pub-contact-grid">
-    <div class="pub-panel">
+  <div class="ha-contact-grid">
+    <div class="ha-panel">
       @if (sent()) {
-        <div class="pub-success">
-          <div class="pub-success-icon">
+        <div class="ha-success">
+          <div class="ha-success-icon">
             <i class="pi pi-check" aria-hidden="true"></i>
           </div>
-          <h2 class="pub-section-title">Message envoyé</h2>
-          <p class="pub-lead text-center">
+          <h2 class="ha-section-title">Message envoyé</h2>
+          <p class="ha-lead text-center">
             Merci, votre message est parti. Nous vous répondrons à l’adresse
             <strong>{{ replyToEmail() }}</strong>.
           </p>
-          <button type="button" class="pub-btn pub-btn--ghost" (click)="reset()">
+          <button type="button" class="ha-btn ha-btn--ghost" (click)="reset()">
             Écrire un autre message
           </button>
         </div>
@@ -1340,11 +1340,11 @@ Remplacer intégralement `src/app/public/pages/contact/contact.component.html` p
         }
 
         @if (knownUser(); as user) {
-          <p class="pub-identity">
+          <p class="ha-identity">
             <i class="pi pi-user" aria-hidden="true"></i>
             <span>
               Vous écrivez en tant que
-              <span class="pub-identity-name">{{ user.firstName }}</span> — {{ user.email }}
+              <span class="ha-identity-name">{{ user.firstName }}</span> — {{ user.email }}
             </span>
           </p>
         } @else {
@@ -1415,7 +1415,7 @@ Remplacer intégralement `src/app/public/pages/contact/contact.component.html` p
           <label class="auth-label" for="contact-message">Message</label>
           <textarea
             id="contact-message"
-            class="pub-textarea"
+            class="ha-textarea"
             placeholder="Décrivez votre demande en quelques lignes."
             [class.auth-input--error]="messageError()"
             [ngModel]="message()"
@@ -1438,15 +1438,15 @@ Remplacer intégralement `src/app/public/pages/contact/contact.component.html` p
       }
     </div>
 
-    <aside class="pub-aside">
+    <aside class="ha-aside">
       <div>
-        <p class="pub-aside-title">Nous écrire</p>
+        <p class="ha-aside-title">Nous écrire</p>
         <a [href]="'mailto:' + contactEmail" class="auth-link">{{ contactEmail }}</a>
       </div>
 
       <div>
-        <p class="pub-aside-title">Adresse</p>
-        <address class="pub-aside-text">
+        <p class="ha-aside-title">Adresse</p>
+        <address class="ha-aside-text">
           HISTORIC AUTO<br />
           5 bis avenue de l’Europe<br />
           44260 La Montagne
@@ -1454,7 +1454,7 @@ Remplacer intégralement `src/app/public/pages/contact/contact.component.html` p
       </div>
 
       <div>
-        <p class="pub-aside-title">Le salon</p>
+        <p class="ha-aside-title">Le salon</p>
         <a href="https://www.historic-auto.com" target="_blank" rel="noopener" class="auth-link">
           historic-auto.com
         </a>
