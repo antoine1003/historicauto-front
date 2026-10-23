@@ -1,11 +1,9 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import { AuthService } from '@app/core/services/auth.service';
-
-interface HomeStat {
-  readonly value: string;
-  readonly label: string;
-}
+import { DEFAULT_HOME_CONTENT } from '@app/public/models/home-content.model';
+import { HomeContentService } from '@app/public/services/home-content.service';
 
 interface HomeStep {
   readonly index: string;
@@ -13,9 +11,35 @@ interface HomeStep {
   readonly text: string;
 }
 
+/** Morceau de texte, à afficher en exposant ou non. */
+interface TextPart {
+  readonly text: string;
+  readonly sup: boolean;
+}
+
 /**
- * Page de présentation publique. Purement présentationnelle : sa seule dépendance est
- * `AuthService`, utilisé pour adapter l'intitulé et la cible des appels à l'action.
+ * « 6e édition » → « 6 » + exposant « e ». Couvre 1er/1re/2e…, sans HTML saisi : le texte reste
+ * du texte brut venu de l'administration.
+ */
+function withOrdinals(text: string): TextPart[] {
+  const parts: TextPart[] = [];
+  let last = 0;
+  for (const m of text.matchAll(/(\d+)(er|re|e)(?![\p{L}\d])/gu)) {
+    const suffixStart = m.index + m[1].length;
+    parts.push({ text: text.slice(last, suffixStart), sup: false });
+    parts.push({ text: m[2], sup: true });
+    last = suffixStart + m[2].length;
+  }
+  parts.push({ text: text.slice(last), sup: false });
+  return parts.filter((p) => p.text !== '');
+}
+
+/**
+ * Page de présentation publique. Textes, images et chiffres viennent de l'administration
+ * (`HomeContentService`) ; `AuthService` adapte l'intitulé et la cible des appels à l'action.
+ *
+ * Pendant le chargement, le contenu d'origine est rendu invisible pour réserver la place, et les
+ * images ne sont pas encore demandées : la page ne montre jamais un texte puis un autre.
  */
 @Component({
   selector: 'app-home',
@@ -27,18 +51,22 @@ interface HomeStep {
 export class HomeComponent {
   protected readonly auth = inject(AuthService);
 
-  /** Chiffres publiés par historic-auto.com/histoire. Ne pas en ajouter d'autres sans source. */
-  protected readonly stats: readonly HomeStat[] = [
-    { value: '40 000', label: 'visiteurs' },
-    { value: '330', label: 'exposants' },
-    { value: '27 000 m²', label: 'de surface' },
-    { value: '30', label: 'expositions thématiques' },
-  ];
+  private readonly loaded = toSignal(inject(HomeContentService).get());
+
+  protected readonly isLoading = computed(() => this.loaded() === undefined);
+  protected readonly content = computed(() => this.loaded() ?? DEFAULT_HOME_CONTENT);
+
+  protected readonly heroTitle = computed(() => withOrdinals(this.content().heroTitle));
+  protected readonly bandSubtitle = computed(() => withOrdinals(this.content().bandSubtitle));
+
+  protected readonly heroImageUrl = computed(() => this.content().heroImageUrl ?? '/images/hero.jpg');
+  protected readonly salonImageUrl = computed(() => this.content().salonImageUrl ?? '/images/salon.jpg');
 
   /**
    * Reprend à l'identique, et dans le même ordre, le stepper réel de
    * `edition-form-page.component.html` : Entité, Stand, Confirmation, Documents, Paiement.
-   * Si ce stepper change, cette liste doit changer avec lui.
+   * Si ce stepper change, cette liste doit changer avec lui. Volontairement absente de
+   * l'administration, pour que la page ne puisse pas décrire un autre parcours que le vrai.
    */
   protected readonly steps: readonly HomeStep[] = [
     {

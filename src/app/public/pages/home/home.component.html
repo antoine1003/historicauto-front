@@ -2,15 +2,17 @@
 <section class="ha-container">
   <div class="ha-hero">
     <div>
-      <p class="ha-eyebrow">Espace exposant</p>
+      <div [class.invisible]="isLoading()">
+        <p class="ha-eyebrow">{{ content().heroEyebrow }}</p>
 
-      <h1 class="ha-h1">Réservez votre stand pour la 6<sup>e</sup> édition</h1>
+        <h1 class="ha-h1">
+          @for (part of heroTitle(); track $index) {
+            @if (part.sup) {<sup>{{ part.text }}</sup>} @else {<span>{{ part.text }}</span>}
+          }
+        </h1>
 
-      <p class="ha-lead">
-        Historic Auto ouvre son espace en ligne aux exposants. Constituez votre dossier à votre
-        rythme — entité, stand et options, devis, documents, paiement — et suivez son avancement
-        à tout moment.
-      </p>
+        <p class="ha-lead">{{ content().heroLead }}</p>
+      </div>
 
       <div class="ha-hero-actions">
         @if (auth.isInitialized()) {
@@ -26,27 +28,35 @@
       </div>
     </div>
 
+    @if (isLoading()) {
+      <div class="w-full aspect-[4/3] bg-[#EFEADD] border border-[#D4C9A8] border-l-4 border-l-[#B8860B]"></div>
+    } @else {
       <img
-        src="/images/hero.jpg"
-        alt="Véhicules de collection exposés au salon Historic Auto"
+        [src]="heroImageUrl()"
+        [alt]="content().heroImageAlt"
         class="w-full aspect-[4/3] object-cover border border-[#D4C9A8] border-l-4 border-l-[#B8860B]"
       />
+    }
   </div>
 </section>
 
 <!-- ── Bandeau salon ── -->
 <section class="ha-band">
-  <div class="ha-container">
+  <div class="ha-container" [class.invisible]="isLoading()">
     <p class="ha-band-meta">
-      <span class="ha-band-meta-strong">Février 2028</span>
+      <span class="ha-band-meta-strong">{{ content().bandDate }}</span>
       <span aria-hidden="true">·</span>
-      <span class="ha-band-meta-strong">Nantes, Parc des Expositions</span>
+      <span class="ha-band-meta-strong">{{ content().bandLocation }}</span>
       <span aria-hidden="true">·</span>
-      <span>6<sup>e</sup> édition du salon du véhicule de collection</span>
+      <span>
+        @for (part of bandSubtitle(); track $index) {
+          @if (part.sup) {<sup>{{ part.text }}</sup>} @else {<span>{{ part.text }}</span>}
+        }
+      </span>
     </p>
 
     <div class="ha-stats">
-      @for (stat of stats; track stat.label) {
+      @for (stat of content().stats; track $index) {
         <div class="ha-stat">
           <p class="ha-stat-value">{{ stat.value }}</p>
           <p class="ha-stat-label">{{ stat.label }}</p>
@@ -58,20 +68,24 @@
 
 <!-- ── Bande image ── -->
 <section class="ha-container ha-section">
+  @if (isLoading()) {
+    <div class="w-full aspect-[3/1] bg-[#EFEADD] border border-[#D4C9A8] border-l-4 border-l-[#B8860B]"></div>
+  } @else {
     <img
-      src="/images/salon.jpg"
-      alt="Vue d'ensemble des allées du salon Historic Auto"
+      [src]="salonImageUrl()"
+      [alt]="content().salonImageAlt"
+      loading="lazy"
       class="w-full aspect-[3/1] object-cover border border-[#D4C9A8] border-l-4 border-l-[#B8860B]"
     />
+  }
 </section>
 
 <!-- ── Comment ça marche ── -->
 <section class="ha-container ha-section">
-  <h2 class="ha-section-title">Comment ça marche</h2>
-  <p class="ha-section-lead">
-    Votre demande de stand se construit en cinq étapes. Vous pouvez l'interrompre et la reprendre
-    quand vous le souhaitez : votre saisie est enregistrée au fur et à mesure.
-  </p>
+  <div [class.invisible]="isLoading()">
+    <h2 class="ha-section-title">{{ content().stepsTitle }}</h2>
+    <p class="ha-section-lead">{{ content().stepsLead }}</p>
+  </div>
 
   <div class="ha-steps">
     @for (step of steps; track step.index) {
@@ -87,17 +101,14 @@
 <!-- ── Appel à l'action de clôture ── -->
 <section class="ha-container ha-section">
   <div class="ha-cta">
-    <h2 class="ha-cta-title">Prêt à déposer votre demande ?</h2>
+    <h2 class="ha-cta-title" [class.invisible]="isLoading()">{{ content().ctaTitle }}</h2>
 
     @if (auth.isInitialized()) {
       @if (auth.isAuthenticated()) {
-        <p class="ha-cta-text">Reprenez votre dossier là où vous l'avez laissé.</p>
+        <p class="ha-cta-text" [class.invisible]="isLoading()">{{ content().ctaTextMember }}</p>
         <a routerLink="/dashboard" class="ha-btn ha-btn--primary">Accéder à mon espace</a>
       } @else {
-        <p class="ha-cta-text">
-          La création de compte prend moins d'une minute. Vous pourrez ensuite commencer votre
-          dossier et le compléter quand vous le souhaitez.
-        </p>
+        <p class="ha-cta-text" [class.invisible]="isLoading()">{{ content().ctaTextGuest }}</p>
         <a routerLink="/register" class="ha-btn ha-btn--primary">Créer mon compte exposant</a>
       }
     }
