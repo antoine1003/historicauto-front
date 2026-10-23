@@ -10,8 +10,34 @@
   <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
   <link rel="manifest" href="/site.webmanifest">
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <!-- Écran d'attente : affiché tant qu'Angular n'a pas démarré (Angular remplace le contenu
+       d'<app-root>). Styles en ligne, sans dépendance, pour s'afficher avant tout le reste. -->
+  <style>
+    .ha-boot {
+      position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center;
+      justify-content: center; gap: 1.25rem; background: #F7F5F0; color: #1A1714;
+      font-family: 'Cormorant Garamond', Georgia, serif;
+    }
+    .ha-boot img { width: 72px; height: 72px; object-fit: contain; }
+    .ha-boot-name { margin: 0; font-size: 1.6rem; font-weight: 500; letter-spacing: 0.02em; }
+    .ha-boot-bar { position: relative; width: 120px; height: 2px; overflow: hidden; background: #E6DFCC; }
+    .ha-boot-bar::after {
+      content: ''; position: absolute; inset: 0; width: 40%; background: #B8860B;
+      animation: ha-boot-slide 1.2s ease-in-out infinite;
+    }
+    @keyframes ha-boot-slide { from { transform: translateX(-100%); } to { transform: translateX(250%); } }
+    @media (prefers-reduced-motion: reduce) {
+      .ha-boot-bar::after { animation: none; width: 100%; opacity: 0.5; }
+    }
+  </style>
 </head>
 <body>
-  <app-root></app-root>
+  <app-root>
+    <div class="ha-boot" role="status" aria-label="Chargement de l'espace exposant">
+      <img src="/images/logo.webp" alt="" />
+      <p class="ha-boot-name">Historic Auto</p>
+      <div class="ha-boot-bar"></div>
+    </div>
+  </app-root>
 </body>
 </html>

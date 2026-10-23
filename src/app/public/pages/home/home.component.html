@@ -1,17 +1,17 @@
 <!-- ── Hero ── -->
-<section class="ha-container">
+<section class="ha-container" [attr.aria-busy]="isLoading()">
   <div class="ha-hero">
     <div>
-      <div [class.invisible]="isLoading()">
-        <p class="ha-eyebrow">{{ content().heroEyebrow }}</p>
+      <div [class.invisible]="isHidden()" [class.ha-skeleton]="isSkeleton()">
+        <p class="ha-eyebrow"><span class="ha-skel">{{ content().heroEyebrow }}</span></p>
 
         <h1 class="ha-h1">
           @for (part of heroTitle(); track $index) {
-            @if (part.sup) {<sup>{{ part.text }}</sup>} @else {<span>{{ part.text }}</span>}
+            @if (part.sup) {<sup>{{ part.text }}</sup>} @else {<span class="ha-skel">{{ part.text }}</span>}
           }
         </h1>
 
-        <p class="ha-lead">{{ content().heroLead }}</p>
+        <p class="ha-lead"><span class="ha-skel">{{ content().heroLead }}</span></p>
       </div>
 
       <div class="ha-hero-actions">
@@ -29,7 +29,10 @@
     </div>
 
     @if (isLoading()) {
-      <div class="w-full aspect-[4/3] bg-[#EFEADD] border border-[#D4C9A8] border-l-4 border-l-[#B8860B]"></div>
+      <div
+        class="w-full aspect-[4/3] bg-[#EFEADD] border border-[#D4C9A8] border-l-4 border-l-[#B8860B]"
+        [class.ha-skel-block]="isSkeleton()"
+      ></div>
     } @else {
       <img
         [src]="heroImageUrl()"
@@ -41,16 +44,16 @@
 </section>
 
 <!-- ── Bandeau salon ── -->
-<section class="ha-band">
-  <div class="ha-container" [class.invisible]="isLoading()">
+<section class="ha-band" [attr.aria-busy]="isLoading()">
+  <div class="ha-container" [class.invisible]="isHidden()" [class.ha-skeleton]="isSkeleton()">
     <p class="ha-band-meta">
-      <span class="ha-band-meta-strong">{{ content().bandDate }}</span>
+      <span class="ha-band-meta-strong ha-skel">{{ content().bandDate }}</span>
       <span aria-hidden="true">·</span>
-      <span class="ha-band-meta-strong">{{ content().bandLocation }}</span>
+      <span class="ha-band-meta-strong ha-skel">{{ content().bandLocation }}</span>
       <span aria-hidden="true">·</span>
       <span>
         @for (part of bandSubtitle(); track $index) {
-          @if (part.sup) {<sup>{{ part.text }}</sup>} @else {<span>{{ part.text }}</span>}
+          @if (part.sup) {<sup>{{ part.text }}</sup>} @else {<span class="ha-skel">{{ part.text }}</span>}
         }
       </span>
     </p>
@@ -58,8 +61,8 @@
     <div class="ha-stats">
       @for (stat of content().stats; track $index) {
         <div class="ha-stat">
-          <p class="ha-stat-value">{{ stat.value }}</p>
-          <p class="ha-stat-label">{{ stat.label }}</p>
+          <p class="ha-stat-value"><span class="ha-skel">{{ stat.value }}</span></p>
+          <p class="ha-stat-label"><span class="ha-skel">{{ stat.label }}</span></p>
         </div>
       }
     </div>
@@ -69,7 +72,10 @@
 <!-- ── Bande image ── -->
 <section class="ha-container ha-section">
   @if (isLoading()) {
-    <div class="w-full aspect-[3/1] bg-[#EFEADD] border border-[#D4C9A8] border-l-4 border-l-[#B8860B]"></div>
+    <div
+      class="w-full aspect-[3/1] bg-[#EFEADD] border border-[#D4C9A8] border-l-4 border-l-[#B8860B]"
+      [class.ha-skel-block]="isSkeleton()"
+    ></div>
   } @else {
     <img
       [src]="salonImageUrl()"
@@ -82,9 +88,9 @@
 
 <!-- ── Comment ça marche ── -->
 <section class="ha-container ha-section">
-  <div [class.invisible]="isLoading()">
-    <h2 class="ha-section-title">{{ content().stepsTitle }}</h2>
-    <p class="ha-section-lead">{{ content().stepsLead }}</p>
+  <div [class.invisible]="isHidden()" [class.ha-skeleton]="isSkeleton()" [attr.aria-busy]="isLoading()">
+    <h2 class="ha-section-title"><span class="ha-skel">{{ content().stepsTitle }}</span></h2>
+    <p class="ha-section-lead"><span class="ha-skel">{{ content().stepsLead }}</span></p>
   </div>
 
   <div class="ha-steps">
@@ -100,15 +106,21 @@
 
 <!-- ── Appel à l'action de clôture ── -->
 <section class="ha-container ha-section">
-  <div class="ha-cta">
-    <h2 class="ha-cta-title" [class.invisible]="isLoading()">{{ content().ctaTitle }}</h2>
+  <div class="ha-cta" [attr.aria-busy]="isLoading()">
+    <h2 class="ha-cta-title" [class.invisible]="isHidden()" [class.ha-skeleton]="isSkeleton()">
+      <span class="ha-skel">{{ content().ctaTitle }}</span>
+    </h2>
 
     @if (auth.isInitialized()) {
       @if (auth.isAuthenticated()) {
-        <p class="ha-cta-text" [class.invisible]="isLoading()">{{ content().ctaTextMember }}</p>
+        <p class="ha-cta-text" [class.invisible]="isHidden()" [class.ha-skeleton]="isSkeleton()">
+          <span class="ha-skel">{{ content().ctaTextMember }}</span>
+        </p>
         <a routerLink="/dashboard" class="ha-btn ha-btn--primary">Accéder à mon espace</a>
       } @else {
-        <p class="ha-cta-text" [class.invisible]="isLoading()">{{ content().ctaTextGuest }}</p>
+        <p class="ha-cta-text" [class.invisible]="isHidden()" [class.ha-skeleton]="isSkeleton()">
+          <span class="ha-skel">{{ content().ctaTextGuest }}</span>
+        </p>
         <a routerLink="/register" class="ha-btn ha-btn--primary">Créer mon compte exposant</a>
       }
     }
