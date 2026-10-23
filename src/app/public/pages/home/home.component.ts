@@ -4,6 +4,10 @@ import { RouterLink } from '@angular/router';
 import { AuthService } from '@app/core/services/auth.service';
 import { DEFAULT_HOME_CONTENT } from '@app/public/models/home-content.model';
 import { HomeContentService } from '@app/public/services/home-content.service';
+import { map, timer } from 'rxjs';
+
+/** En dessous, le contenu arrive sans que l'on montre d'attente (pas de clignotement). */
+const SKELETON_DELAY_MS = 300;
 
 interface HomeStep {
   readonly index: string;
@@ -39,7 +43,8 @@ function withOrdinals(text: string): TextPart[] {
  * (`HomeContentService`) ; `AuthService` adapte l'intitulé et la cible des appels à l'action.
  *
  * Pendant le chargement, le contenu d'origine est rendu invisible pour réserver la place, et les
- * images ne sont pas encore demandées : la page ne montre jamais un texte puis un autre.
+ * images ne sont pas encore demandées : la page ne montre jamais un texte puis un autre. Au-delà de
+ * 300 ms, ce même texte devient des barres animées (squelettes) de la taille des lignes finales.
  */
 @Component({
   selector: 'app-home',
@@ -54,6 +59,13 @@ export class HomeComponent {
   private readonly loaded = toSignal(inject(HomeContentService).get());
 
   protected readonly isLoading = computed(() => this.loaded() === undefined);
+
+  /** Passé ce délai sans réponse, le texte invisible laisse place aux squelettes animés. */
+  private readonly slow = toSignal(timer(SKELETON_DELAY_MS).pipe(map(() => true)), { initialValue: false });
+
+  /** Chargement court : rien n'est montré. Chargement long : squelettes. */
+  protected readonly isHidden = computed(() => this.isLoading() && !this.slow());
+  protected readonly isSkeleton = computed(() => this.isLoading() && this.slow());
   protected readonly content = computed(() => this.loaded() ?? DEFAULT_HOME_CONTENT);
 
   protected readonly heroTitle = computed(() => withOrdinals(this.content().heroTitle));
