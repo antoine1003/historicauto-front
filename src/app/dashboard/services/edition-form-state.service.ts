@@ -60,6 +60,11 @@ export class EditionFormStateService {
   private readonly optionGroupsSignal = signal<OptionGroupDefinition[]>([]);
   /** Bascule à true si le chargement du catalogue d'options a échoué (cf. revue finale). */
   private readonly catalogLoadFailedSignal = signal(false);
+  /**
+   * Type d'exposant connu du serveur au chargement du catalogue. Les packs de surface Pro et Club
+   * sont des options distinctes : quand l'étape Entité change ce type, le catalogue est rechargé.
+   */
+  private catalogExhibitorType: string | null = null;
   private readonly sharedDocumentsSignal = signal<SharedDocumentItem[]>([]);
   private readonly entityAutosaveStatusSignal = signal<AutosaveStatus>('idle');
   private readonly standAutosaveStatusSignal = signal<AutosaveStatus>('idle');
@@ -263,6 +268,10 @@ export class EditionFormStateService {
     this.structureUploadErrorsSignal.set([]);
     this.structureRemovingIdsSignal.set(new Set());
 
+    // Le cache du catalogue ne connaît pas le type d'exposant : un catalogue mis en cache avant un
+    // changement de type (autre visite, autre compte) proposerait les packs de surface de l'autre type.
+    this.catalogExhibitorType = null;
+    this.optionsCatalogService.invalidate(year);
     this.optionsCatalogService.getForEdition(year).subscribe({
       next: (groups) => {
         this.optionGroupsSignal.set(groups);
@@ -308,6 +317,7 @@ export class EditionFormStateService {
 
         this.loadRealQuoteDocuments(year);
         this.state.set(this.toEditionRegistrationState(response.data));
+        this.catalogExhibitorType = this.state()?.entity.exhibitorType ?? null;
 
         if (paymentReturnStatus) {
           // Ne PAS naviguer ici : à cet instant reg.documents === [] (mock hardcodé dans
@@ -1000,6 +1010,9 @@ export class EditionFormStateService {
             current ? { ...current, entity: this.toEntityStepState(response.data) } : current,
           );
           this.entityAutosaveStatusSignal.set('saved');
+          if (response.data.exhibitorType !== this.catalogExhibitorType) {
+            this.reloadCatalogForExhibitorType(reg.editionYear, response.data.exhibitorType);
+          }
         },
         error: () => {
           this.entityAutosaveStatusSignal.set('error');
@@ -1012,6 +1025,41 @@ export class EditionFormStateService {
       });
       this.entityAutosaveTimer = null;
     }, AUTOSAVE_DEBOUNCE_MS);
+  }
+
+  /**
+   * Après un changement de type d'exposant : recharge le catalogue (les packs de surface Pro et
+   * Club sont des options distinctes), retire des sélections les options qui n'y figurent plus
+   * (le serveur a déjà retiré la ligne correspondante), puis renvoie le stand pour que lignes et
+   * totaux soient recalculés aux tarifs du nouveau type.
+   */
+  private reloadCatalogForExhibitorType(year: string, exhibitorType: string): void {
+    this.catalogExhibitorType = exhibitorType;
+    this.optionsCatalogService.invalidate(year);
+    this.optionsCatalogService.getForEdition(year).subscribe({
+      next: (groups) => {
+        if (this.catalogExhibitorType !== exhibitorType) {
+          return; // un autre changement de type a suivi : sa propre réponse fait foi
+        }
+        this.optionGroupsSignal.set(groups);
+        this.catalogLoadFailedSignal.set(false);
+
+        const knownIds = new Set(groups.flatMap((group) => group.options.map((option) => option.id)));
+        this.patchLocalState((reg) => ({
+          stand: {
+            ...reg.stand,
+            selections: Object.fromEntries(
+              Object.entries(reg.stand.selections).filter(([optionId]) => knownIds.has(optionId)),
+            ),
+          },
+        }));
+        this.scheduleStandAutosave();
+      },
+      error: () => {
+        this.optionGroupsSignal.set([]);
+        this.catalogLoadFailedSignal.set(true);
+      },
+    });
   }
 
   private scheduleStandAutosave(): void {

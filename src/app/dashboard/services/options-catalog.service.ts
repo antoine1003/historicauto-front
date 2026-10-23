@@ -36,6 +36,14 @@ export class OptionsCatalogService {
 
     return cached;
   }
+
+  /**
+   * Oublie le catalogue mis en cache pour une édition. Le catalogue dépend du type d'exposant
+   * (packs de surface Pro et Club distincts) : à rappeler quand ce type change.
+   */
+  invalidate(year: string): void {
+    this.cache.delete(year);
+  }
 }
 
 function toOptionGroupDefinition(dto: OptionGroupApiDto): OptionGroupDefinition {
