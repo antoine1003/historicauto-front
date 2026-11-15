@@ -44,3 +44,6 @@ Thumbs.db
 
 /.worktrees/
 /.claude/settings.local.json
+/.claude/worktrees/devis-confirmation-signature-frontend/
+/.claude/worktrees/public-landing-contact/
+/.claude/worktrees/registration-form-frontend-integration/
