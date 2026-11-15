@@ -72,6 +72,28 @@ export enum RegistrationStep {
   PAYMENT = 5,
 }
 
+/**
+ * Jeton d'URL de chaque étape (`/edition/:year?step=documents`), pour ouvrir le formulaire sur un
+ * onglet précis depuis un lien d'email. DOIT rester identique à l'enum PHP
+ * App\Enum\RegistrationFormStep côté back, qui construit ces liens.
+ */
+export const REGISTRATION_STEP_SLUGS: Readonly<Record<RegistrationStep, string>> = {
+  [RegistrationStep.ENTITY]: 'entite',
+  [RegistrationStep.STAND]: 'stand',
+  [RegistrationStep.CONFIRMATION]: 'confirmation',
+  [RegistrationStep.DOCUMENTS]: 'documents',
+  [RegistrationStep.PAYMENT]: 'paiement',
+};
+
+/** Étape désignée par un jeton d'URL, `null` si absent ou inconnu (→ étape par défaut). */
+export function registrationStepFromSlug(slug: string | null): RegistrationStep | null {
+  if (!slug) {
+    return null;
+  }
+  const match = Object.entries(REGISTRATION_STEP_SLUGS).find(([, value]) => value === slug.toLowerCase());
+  return match ? (Number(match[0]) as RegistrationStep) : null;
+}
+
 export interface StandManagerForm {
   /** UUID serveur une fois créé côté back ; id temporaire `temp-<uuid>` pendant l'ajout optimiste. */
   id: string;

@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { Router, RouterLink, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../services/auth.service';
+import { safeReturnUrl } from '../../guards/auth.guard';
 
 // PrimeNG
 import { InputTextModule } from 'primeng/inputtext';
@@ -75,16 +76,15 @@ export class LoginComponent implements OnInit {
   };
 
   /**
-   * URL à laquelle revenir après connexion, transmise par ex. par EditionFormStateService quand
-   * une session expire pendant un retour de paiement Stripe (`?returnUrl=...`), pour que
-   * `?payment=success` survive au détour par le login. Nouveau pattern introduit pour ce besoin :
-   * aucun mécanisme "returnUrl" n'existait déjà dans ce code base (authGuard redirige vers /login
-   * sans le préserver).
+   * URL à laquelle revenir après connexion (`?returnUrl=...`), posée par authGuard (lien d'email
+   * vers un onglet du formulaire, ex. `/edition/2026?step=documents`) ou par EditionFormStateService
+   * quand la session expire pendant un retour de paiement Stripe. Filtrée par safeReturnUrl :
+   * chemin interne uniquement.
    */
   private returnUrl: string | null = null;
 
   ngOnInit(): void {
-    this.returnUrl = this.route.snapshot.queryParamMap.get('returnUrl');
+    this.returnUrl = safeReturnUrl(this.route.snapshot.queryParamMap.get('returnUrl'));
 
     const status  = this.route.snapshot.queryParamMap.get('status');
     const message = this.route.snapshot.queryParamMap.get('message');

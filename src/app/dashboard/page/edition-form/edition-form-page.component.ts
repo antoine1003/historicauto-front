@@ -1,4 +1,4 @@
-import { Component, computed, inject, OnInit, signal, ViewChild } from '@angular/core';
+import { Component, computed, effect, inject, OnInit, signal, untracked, ViewChild } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { StepperModule } from 'primeng/stepper';
 import { ButtonModule } from 'primeng/button';
@@ -14,7 +14,12 @@ import {
 } from '@app/dashboard/page/edition-form/components/steps/documents/step-documents.component';
 import { StepPaymentComponent } from '@app/dashboard/page/edition-form/components/steps/payment/step-payment.component';
 import { EditionFormStateService } from '@app/dashboard/services/edition-form-state.service';
-import { AutosaveStatus, RegistrationStep } from '@app/dashboard/models/edition-form.models';
+import {
+  AutosaveStatus,
+  REGISTRATION_STEP_SLUGS,
+  RegistrationStep,
+  registrationStepFromSlug,
+} from '@app/dashboard/models/edition-form.models';
 import { ValidatableFormStep } from '@app/dashboard/models/validatable-form-step';
 import { LoaderComponent } from '@app/shared/components/loader/loader.component';
 import { Title } from '@angular/platform-browser';
@@ -91,6 +96,30 @@ export class EditionFormPageComponent implements OnInit {
     { label: `Inscription ${this.year() ?? ''}`.trim() },
   ]);
 
+  constructor() {
+    // L'URL suit l'onglet affiché (`?step=…`, sans entrée d'historique) : un rafraîchissement ou un
+    // lien copié rouvre le même onglet. Rien n'est écrit tant que l'inscription n'est pas chargée,
+    // pour ne pas écraser le `?step=` d'un lien d'email avant qu'il ait pu être appliqué.
+    effect(() => {
+      const step = this.formState.activeStep();
+      if (!this.formState.registration()) {
+        return;
+      }
+      const slug = REGISTRATION_STEP_SLUGS[step];
+      untracked(() => {
+        if (this.route.snapshot.queryParamMap.get('step') === slug) {
+          return;
+        }
+        void this.router.navigate([], {
+          relativeTo: this.route,
+          queryParams: { step: slug },
+          queryParamsHandling: 'merge',
+          replaceUrl: true,
+        });
+      });
+    });
+  }
+
   ngOnInit(): void {
     const year = this.route.snapshot.paramMap.get('year');
     if (!year) {
@@ -102,12 +131,21 @@ export class EditionFormPageComponent implements OnInit {
 
     const paymentParam = this.route.snapshot.queryParamMap.get('payment');
     const paymentReturnStatus = paymentParam === 'success' || paymentParam === 'cancelled' ? paymentParam : null;
-    this.formState.loadForEditionYear(year, paymentReturnStatus);
+    // Onglet demandé par l'URL (lien d'email) : ouvert seulement s'il est accessible à l'exposant
+    // (cf. isStepUnlocked) ; un jeton inconnu ou une étape verrouillée laisse l'étape par défaut.
+    const requestedStep = registrationStepFromSlug(this.route.snapshot.queryParamMap.get('step'));
+    this.formState.loadForEditionYear(year, paymentReturnStatus, requestedStep);
 
     if (paymentReturnStatus) {
       // Retire `?payment=...` de l'URL une fois consommé : un rafraîchissement ou un
-      // marque-page ne doit pas refaire apparaître le toast des jours plus tard.
-      void this.router.navigate([], { relativeTo: this.route, queryParams: {}, replaceUrl: true });
+      // marque-page ne doit pas refaire apparaître le toast des jours plus tard. `merge` pour
+      // garder `?step=`, que la synchro de l'onglet réécrit ensuite.
+      void this.router.navigate([], {
+        relativeTo: this.route,
+        queryParams: { payment: null },
+        queryParamsHandling: 'merge',
+        replaceUrl: true,
+      });
     }
 
     this.title.setTitle(`Formulaire d'inscription ${year}`);

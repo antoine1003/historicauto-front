@@ -89,13 +89,15 @@ export class EditionFormStateService {
   private readonly structureRemovingIdsSignal = signal<ReadonlySet<string>>(new Set());
   private readonly checkoutInProgressSignal = signal(false);
   /**
-   * Navigation vers l'Étape 5 différée jusqu'à ce que les documents réels (dont le devis signé,
-   * condition de déverrouillage de PAYMENT dans isStepUnlocked) soient chargés en état — sinon
-   * goToStep(PAYMENT) échoue silencieusement au retour de Stripe (cf. revue finale). Positionné
-   * uniquement dans loadForEditionYear() côté retour de paiement, consommé dans
-   * mergeRealDocuments() quel que soit l'appelant (loadRealQuoteDocuments/confirmRegistration/refreshDocuments).
+   * Étape demandée à l'ouverture (`?step=…` d'un lien d'email, ou Paiement au retour de Stripe),
+   * appliquée dès qu'elle est accessible. Les règles de isStepUnlocked dépendent du statut et des
+   * documents réels (devis présent, devis signé), qui n'arrivent qu'après la réponse principale via
+   * loadRealQuoteDocuments() → mergeRealDocuments() : sans ce report, goToStep() échouerait
+   * silencieusement pour Confirmation/Documents/Paiement (cf. revue finale Stripe). Consommée une
+   * seule fois : si l'étape est encore verrouillée une fois les documents chargés, on reste sur
+   * l'étape par défaut. Annulée dès que l'exposant change lui-même d'onglet.
    */
-  private pendingPaymentStep = false;
+  private pendingStep: RegistrationStep | null = null;
 
   constructor() {
     // Filet de sécurité bfcache : si le navigateur restaure cette page depuis le cache
@@ -246,7 +248,11 @@ export class EditionFormStateService {
    * `loading`/`loadError` reflètent l'état de la requête, `registration()` reste `null` tant
    * qu'elle n'a pas abouti.
    */
-  loadForEditionYear(year: string, paymentReturnStatus: 'success' | 'cancelled' | null = null): void {
+  loadForEditionYear(
+    year: string,
+    paymentReturnStatus: 'success' | 'cancelled' | null = null,
+    requestedStep: RegistrationStep | null = null,
+  ): void {
     // Capturé synchronement AVANT que le composant appelant ne retire `?payment=...` de l'URL
     // (cf. EditionFormPageComponent.ngOnInit, qui nettoie l'URL juste après cet appel) : si on
     // lisait `this.router.url` plus tard, dans le catchError 401 ci-dessous, le paramètre aurait
@@ -256,6 +262,8 @@ export class EditionFormStateService {
     this.loadErrorSignal.set(null);
     this.state.set(null);
     this.activeStepSignal.set(RegistrationStep.ENTITY);
+    // Le retour de Stripe prime sur un éventuel `?step=` : c'est l'onglet Paiement qui affiche le solde.
+    this.pendingStep = paymentReturnStatus ? RegistrationStep.PAYMENT : requestedStep;
     this.entityAutosaveStatusSignal.set('idle');
     this.standAutosaveStatusSignal.set('idle');
     this.sharedDocumentsSignal.set([]);
@@ -299,13 +307,13 @@ export class EditionFormStateService {
             // Session expirée pendant l'aller-retour Stripe (les sessions Checkout peuvent vivre
             // jusqu'à 24h) : ne PAS afficher "Aucune inscription trouvée", rediriger vers le login
             // en conservant l'URL courante (dont ?payment=success/cancelled) pour y revenir après
-            // connexion — cf. revue finale §Important. Aucun pattern "returnUrl" préexistant dans ce
-            // code base (authGuard redirige vers /login sans le préserver) : celui-ci est introduit
-            // ici et consommé par LoginComponent.
+            // connexion — cf. revue finale §Important. Même `?returnUrl=` que celui posé par
+            // authGuard, consommé par LoginComponent.
             void this.router.navigate(['/login'], { queryParams: { returnUrl: currentUrlForReturn } });
             return of(null);
           }
           this.loadErrorSignal.set(err.status === 403 ? 'closed' : 'not_found');
+          this.pendingStep = null;
           return of(null);
         }),
       )
@@ -319,12 +327,13 @@ export class EditionFormStateService {
         this.state.set(this.toEditionRegistrationState(response.data));
         this.catalogExhibitorType = this.state()?.entity.exhibitorType ?? null;
 
+        // Étape déjà accessible avec la seule réponse principale (Entité, Stand, ou statut suffisant) :
+        // on l'ouvre tout de suite. Sinon elle reste en attente des documents réels (cf. pendingStep).
+        if (this.pendingStep !== null && this.isStepUnlocked()(this.pendingStep)) {
+          this.goToStep(this.pendingStep);
+        }
+
         if (paymentReturnStatus) {
-          // Ne PAS naviguer ici : à cet instant reg.documents === [] (mock hardcodé dans
-          // toEditionRegistrationState), donc isStepUnlocked(PAYMENT) est encore false — le devis
-          // signé n'arrive qu'après via loadRealQuoteDocuments() → mergeRealDocuments(),
-          // asynchrone. On diffère la navigation jusqu'à ce que ce merge ait réellement eu lieu.
-          this.pendingPaymentStep = true;
           this.messageService.add(
             paymentReturnStatus === 'success'
               ? {
@@ -354,7 +363,7 @@ export class EditionFormStateService {
         const match = response.data.find((r) => r.edition.year === year);
         if (!match) {
           console.warn(`[EditionFormStateService] Aucune inscription réelle trouvée pour l'année ${year}.`);
-          this.pendingPaymentStep = false;
+          this.pendingStep = null;
           return;
         }
 
@@ -373,13 +382,13 @@ export class EditionFormStateService {
           next: (docsResponse) => this.mergeRealDocuments(docsResponse.data),
           error: (err) => {
             console.warn('[EditionFormStateService] Échec du chargement des documents réels :', err);
-            this.pendingPaymentStep = false;
+            this.pendingStep = null;
           },
         });
       },
       error: (err) => {
         console.warn('[EditionFormStateService] Échec du chargement de la registration réelle :', err);
-        this.pendingPaymentStep = false;
+        this.pendingStep = null;
       },
     });
   }
@@ -406,13 +415,17 @@ export class EditionFormStateService {
 
     this.state.update((reg) => (reg ? { ...reg, documents: items } : reg));
 
-    if (this.pendingPaymentStep) {
-      this.pendingPaymentStep = false;
-      this.goToStep(RegistrationStep.PAYMENT);
+    if (this.pendingStep !== null) {
+      // goToStep() est sans effet si l'étape reste verrouillée : on garde alors l'étape par défaut.
+      this.goToStep(this.pendingStep);
     }
   }
 
   goToStep(step: RegistrationStep): void {
+    // Toute navigation (clic dans le stepper, Suivant/Précédent, passage auto aux Documents après
+    // confirmation) remplace l'étape demandée à l'ouverture : un chargement tardif des documents ne
+    // doit pas ramener l'exposant sur l'onglet du lien d'email.
+    this.pendingStep = null;
     if (this.isStepUnlocked()(step)) {
       this.activeStepSignal.set(step);
     }
