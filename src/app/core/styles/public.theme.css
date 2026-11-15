@@ -111,6 +111,12 @@
   @apply py-14 sm:py-16;
 }
 
+/* Section pleine largeur sur fond parchemin : alterne avec le fond clair de la coquille pour que
+   les sections de la page d'accueil se distinguent. Le contenu va dans un .ha-container enfant. */
+.ha-section--tinted {
+  @apply bg-[#EFEADD] border-y border-[#D4C9A8];
+}
+
 .ha-eyebrow {
   @apply text-[0.78rem] font-semibold uppercase tracking-[0.22em] text-[#B8860B] mb-4;
 }
@@ -144,7 +150,7 @@
 /* ── Bandeau salon ── */
 
 .ha-band {
-  @apply border-y border-[#D4C9A8] bg-[#FAFAF7];
+  @apply border-y border-[#D4C9A8] bg-[#EFEADD];
 }
 
 .ha-band-meta {
