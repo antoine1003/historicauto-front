@@ -18,6 +18,16 @@
   text-[#6B6560] text-sm rounded-sm px-4 py-3 mt-4;
 }
 
+/* Encart d'information discret : fond parchemin, filet doré à gauche, icône dorée. */
+.ef-notice {
+  @apply flex items-start gap-3 bg-[#FAF6EC] border border-[#EDE7D8] border-l-2 border-l-[#B8860B]
+  rounded-sm px-4 py-3 text-sm leading-relaxed text-[#6B6560];
+}
+
+.ef-notice-icon {
+  @apply text-[#B8860B] text-base mt-0.5 shrink-0;
+}
+
 .ef-content {
   @apply max-w-5xl mx-auto px-4 py-6 sm:px-8 sm:py-10;
 }

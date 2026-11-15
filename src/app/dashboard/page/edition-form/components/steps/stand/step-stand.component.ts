@@ -352,13 +352,4 @@ export class StepStandComponent implements ValidatableFormStep {
     }
     this.formState.submitRegistrationOptions();
   }
-
-  /**
-   * TODO : remplace l'appel `nous contacter` générique par une navigation vers le même
-   * formulaire de contact que le bouton « Nous contacter », avec objet pré-rempli
-   * « Formulaire espace exposant — commande complémentaire » (cf. cahier des charges étape 2).
-   */
-  protected requestAdditionalOrder(): void {
-    // no-op (front only)
-  }
 }
