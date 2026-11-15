@@ -5,7 +5,7 @@
     <p-message
       severity="info"
       text="Si vous souhaitez modifier vos options avant de confirmer définitivement votre participation, contactez-nous directement."
-      styleClass="w-full mb-5"
+      class="w-full mb-5"
     />
 
     @if (quoteDocument(); as quote) {
@@ -75,7 +75,7 @@
         />
       </div>
     } @else if (registration.confirmation.confirmedAt) {
-      <p-message severity="success" text="Inscription confirmée." styleClass="w-full mt-4" />
+      <p-message severity="success" text="Inscription confirmée." class="w-full mt-4" />
     }
   </div>
 }

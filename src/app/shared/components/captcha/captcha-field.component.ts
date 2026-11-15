@@ -18,7 +18,8 @@ import { CaptchaService } from '@app/shared/services/captcha.service';
  *
  * Il n'emploie que les classes de `core/styles/auth.theme.css`, déjà utilisées par les deux pages :
  * il est donc cohérent partout sans ajouter une ligne de CSS globale — ce qui compte, le budget
- * `anyComponentStyle` d'Angular étant à 8 ko et `edition-form.theme.css` en pesant déjà 7,98, lui
+ * `anyComponentStyle` d'Angular étant à 10 ko (relevé de 8) et `edition-form.theme.css` en pesant déjà
+ * 8,6 depuis l'ajout de `.ef-notice`, lui
  * qui est à la fois importé globalement et employé comme `styleUrl` de composant.
  */
 @Component({

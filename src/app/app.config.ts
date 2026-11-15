@@ -1,6 +1,6 @@
 import { ApplicationConfig, provideBrowserGlobalErrorListeners } from '@angular/core';
 import { provideRouter, withInMemoryScrolling } from '@angular/router';
-import { provideHttpClient, withInterceptors } from '@angular/common/http';
+import { provideHttpClient, withInterceptors, withXhr } from '@angular/common/http';
 import { providePrimeNG } from 'primeng/config';
 import { MessageService } from 'primeng/api';
 import Aura from '@primeuix/themes/aura';
@@ -16,6 +16,7 @@ export const appConfig: ApplicationConfig = {
       withInMemoryScrolling({ scrollPositionRestoration: 'enabled', anchorScrolling: 'enabled' })
     ),
     provideHttpClient(
+      withXhr(),
       withInterceptors([authInterceptor])
     ),
     providePrimeNG({
@@ -24,7 +25,8 @@ export const appConfig: ApplicationConfig = {
         options: {
           darkModeSelector: false, // ← classe sur <html> au lieu de @media
         },
-      }
+      },
+      license: 'eyJpZCI6IjAwNGU4YWZiLThmY2EtNGZjOC04ODcyLTZlZDdmNTg1MGU1OCIsInByb2R1Y3QiOiJwcmltZXVpIiwidGllciI6ImNvbW11bml0eSIsInR5cGUiOiJkZXYiLCJpYXQiOjE3OTQ0OTU4MjQsImV4cCI6MTgyNjAzMTgyNH0.paNaSkQ_ZaX5AaYLzuHxHVTKYY7YYEh-xgAXQpQWIbSIlk7jSTjsEEnCNYD5wqtRgQe--WyTvB3haSMPqvVlAg'
     }),
     MessageService,
   ]

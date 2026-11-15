@@ -1,4 +1,4 @@
-import { Component, computed, inject, OnDestroy, OnInit } from '@angular/core';
+import { Component, computed, inject, OnDestroy, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { ButtonModule } from 'primeng/button';
 import { TagModule } from 'primeng/tag';
@@ -20,6 +20,7 @@ const DOCUMENT_TYPE_ICON: Record<DocumentType, string> = {
   selector: 'app-step-documents',
   standalone: true,
   imports: [DatePipe, ButtonModule, TagModule, InsuranceRcComponent],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './step-documents.component.html',
 })
 export class StepDocumentsComponent implements OnInit, OnDestroy {

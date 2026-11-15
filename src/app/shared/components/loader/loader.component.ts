@@ -1,10 +1,11 @@
-import { Component, input } from '@angular/core';
+import { Component, input, ChangeDetectionStrategy } from '@angular/core';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 
 @Component({
   selector: 'app-loader',
   standalone: true,
   imports: [ProgressSpinnerModule],
+  changeDetection: ChangeDetectionStrategy.Eager,
   template: `
     <div class="auth-spinner">
       <p-progress-spinner

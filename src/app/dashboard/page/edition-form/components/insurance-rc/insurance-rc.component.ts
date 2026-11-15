@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { ButtonModule } from 'primeng/button';
 import { FileUploadModule } from 'primeng/fileupload';
@@ -16,6 +16,7 @@ import { downloadDocumentFile } from '@app/core/utils/document-download.util';
   selector: 'app-insurance-rc',
   standalone: true,
   imports: [DatePipe, ButtonModule, FileUploadModule],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './insurance-rc.component.html',
 })
 export class InsuranceRcComponent {

@@ -1,11 +1,11 @@
-<p-confirmDialog />
+<p-confirm-dialog />
 
 @if (formState.registration(); as registration) {
   @if (formState.catalogLoadFailed()) {
     <p-message
       severity="error"
       text="Le catalogue des options n'a pas pu être chargé. Rechargez la page ou réessayez plus tard."
-      styleClass="w-full mb-4"
+      class="w-full mb-4"
     />
   }
 

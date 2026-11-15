@@ -1,4 +1,4 @@
-import { Component, ElementRef, inject, signal, computed, viewChild } from '@angular/core';
+import { Component, ElementRef, inject, signal, computed, viewChild, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -23,6 +23,7 @@ import { ButtonModule } from 'primeng/button';
     CaptchaFieldComponent,
   ],
   templateUrl: './register.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ['./register.component.scss'],
 })
 export class RegisterComponent {

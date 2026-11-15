@@ -1,4 +1,4 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, inject, ChangeDetectionStrategy } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
@@ -17,6 +17,7 @@ interface ChecklistItem {
   selector: 'app-step-confirmation',
   standalone: true,
   imports: [FormsModule, DatePipe, ButtonModule, CheckboxModule, InputTextModule, MessageModule],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './step-confirmation.component.html',
 })
 export class StepConfirmationComponent {

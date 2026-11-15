@@ -109,7 +109,7 @@
             [disabled]="loading()"
             [required]="true"
             fluid
-            [styleClass]="subjectError() ? 'auth-input--error' : ''"
+            [class]="subjectError() ? 'auth-input--error' : ''"
           />
           @if (subjectError()) {
             <p id="contact-subject-error" class="auth-field-error" role="alert">

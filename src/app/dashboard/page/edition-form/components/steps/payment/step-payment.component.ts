@@ -1,4 +1,4 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, inject, ChangeDetectionStrategy } from '@angular/core';
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { ButtonModule } from 'primeng/button';
 import { TableModule } from 'primeng/table';
@@ -24,6 +24,7 @@ const EPSILON = 0.005;
   selector: 'app-step-payment',
   standalone: true,
   imports: [DatePipe, DecimalPipe, ButtonModule, TableModule, MessageModule, OptionsRecapComponent],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './step-payment.component.html',
 })
 export class StepPaymentComponent {

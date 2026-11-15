@@ -1,4 +1,4 @@
-import { Component, computed, input } from '@angular/core';
+import { Component, computed, input, ChangeDetectionStrategy } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
 import { PARTITION_LAYOUT_LABELS, StandLine } from '@app/dashboard/models/edition-form.models';
 
@@ -18,6 +18,7 @@ interface RecapSection {
   selector: 'app-options-recap',
   standalone: true,
   imports: [DecimalPipe],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './options-recap.component.html',
 })
 export class OptionsRecapComponent {

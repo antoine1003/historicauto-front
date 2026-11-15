@@ -12,7 +12,7 @@
             [options]="[{ label: 'Professionnel', value: ExhibitorType.PRO }, { label: 'Club', value: ExhibitorType.CLUB }]"
             optionLabel="label"
             optionValue="value"
-            styleClass="w-full"
+            class="w-full"
           />
         </div>
 
@@ -55,7 +55,7 @@
               [filter]="true"
               filterPlaceHolder="Rechercher un domaine"
               [showToggleAll]="false"
-              styleClass="w-full ef-multiselect-wrap"
+              class="w-full ef-multiselect-wrap"
             />
             @if (form.controls.activityDomainIds.touched && form.controls.activityDomainIds.invalid) {
               <p class="ef-field-error">Au moins un domaine d'activité est obligatoire pour un exposant professionnel.</p>
@@ -71,7 +71,7 @@
             [options]="clubTypeOptions"
             optionLabel="label"
             optionValue="value"
-            styleClass="w-full"
+            class="w-full"
           />
           @if (form.controls.clubType.touched && form.controls.clubType.invalid) {
             <p class="ef-field-error">Le type de club est obligatoire.</p>

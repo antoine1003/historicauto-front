@@ -1,4 +1,4 @@
-import { Component, computed, DestroyRef, effect, inject, OnInit } from '@angular/core';
+import { Component, computed, DestroyRef, effect, inject, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { AbstractControl, FormBuilder, FormsModule, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { ButtonModule } from 'primeng/button';
@@ -59,6 +59,7 @@ interface EntityFormControls {
     InputMaskDirective,
     InsuranceRcComponent,
   ],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './step-entity.component.html',
 })
 export class StepEntityComponent implements OnInit, ValidatableFormStep {

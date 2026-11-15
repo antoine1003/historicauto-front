@@ -1,4 +1,4 @@
-import { Component, computed, effect, inject, OnInit, signal, untracked, ViewChild } from '@angular/core';
+import { Component, computed, effect, inject, OnInit, signal, untracked, ViewChild, ChangeDetectionStrategy } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { StepperModule } from 'primeng/stepper';
 import { ButtonModule } from 'primeng/button';
@@ -71,6 +71,7 @@ import { environment } from '../../../../environments/environment';
     `,
   ],
   templateUrl: './edition-form-page.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   standalone: true
 })
 export class EditionFormPageComponent implements OnInit {
