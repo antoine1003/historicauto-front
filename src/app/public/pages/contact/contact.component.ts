@@ -46,7 +46,7 @@ export class ContactComponent {
 
   protected readonly subjectOptions: SubjectOption[] = [
     { label: 'Réserver un stand', value: 'stand' },
-    { label: 'Question sur ma demande', value: 'demande' },
+    { label: 'Question sur mon stand et/ou options', value: 'demande' },
     { label: 'Facturation', value: 'facturation' },
     { label: 'Autre', value: 'autre' },
   ];
