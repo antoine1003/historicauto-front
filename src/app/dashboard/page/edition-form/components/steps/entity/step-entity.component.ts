@@ -15,6 +15,7 @@ import { ActivityDomainService } from '@app/dashboard/services/activity-domain.s
 import { PastEditionService } from '@app/dashboard/services/past-edition.service';
 import { ActivityDomainApiDto } from '@app/dashboard/models/registration-api.models';
 import { InsuranceRcComponent } from '@app/dashboard/page/edition-form/components/insurance-rc/insurance-rc.component';
+import { isValidOrEmptyPhone, PhoneFormatDirective, PhonePipe, phoneValidator } from '@app/shared/phone/phone-format';
 
 /**
  * « Vous étiez présent en » est obligatoire, mais `[]` (« Aucun ») est une réponse valide : seul
@@ -59,6 +60,8 @@ interface EntityFormControls {
     FileUploadModule,
     InputMaskDirective,
     InsuranceRcComponent,
+    PhoneFormatDirective,
+    PhonePipe,
   ],
   changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './step-entity.component.html',
@@ -103,7 +106,7 @@ export class StepEntityComponent implements OnInit, ValidatableFormStep {
     entityManager: this.fb.nonNullable.group({
       firstName: ['', Validators.required],
       lastName: ['', Validators.required],
-      phone: [''],
+      phone: ['', phoneValidator],
       // `pattern` en plus de `email` : ce dernier accepte « a@b », que le back refuse à la soumission.
       email: ['', [Validators.required, Validators.email, Validators.pattern(/^[^@\s]+@[^@\s]+\.[^@\s]+$/)]],
     }),
@@ -211,8 +214,15 @@ export class StepEntityComponent implements OnInit, ValidatableFormStep {
     control.markAsTouched();
   }
 
+  /** Le responsable à ajouter n'est pas dans le formulaire réactif : erreur de téléphone gérée à la main. */
+  protected newManagerPhoneInvalid = false;
+
   protected addManager(): void {
     if (!this.newManager.firstName || !this.newManager.lastName || !this.newManager.email) {
+      return;
+    }
+    if (!isValidOrEmptyPhone(this.newManager.phone)) {
+      this.newManagerPhoneInvalid = true;
       return;
     }
 

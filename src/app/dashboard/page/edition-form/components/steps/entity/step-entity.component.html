@@ -114,7 +114,11 @@
           </div>
           <div class="ef-field">
             <label class="ef-label" for="entityManagerPhone">Téléphone</label>
-            <input pInputText id="entityManagerPhone" type="tel" class="w-full" formControlName="phone" maxlength="20" autocomplete="tel" />
+            <input pInputText appPhoneFormat id="entityManagerPhone" class="w-full" formControlName="phone" maxlength="20" />
+            <p class="ef-help-text">Numéro étranger : commencez par l'indicatif du pays (ex. +32 pour la Belgique).</p>
+            @if (manager.phone.touched && manager.phone.invalid) {
+              <p class="ef-field-error">Le numéro de téléphone n'est pas valide.</p>
+            }
           </div>
           <div class="ef-field">
             <label class="ef-label" for="entityManagerEmail">Email *</label>
@@ -159,7 +163,12 @@
       <div class="ef-manager-card mb-3">
         <div class="flex-1">
           <p class="text-sm font-semibold text-[#1A1714]">{{ manager.firstName }} {{ manager.lastName }}</p>
-          <p class="ef-help-text">{{ manager.email }} — {{ manager.phone }}</p>
+          <p class="ef-help-text">
+            {{ manager.email }}
+            @if (manager.phone) {
+              — {{ manager.phone | phone }}
+            }
+          </p>
         </div>
         @if (!formState.isReadOnly()) {
           <p-button
@@ -180,7 +189,22 @@
         <div class="ef-grid-2 flex-1 !mb-0">
           <input pInputText placeholder="Prénom" class="w-full" [(ngModel)]="newManager.firstName" [ngModelOptions]="{ standalone: true }" />
           <input pInputText placeholder="Nom" class="w-full" [(ngModel)]="newManager.lastName" [ngModelOptions]="{ standalone: true }" />
-          <input pInputText placeholder="Téléphone" class="w-full" [(ngModel)]="newManager.phone" [ngModelOptions]="{ standalone: true }" />
+          <div>
+            <input
+              pInputText
+              appPhoneFormat
+              placeholder="Téléphone"
+              class="w-full"
+              maxlength="20"
+              [(ngModel)]="newManager.phone"
+              [ngModelOptions]="{ standalone: true }"
+              (ngModelChange)="newManagerPhoneInvalid = false"
+            />
+            <p class="ef-help-text">Numéro étranger : commencez par l'indicatif du pays (ex. +32 pour la Belgique).</p>
+            @if (newManagerPhoneInvalid) {
+              <p class="ef-field-error">Le numéro de téléphone n'est pas valide.</p>
+            }
+          </div>
           <input pInputText placeholder="Email" class="w-full" [(ngModel)]="newManager.email" [ngModelOptions]="{ standalone: true }" />
         </div>
         <p-button label="Ajouter un responsable" icon="pi pi-plus" (onClick)="addManager()" />
