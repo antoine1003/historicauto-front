@@ -463,6 +463,29 @@ export class EditionFormStateService {
     return next !== undefined && this.isStepUnlocked()(next);
   });
 
+  /**
+   * Bouton de droite du pied de formulaire sur l'étape Stand, selon l'avancement de la demande :
+   * - `submit` : brouillon encore modifiable, le bouton s'appelle « Soumettre » et envoie la demande ;
+   * - `hidden` : demande envoyée, en attente de décision de HA (ou en liste d'attente) — un
+   *   « Suivant » forcément grisé ne ferait que dérouter l'exposant ;
+   * - `next` : décision rendue (acceptée, refusée, puis confirmée…) ou brouillon d'une édition close
+   *   consulté en lecture seule, le bouton redevient « Suivant ».
+   * Sur les autres étapes, toujours `next`.
+   */
+  readonly nextButtonMode = computed((): 'submit' | 'hidden' | 'next' => {
+    const reg = this.state();
+    if (!reg || this.activeStepSignal() !== RegistrationStep.STAND) {
+      return 'next';
+    }
+    if (reg.status === RegistrationStatus.DRAFT) {
+      return reg.readOnly ? 'next' : 'submit';
+    }
+    if (reg.status === RegistrationStatus.SUBMITTED || reg.status === RegistrationStatus.WAITLISTED) {
+      return 'hidden';
+    }
+    return 'next';
+  });
+
   /** Symétrique pour "Précédent" — protège contre le même dead-click si une étape antérieure se reverrouillait. */
   readonly isPreviousStepUnlocked = computed(() => {
     const previous = this.stepOrder[this.stepOrder.indexOf(this.activeStepSignal()) - 1];

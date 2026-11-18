@@ -347,7 +347,8 @@ export class StepStandComponent implements ValidatableFormStep {
     return this.isValid();
   }
 
-  protected submit(): void {
+  /** Appelé par `EditionFormPageComponent` (via `@ViewChild`) au clic sur « Soumettre » du pied de formulaire. */
+  submit(): void {
     if (!this.validateAndTouch()) {
       return;
     }

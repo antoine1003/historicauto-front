@@ -149,13 +149,27 @@
         }
 
         @if (!formState.isLastStep()) {
-          <p-button
-            label="Suivant"
-            icon="pi pi-arrow-right"
-            iconPos="right"
-            [disabled]="!formState.isNextStepUnlocked()"
-            (onClick)="goToNextStep()"
-          />
+          @switch (formState.nextButtonMode()) {
+            @case ('submit') {
+              <p-button
+                label="Soumettre"
+                icon="pi pi-send"
+                iconPos="right"
+                [disabled]="formState.submitStatus() === 'submitting'"
+                [loading]="formState.submitStatus() === 'submitting'"
+                (onClick)="submitStand()"
+              />
+            }
+            @case ('next') {
+              <p-button
+                label="Suivant"
+                icon="pi pi-arrow-right"
+                iconPos="right"
+                [disabled]="!formState.isNextStepUnlocked()"
+                (onClick)="goToNextStep()"
+              />
+            }
+          }
         }
       </div>
     </div>

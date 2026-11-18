@@ -195,4 +195,9 @@ export class EditionFormPageComponent implements OnInit {
     }
     this.formState.goToNextStep();
   }
+
+  /** « Soumettre » du pied de formulaire, affiché à la place de « Suivant » sur un brouillon (étape Stand). */
+  protected submitStand(): void {
+    this.standStep?.submit();
+  }
 }

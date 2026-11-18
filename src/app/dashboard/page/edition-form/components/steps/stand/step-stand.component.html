@@ -367,19 +367,11 @@
       }
     }
 
-    <div class="mt-5 flex flex-col items-start gap-2">
-      @if (!formState.isReadOnly()) {
-        <p-button
-          label="Envoyer ma demande"
-          icon="pi pi-send"
-          [disabled]="formState.submitStatus() === 'submitting'"
-          [loading]="formState.submitStatus() === 'submitting'"
-          (onClick)="submit()"
-        />
-      }
-      @if (formState.submitStatus() === 'submitted') {
-        <p class="ef-field-success">Votre demande a bien été envoyée à l'organisation.</p>
-      }
-    </div>
+    <!-- L'envoi se fait par le bouton « Soumettre » du pied de formulaire (EditionFormPageComponent). -->
+    @if (formState.submitStatus() === 'submitted') {
+      <p class="ef-field-success mt-5">
+        Votre demande a bien été envoyée à l'organisation. Vous serez notifié par email dès que notre équipe aura étudié votre demande.
+      </p>
+    }
   </div>
 }
