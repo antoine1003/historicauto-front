@@ -38,6 +38,7 @@ interface EntityFormControls {
   exhibitorType: ExhibitorType;
   companyName: string;
   siret: string | null;
+  standName: string | null;
   activityDomainIds: string[];
   clubType: ClubType | null;
   entityManager: EntityManagerForm;
@@ -94,6 +95,8 @@ export class StepEntityComponent implements OnInit, ValidatableFormStep {
     exhibitorType: this.fb.nonNullable.control<ExhibitorType>(ExhibitorType.PRO),
     companyName: this.fb.nonNullable.control('', Validators.required),
     siret: this.fb.control<string | null>(null),
+    /** Facultatif, pros uniquement : nom affiché du stand s'il diffère de l'entité de facturation. */
+    standName: this.fb.control<string | null>(null, Validators.maxLength(255)),
     activityDomainIds: this.fb.nonNullable.control<string[]>([]),
     clubType: this.fb.control<ClubType | null>(null),
     /** Responsable de l'entité : exigé quel que soit le type d'exposant, contrairement aux champs ci-dessus. */
@@ -148,7 +151,7 @@ export class StepEntityComponent implements OnInit, ValidatableFormStep {
    * donnée fantôme envoyée au back (ex: SIRET conservé après bascule PRO → CLUB).
    */
   private applyExhibitorTypeValidators(type: ExhibitorType): void {
-    const { siret, activityDomainIds, clubType } = this.form.controls;
+    const { siret, standName, activityDomainIds, clubType } = this.form.controls;
 
     if (type === ExhibitorType.PRO) {
       siret.setValidators(Validators.required);
@@ -159,6 +162,7 @@ export class StepEntityComponent implements OnInit, ValidatableFormStep {
       siret.clearValidators();
       activityDomainIds.clearValidators();
       siret.setValue(null, { emitEvent: false });
+      standName.setValue(null, { emitEvent: false });
       activityDomainIds.setValue([], { emitEvent: false });
       clubType.setValidators(Validators.required);
     }

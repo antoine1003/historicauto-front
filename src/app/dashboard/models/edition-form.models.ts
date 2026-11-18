@@ -116,6 +116,8 @@ export interface EntityStepState {
   companyName: string;
   /** Uniquement pertinent si exhibitorType === PRO. */
   siret: string | null;
+  /** Nom du stand, facultatif, s'il diffère du nom de l'entité. Uniquement pertinent si exhibitorType === PRO. */
+  standName: string | null;
   /** Uniquement pertinent si exhibitorType === PRO. UUIDs d'ActivityDomain, résolus via ActivityDomainService. */
   activityDomainIds: string[];
   /** Uniquement pertinent si exhibitorType === CLUB. */
@@ -311,6 +313,7 @@ export interface EntityStepPayload {
   exhibitorType: ExhibitorType;
   companyName: string;
   siret: string | null;
+  standName: string | null;
   activityDomainIds: string[];
   clubType: ClubType | null;
   entityManager: EntityManagerForm;
