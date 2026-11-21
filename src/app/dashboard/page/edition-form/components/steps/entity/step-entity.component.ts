@@ -192,10 +192,10 @@ export class StepEntityComponent implements OnInit, ValidatableFormStep {
     this.previousStand.set(stand);
   }
 
-  /** À la réouverture d'une inscription, retrouve le rappel si le nom enregistré est celui d'un stand précédent. */
+  /** À la réouverture (y compris en lecture seule), retrouve le rappel si le nom enregistré est celui d'un stand précédent. */
   private restorePreviousStand(): void {
     const name = this.form.controls.companyName.value;
-    if (this.formState.isReadOnly() || name.trim().length < 2) {
+    if (name.trim().length < 2) {
       return;
     }
     this.previousStandService
