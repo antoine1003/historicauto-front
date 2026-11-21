@@ -210,7 +210,8 @@
 
     @if (!formState.isReadOnly()) {
       <div class="ef-manager-card mt-4">
-        <div class="ef-grid-2 flex-1 !mb-0">
+        <!-- items-start : sans lui, l'email s'étire à la hauteur du téléphone et de son aide. -->
+        <div class="ef-grid-2 flex-1 !mb-0 items-start">
           <input pInputText placeholder="Prénom" class="w-full" [(ngModel)]="newManager.firstName" [ngModelOptions]="{ standalone: true }" />
           <input pInputText placeholder="Nom" class="w-full" [(ngModel)]="newManager.lastName" [ngModelOptions]="{ standalone: true }" />
           <div>
