@@ -13,7 +13,7 @@ const CARPET_COLORS: Record<CarpetColor, { label: string; hex: string; light: bo
 @Component({
   selector: 'app-previous-stand-reminder',
   standalone: true,
-    changeDetection: ChangeDetectionStrategy.Eager,
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './previous-stand-reminder.component.html',
 })
 export class PreviousStandReminderComponent {
