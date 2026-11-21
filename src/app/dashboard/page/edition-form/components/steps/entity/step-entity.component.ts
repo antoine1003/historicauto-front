@@ -1,7 +1,9 @@
-import { Component, computed, DestroyRef, effect, inject, OnInit, ChangeDetectionStrategy } from '@angular/core';
+import { Component, computed, DestroyRef, effect, inject, OnInit, signal, ChangeDetectionStrategy } from '@angular/core';
 import { AbstractControl, FormBuilder, FormsModule, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { ButtonModule } from 'primeng/button';
+import { AutoCompleteCompleteEvent, AutoCompleteModule, AutoCompleteSelectEvent } from 'primeng/autocomplete';
+import { catchError, of, Subject, switchMap } from 'rxjs';
 import { InputTextModule } from 'primeng/inputtext';
 import { SelectModule } from 'primeng/select';
 import { MultiSelectModule } from 'primeng/multiselect';
@@ -13,6 +15,9 @@ import { ValidatableFormStep } from '@app/dashboard/models/validatable-form-step
 import { EditionFormStateService } from '@app/dashboard/services/edition-form-state.service';
 import { ActivityDomainService } from '@app/dashboard/services/activity-domain.service';
 import { PastEditionService } from '@app/dashboard/services/past-edition.service';
+import { PreviousStandService } from '@app/dashboard/services/previous-stand.service';
+import { normalizeStandName, PreviousStandDto } from '@app/dashboard/models/previous-stand.models';
+import { PreviousStandReminderComponent } from '@app/dashboard/page/edition-form/components/previous-stand-reminder/previous-stand-reminder.component';
 import { ActivityDomainApiDto } from '@app/dashboard/models/registration-api.models';
 import { InsuranceRcComponent } from '@app/dashboard/page/edition-form/components/insurance-rc/insurance-rc.component';
 import { isValidOrEmptyPhone, PhoneFormatDirective, PhonePipe, phoneValidator } from '@app/shared/phone/phone-format';
@@ -54,6 +59,8 @@ interface EntityFormControls {
     ReactiveFormsModule,
     ButtonModule,
     InputTextModule,
+    AutoCompleteModule,
+    PreviousStandReminderComponent,
     SelectModule,
     MultiSelectModule,
     CheckboxModule,
@@ -70,6 +77,7 @@ export class StepEntityComponent implements OnInit, ValidatableFormStep {
   protected readonly formState = inject(EditionFormStateService);
   private readonly activityDomainService = inject(ActivityDomainService);
   private readonly pastEditionService = inject(PastEditionService);
+  private readonly previousStandService = inject(PreviousStandService);
   private readonly fb = inject(FormBuilder);
   private readonly destroyRef = inject(DestroyRef);
 
@@ -93,6 +101,14 @@ export class StepEntityComponent implements OnInit, ValidatableFormStep {
   protected readonly previousEditionYears = computed(() =>
     [...new Set([...this.pastEditionOptions(), ...(this.formState.registration()?.entity.previousEditions ?? [])])].sort(),
   );
+
+  /** Suggestions du champ « nom » : stands de l'édition précédente dont le nom ressemble à la saisie. */
+  protected readonly standSuggestions = signal<PreviousStandDto[]>([]);
+
+  /** Stand de l'édition précédente reconnu pour le nom saisi, affiché en rappel sous le champ. */
+  protected readonly previousStand = signal<PreviousStandDto | null>(null);
+
+  private readonly standQuery$ = new Subject<string>();
 
   protected readonly form = this.fb.group({
     exhibitorType: this.fb.nonNullable.control<ExhibitorType>(ExhibitorType.PRO),
@@ -143,9 +159,59 @@ export class StepEntityComponent implements OnInit, ValidatableFormStep {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((type) => this.applyExhibitorTypeValidators(type));
 
+    this.standQuery$
+      .pipe(
+        switchMap((q) => this.previousStandService.search(q).pipe(catchError(() => of([] as PreviousStandDto[])))),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe((stands) => this.standSuggestions.set(stands));
+
+    // Le rappel ne vaut que pour le nom exact du stand reconnu : toute modification le retire.
+    this.form.controls.companyName.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((name) => {
+      const stand = this.previousStand();
+      if (stand && normalizeStandName(name) !== normalizeStandName(stand.standName)) {
+        this.previousStand.set(null);
+      }
+    });
+
+    this.restorePreviousStand();
+
     this.form.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((value) => {
       this.formState.updateEntity(value as Partial<EntityFormControls>);
     });
+  }
+
+  protected searchPreviousStands(event: AutoCompleteCompleteEvent): void {
+    this.standQuery$.next(event.query);
+  }
+
+  /** Le contrôle porte le nom (chaîne), jamais l'objet : on garde le stand à part pour le rappel. */
+  protected onPreviousStandSelected(event: AutoCompleteSelectEvent): void {
+    const stand = event.value as PreviousStandDto;
+    this.form.controls.companyName.setValue(stand.standName);
+    this.previousStand.set(stand);
+  }
+
+  /** À la réouverture d'une inscription, retrouve le rappel si le nom enregistré est celui d'un stand précédent. */
+  private restorePreviousStand(): void {
+    const name = this.form.controls.companyName.value;
+    if (this.formState.isReadOnly() || name.trim().length < 2) {
+      return;
+    }
+    this.previousStandService
+      .search(name)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (stands) => {
+          const wanted = normalizeStandName(name);
+          const match = stands.find((s) => normalizeStandName(s.standName) === wanted);
+          // Le nom a pu changer pendant la requête.
+          if (match && normalizeStandName(this.form.controls.companyName.value) === wanted) {
+            this.previousStand.set(match);
+          }
+        },
+        error: () => undefined,
+      });
   }
 
   /**

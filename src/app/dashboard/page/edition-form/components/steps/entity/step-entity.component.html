@@ -20,11 +20,34 @@
           <label class="ef-label" for="companyName">
             {{ form.controls.exhibitorType.value === ExhibitorType.PRO ? 'Nom entité de facturation' : 'Nom du club' }} *
           </label>
-          <input pInputText id="companyName" class="w-full" formControlName="companyName" />
+          <p-autocomplete
+            inputId="companyName"
+            formControlName="companyName"
+            [suggestions]="standSuggestions()"
+            (completeMethod)="searchPreviousStands($event)"
+            (onSelect)="onPreviousStandSelected($event)"
+            optionLabel="standName"
+            optionValue="standName"
+            [forceSelection]="false"
+            [minQueryLength]="2"
+            [delay]="250"
+            styleClass="w-full"
+            inputStyleClass="w-full"
+          >
+            <ng-template #item let-stand>
+              <div class="flex w-full items-center justify-between gap-3">
+                <span>{{ stand.standName }}</span>
+                <span class="ef-muted text-xs">{{ stand.type === 'CLUB' ? 'Club' : 'Pro' }}</span>
+              </div>
+            </ng-template>
+          </p-autocomplete>
           @if (form.controls.companyName.touched && form.controls.companyName.invalid) {
             <p class="ef-field-error">
               {{ form.controls.exhibitorType.value === ExhibitorType.PRO ? "Le nom de l'entité de facturation est obligatoire." : 'Le nom du club est obligatoire.' }}
             </p>
+          }
+          @if (previousStand(); as stand) {
+            <app-previous-stand-reminder [stand]="stand" />
           }
         </div>
       </div>
