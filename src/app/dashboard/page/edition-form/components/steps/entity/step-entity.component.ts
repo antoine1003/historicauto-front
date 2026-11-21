@@ -161,7 +161,11 @@ export class StepEntityComponent implements OnInit, ValidatableFormStep {
 
     this.standQuery$
       .pipe(
-        switchMap((q) => this.previousStandService.search(q).pipe(catchError(() => of([] as PreviousStandDto[])))),
+        switchMap((q) =>
+          this.previousStandService
+            .search(q, this.formState.editionYear() ?? '')
+            .pipe(catchError(() => of([] as PreviousStandDto[]))),
+        ),
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe((stands) =>
@@ -209,7 +213,7 @@ export class StepEntityComponent implements OnInit, ValidatableFormStep {
       return;
     }
     this.previousStandService
-      .search(name)
+      .search(name, this.formState.editionYear() ?? '')
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (stands) => {
