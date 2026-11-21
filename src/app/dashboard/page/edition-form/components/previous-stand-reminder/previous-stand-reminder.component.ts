@@ -1,5 +1,4 @@
 import { ChangeDetectionStrategy, Component, computed, input, signal } from '@angular/core';
-import { ButtonModule } from 'primeng/button';
 import { CarpetColor, PreviousStandDto } from '@app/dashboard/models/previous-stand.models';
 
 const CARPET_COLORS: Record<CarpetColor, { label: string; hex: string; light: boolean }> = {
@@ -14,8 +13,7 @@ const CARPET_COLORS: Record<CarpetColor, { label: string; hex: string; light: bo
 @Component({
   selector: 'app-previous-stand-reminder',
   standalone: true,
-  imports: [ButtonModule],
-  changeDetection: ChangeDetectionStrategy.Eager,
+    changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './previous-stand-reminder.component.html',
 })
 export class PreviousStandReminderComponent {
@@ -26,6 +24,12 @@ export class PreviousStandReminderComponent {
   protected readonly carpet = computed(() => {
     const color = this.stand().carpetColor;
     return color ? CARPET_COLORS[color] : null;
+  });
+
+  /** Le détail n'apporte rien quand il se réduit au total (ex. « 9 m (9) ») : on ne l'affiche alors pas. */
+  protected readonly partitionDetailShown = computed(() => {
+    const { partitionDetail, partitionTotalM } = this.stand();
+    return partitionDetail && partitionDetail !== String(partitionTotalM) ? partitionDetail : null;
   });
 
   protected readonly electricalLabel = computed(() => {

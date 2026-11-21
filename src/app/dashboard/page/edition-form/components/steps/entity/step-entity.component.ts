@@ -16,7 +16,7 @@ import { EditionFormStateService } from '@app/dashboard/services/edition-form-st
 import { ActivityDomainService } from '@app/dashboard/services/activity-domain.service';
 import { PastEditionService } from '@app/dashboard/services/past-edition.service';
 import { PreviousStandService } from '@app/dashboard/services/previous-stand.service';
-import { normalizeStandName, PreviousStandDto } from '@app/dashboard/models/previous-stand.models';
+import { normalizeStandName, PreviousStandDto, StandSuggestion } from '@app/dashboard/models/previous-stand.models';
 import { PreviousStandReminderComponent } from '@app/dashboard/page/edition-form/components/previous-stand-reminder/previous-stand-reminder.component';
 import { ActivityDomainApiDto } from '@app/dashboard/models/registration-api.models';
 import { InsuranceRcComponent } from '@app/dashboard/page/edition-form/components/insurance-rc/insurance-rc.component';
@@ -103,7 +103,7 @@ export class StepEntityComponent implements OnInit, ValidatableFormStep {
   );
 
   /** Suggestions du champ « nom » : stands de l'édition précédente dont le nom ressemble à la saisie. */
-  protected readonly standSuggestions = signal<(PreviousStandDto & { value: string })[]>([]);
+  protected readonly standSuggestions = signal<StandSuggestion[]>([]);
 
   /** Stand de l'édition précédente reconnu pour le nom saisi, affiché en rappel sous le champ. */
   protected readonly previousStand = signal<PreviousStandDto | null>(null);
@@ -171,6 +171,10 @@ export class StepEntityComponent implements OnInit, ValidatableFormStep {
 
     // Le rappel ne vaut que pour le nom exact du stand reconnu : toute modification le retire.
     this.form.controls.companyName.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((name) => {
+      // p-autocomplete émet null à l'effacement : on remet le contrôle à "" sans réémettre.
+      if (name === null) {
+        this.form.controls.companyName.setValue('', { emitEvent: false });
+      }
       const stand = this.previousStand();
       if (stand && normalizeStandName(name) !== normalizeStandName(stand.standName)) {
         this.previousStand.set(null);
@@ -180,7 +184,8 @@ export class StepEntityComponent implements OnInit, ValidatableFormStep {
     this.restorePreviousStand();
 
     this.form.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((value) => {
-      this.formState.updateEntity(value as Partial<EntityFormControls>);
+      // p-autocomplete émet null quand on vide le champ : l'état et le contrôle gardent une chaîne.
+      this.formState.updateEntity({ ...value, companyName: value.companyName ?? '' } as Partial<EntityFormControls>);
     });
   }
 
@@ -190,7 +195,9 @@ export class StepEntityComponent implements OnInit, ValidatableFormStep {
 
   /** Le contrôle porte le nom (chaîne), jamais l'objet : on garde le stand à part pour le rappel. */
   protected onPreviousStandSelected(event: AutoCompleteSelectEvent): void {
-    const { value: _value, ...stand } = event.value as PreviousStandDto & { value: string };
+    const suggestion = event.value as StandSuggestion;
+    const stand: PreviousStandDto = { ...suggestion };
+    delete (stand as Partial<StandSuggestion>).value;
     this.form.controls.companyName.setValue(stand.standName);
     this.previousStand.set(stand);
   }
@@ -198,7 +205,7 @@ export class StepEntityComponent implements OnInit, ValidatableFormStep {
   /** À la réouverture (y compris en lecture seule), retrouve le rappel si le nom enregistré est celui d'un stand précédent. */
   private restorePreviousStand(): void {
     const name = this.form.controls.companyName.value;
-    if (name.trim().length < 2) {
+    if ((name ?? '').trim().length < 2) {
       return;
     }
     this.previousStandService

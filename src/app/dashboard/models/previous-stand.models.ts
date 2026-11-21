@@ -16,6 +16,9 @@ export interface PreviousStandDto {
   edition: string;
 }
 
+/** Suggestion de l'autocomplétion : `value` est requis par p-autocomplete (sans `optionValue`) pour garder le texte saisi. */
+export type StandSuggestion = PreviousStandDto & { value: string };
+
 /**
  * Normalise un nom de stand pour la comparaison, avec les mêmes règles que le back
  * (`u()->ascii()->lower()` + espaces compactés) : sans accents ni casse, ligatures développées.
