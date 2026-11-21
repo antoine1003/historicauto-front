@@ -103,7 +103,7 @@ export class StepEntityComponent implements OnInit, ValidatableFormStep {
   );
 
   /** Suggestions du champ « nom » : stands de l'édition précédente dont le nom ressemble à la saisie. */
-  protected readonly standSuggestions = signal<PreviousStandDto[]>([]);
+  protected readonly standSuggestions = signal<(PreviousStandDto & { value: string })[]>([]);
 
   /** Stand de l'édition précédente reconnu pour le nom saisi, affiché en rappel sous le champ. */
   protected readonly previousStand = signal<PreviousStandDto | null>(null);
@@ -164,7 +164,10 @@ export class StepEntityComponent implements OnInit, ValidatableFormStep {
         switchMap((q) => this.previousStandService.search(q).pipe(catchError(() => of([] as PreviousStandDto[])))),
         takeUntilDestroyed(this.destroyRef),
       )
-      .subscribe((stands) => this.standSuggestions.set(stands));
+      .subscribe((stands) =>
+        // `value` : sans `optionValue`, p-autocomplete garde la chaîne saisie telle quelle et ne lit que `option.value` d'une suggestion.
+        this.standSuggestions.set(stands.map((s) => ({ ...s, value: s.standName }))),
+      );
 
     // Le rappel ne vaut que pour le nom exact du stand reconnu : toute modification le retire.
     this.form.controls.companyName.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((name) => {
@@ -187,7 +190,7 @@ export class StepEntityComponent implements OnInit, ValidatableFormStep {
 
   /** Le contrôle porte le nom (chaîne), jamais l'objet : on garde le stand à part pour le rappel. */
   protected onPreviousStandSelected(event: AutoCompleteSelectEvent): void {
-    const stand = event.value as PreviousStandDto;
+    const { value: _value, ...stand } = event.value as PreviousStandDto & { value: string };
     this.form.controls.companyName.setValue(stand.standName);
     this.previousStand.set(stand);
   }
