@@ -36,7 +36,7 @@
                 }
               </label>
             </div>
-            <span class="ef-option-price">{{ option.priceTtc | number: '1.0-2' }} € TTC</span>
+            <span class="ef-option-price">{{ option.priceTtc | number: '1.2-2' }} € TTC</span>
           </div>
         }
       </div>
@@ -87,7 +87,7 @@
 
                 <div class="flex items-center gap-3">
                   <span class="ef-option-price">
-                    {{ option.priceTtc | number: '1.0-2' }} € TTC{{ option.unit ? ' / ' + option.unit : '' }}
+                    {{ option.priceTtc | number: '1.2-2' }} € TTC{{ option.unit ? ' / ' + option.unit : '' }}
                   </span>
                   @if (group.inputType === OptionInputType.NUMBER) {
                     <p-input-number
@@ -424,6 +424,7 @@
         [totalTtc]="registration.stand.totalTtc"
         [totalVat]="registration.stand.totalVat"
         [depositTtc]="registration.stand.depositTtc"
+        [order]="formState.orderSummary()"
       />
     </div>
 

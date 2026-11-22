@@ -13,6 +13,7 @@ import {
   NewManagerPayload,
   OptionGroupBehaviour,
   OptionGroupDefinition,
+  OrderSummary,
   PARTITION_SEGMENT_COUNTS,
   PartitionDetailForm,
   RegistrationStatus,
@@ -231,17 +232,47 @@ export class EditionFormStateService {
     return reg ? reg.payment.payments.reduce((sum, payment) => sum + payment.amountTtc, 0) : 0;
   });
 
-  readonly balanceDueTtc = computed(() => {
+  /**
+   * Total de la commande frais compris, pour le récapitulatif de l'étape Stand.
+   *
+   * Le stand suit les options en direct (`stand.totalTtc`, recalculé par le serveur à chaque
+   * enregistrement du stand), sauf si le serveur l'a fixé (devis signé, saisie admin) : on reprend
+   * alors `payment.standTotalTtc`. Ce dernier n'est relu qu'au chargement de la page : s'y fier
+   * sans qu'il soit fixé affichait, après l'envoi de la demande, le total des options d'avant la
+   * saisie.
+   */
+  readonly orderSummary = computed<OrderSummary | null>(() => {
     const reg = this.state();
     if (!reg) {
-      return 0;
+      return null;
     }
-    const discounted = reg.payment.standTotalTtc * (1 - reg.payment.discountPercent / 100);
-    const extras = reg.payment.extraOptions.reduce((sum, extra) => sum + extra.lineTotalTtc, 0);
-    // Les prestations s'ajoutent APRÈS la remise, comme dans Registration::getOrderTotalTtc().
-    const orderTotal = discounted + reg.payment.fileFeeTtc + reg.payment.additionalFeeTtc + extras;
+    const standTtc = reg.payment.standTotalFixed ? reg.payment.standTotalTtc : reg.stand.totalTtc;
+    const discountTtc = standTtc * (reg.payment.discountPercent / 100);
+    const fees = [{ label: 'Frais de dossier', amountTtc: reg.payment.fileFeeTtc }];
+    if (reg.payment.additionalFeeTtc !== 0) {
+      fees.push({ label: reg.payment.additionalFeeLabel, amountTtc: reg.payment.additionalFeeTtc });
+    }
+    const extrasTtc = reg.payment.extraOptions.reduce((sum, extra) => sum + extra.lineTotalTtc, 0);
+    const orderTotalTtc = standTtc - discountTtc + fees.reduce((sum, fee) => sum + fee.amountTtc, 0) + extrasTtc;
 
-    return orderTotal - this.paymentsTotalTtc();
+    return {
+      standTtc,
+      standFixed: reg.payment.standTotalFixed,
+      discountPercent: reg.payment.discountPercent,
+      discountTtc,
+      fees,
+      extrasTtc,
+      orderTotalTtc,
+      depositRatePercent: reg.payment.depositRatePercent,
+      depositTtc: orderTotalTtc * (reg.payment.depositRatePercent / 100),
+    };
+  });
+
+  readonly balanceDueTtc = computed(() => {
+    const summary = this.orderSummary();
+
+    // Même total que le récapitulatif (orderSummary), lui-même calqué sur Registration::getOrderTotalTtc().
+    return summary ? summary.orderTotalTtc - this.paymentsTotalTtc() : 0;
   });
 
   /**
@@ -1508,6 +1539,7 @@ export class EditionFormStateService {
       documents: [],
       payment: {
         standTotalTtc: dto.payment.standTotalTtc,
+        standTotalFixed: dto.payment.standTotalFixed ?? false,
         discountPercent: dto.payment.discountPercent,
         fileFeeTtc: dto.payment.fileFeeTtc,
         additionalFeeLabel: dto.payment.additionalFeeLabel,

@@ -37,7 +37,8 @@ export class StepPaymentComponent {
     if (!reg) {
       return 0;
     }
-    return reg.payment.standTotalTtc * (1 - reg.payment.discountPercent / 100);
+    // Montant du stand de orderSummary : fixé par le serveur s'il l'est, sinon total des options à jour.
+    return (this.formState.orderSummary()?.standTtc ?? 0) * (1 - reg.payment.discountPercent / 100);
   });
 
   protected readonly extraOptionsTotalTtc = computed(() => {

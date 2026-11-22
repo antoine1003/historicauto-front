@@ -127,6 +127,8 @@ export interface ExtraOptionApiDto {
 
 export interface PaymentStepApiDto {
   standTotalTtc: number;
+  /** Montant du stand fixé côté serveur (devis signé, saisie admin) ; absent des anciennes réponses. */
+  standTotalFixed?: boolean;
   discountPercent: number;
   fileFeeTtc: number;
   additionalFeeLabel: string;

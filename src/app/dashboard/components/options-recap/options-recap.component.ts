@@ -1,6 +1,6 @@
 import { Component, computed, input, ChangeDetectionStrategy } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
-import { PARTITION_LAYOUT_LABELS, StandLine } from '@app/dashboard/models/edition-form.models';
+import { OrderSummary, PARTITION_LAYOUT_LABELS, StandLine } from '@app/dashboard/models/edition-form.models';
 
 interface RecapSection {
   groupLabel: string;
@@ -34,6 +34,12 @@ export class OptionsRecapComponent {
    * finale : deux "Acompte" contradictoires sur un même écran sinon.
    */
   readonly showTotals = input<boolean>(true);
+  /**
+   * Fourni, le bloc de totaux va jusqu'au total de la commande frais compris (frais de dossier,
+   * frais de l'édition, remise, prestations) et l'acompte est estimé sur ce total. Absent, il s'arrête
+   * au total du stand.
+   */
+  readonly order = input<OrderSummary | null>(null);
 
   /**
    * Regroupe les lignes consécutives partageant la même section. Les lignes arrivent déjà

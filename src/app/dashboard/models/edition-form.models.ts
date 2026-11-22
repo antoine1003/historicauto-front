@@ -194,6 +194,25 @@ export const STRUCTURE_ACCEPTED_MIME_TYPES = 'image/jpeg,image/png,image/webp,ap
 /** Miroir de RegistrationPartitionAttachment::MAX_PER_REGISTRATION (mêmes formats et taille que le barnum). */
 export const PARTITION_MAX_ATTACHMENTS = 10;
 
+/**
+ * Du stand au total de la commande, frais compris : ce que l'exposant paiera réellement. Même
+ * formule que Registration::getOrderTotalTtc() côté serveur (remise sur le stand seul, puis frais
+ * et prestations supplémentaires).
+ */
+export interface OrderSummary {
+  standTtc: number;
+  /** Montant du stand fixé (devis signé) : il peut différer de la somme des lignes affichées. */
+  standFixed: boolean;
+  discountPercent: number;
+  /** Montant retiré par la remise (positif). */
+  discountTtc: number;
+  fees: { label: string; amountTtc: number }[];
+  extrasTtc: number;
+  orderTotalTtc: number;
+  depositRatePercent: number;
+  depositTtc: number;
+}
+
 /** Ligne de commande déjà chiffrée par le serveur — le front n'effectue aucun calcul de prix. */
 export interface StandLine {
   optionId: string;
@@ -283,6 +302,8 @@ export interface ExtraOptionItem {
 
 export interface PaymentSummary {
   standTotalTtc: number;
+  /** Vrai : standTotalTtc est fixé par le serveur. Faux : ce n'est que le total des options au chargement. */
+  standTotalFixed: boolean;
   discountPercent: number;
   fileFeeTtc: number;
   /** Frais complémentaire de l'édition, ajouté aux frais de dossier ; 0 s'il n'y en a pas. */
