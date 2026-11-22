@@ -51,7 +51,9 @@ export class StepPaymentComponent {
     const reg = this.formState.registration();
     // Même formule que Registration::getOrderTotalTtc() et que balanceDueTtc() du service : les
     // prestations s'ajoutent après la remise. Les trois doivent rester d'accord.
-    return reg ? this.discountedTotalTtc() + reg.payment.fileFeeTtc + this.extraOptionsTotalTtc() : 0;
+    return reg
+      ? this.discountedTotalTtc() + reg.payment.fileFeeTtc + reg.payment.additionalFeeTtc + this.extraOptionsTotalTtc()
+      : 0;
   });
 
   protected readonly depositDueTtc = computed(() => {

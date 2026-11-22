@@ -91,6 +91,13 @@
         <span>{{ registration.payment.fileFeeTtc | number: '1.0-2' }} € TTC</span>
       </div>
 
+      @if (registration.payment.additionalFeeTtc !== 0) {
+        <div class="ef-summary-row">
+          <span>{{ registration.payment.additionalFeeLabel }}</span>
+          <span>{{ registration.payment.additionalFeeTtc | number: '1.0-2' }} € TTC</span>
+        </div>
+      }
+
       @if (registration.payment.extraOptions.length > 0) {
         <div class="ef-summary-row">
           <span class="ef-muted text-sm font-semibold uppercase tracking-wide">

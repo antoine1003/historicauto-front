@@ -226,7 +226,7 @@ export class EditionFormStateService {
     const discounted = reg.payment.standTotalTtc * (1 - reg.payment.discountPercent / 100);
     const extras = reg.payment.extraOptions.reduce((sum, extra) => sum + extra.lineTotalTtc, 0);
     // Les prestations s'ajoutent APRÈS la remise, comme dans Registration::getOrderTotalTtc().
-    const orderTotal = discounted + reg.payment.fileFeeTtc + extras;
+    const orderTotal = discounted + reg.payment.fileFeeTtc + reg.payment.additionalFeeTtc + extras;
 
     return orderTotal - this.paymentsTotalTtc();
   });
@@ -1353,6 +1353,8 @@ export class EditionFormStateService {
         standTotalTtc: dto.payment.standTotalTtc,
         discountPercent: dto.payment.discountPercent,
         fileFeeTtc: dto.payment.fileFeeTtc,
+        additionalFeeLabel: dto.payment.additionalFeeLabel,
+        additionalFeeTtc: dto.payment.additionalFeeTtc,
         depositRatePercent: dto.payment.depositRatePercent,
         extraOptions: (dto.payment.extraOptions ?? []).map((e) => ({
           id: e.id,

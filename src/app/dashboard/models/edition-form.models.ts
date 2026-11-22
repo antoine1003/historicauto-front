@@ -277,6 +277,9 @@ export interface PaymentSummary {
   standTotalTtc: number;
   discountPercent: number;
   fileFeeTtc: number;
+  /** Frais complémentaire de l'édition, ajouté aux frais de dossier ; 0 s'il n'y en a pas. */
+  additionalFeeLabel: string;
+  additionalFeeTtc: number;
   depositRatePercent: number;
   extraOptions: ExtraOptionItem[];
   balanceDueDate: Date | null;

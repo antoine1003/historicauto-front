@@ -127,6 +127,8 @@ export interface PaymentStepApiDto {
   standTotalTtc: number;
   discountPercent: number;
   fileFeeTtc: number;
+  additionalFeeLabel: string;
+  additionalFeeTtc: number;
   depositRatePercent: number;
   /** Optionnel tant que la branche back de ce chantier n'est pas fusionnée : la clé peut être absente. */
   extraOptions?: ExtraOptionApiDto[];
