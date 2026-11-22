@@ -175,11 +175,18 @@ export class EditionFormStateService {
           // historique), sans réintroduire le bug "reg.readOnly ≈ pas DRAFT" (pas "édition passée").
           return reg.documents.some((doc) => doc.kind === 'quote') || reg.confirmation.confirmedAt !== null;
         case RegistrationStep.DOCUMENTS:
-          // Débloquée uniquement une fois la confirmation soumise (génère le lien de signature) —
-          // avant CONFIRMED, le devis est consultable via le lien de l'Étape 3, pas via cet onglet.
-          // Ne suit PAS reg.readOnly : sinon toute inscription non-DRAFT (donc aussi ACCEPTED, pas
-          // encore confirmée) débloquerait cet onglet prématurément.
-          return reg.status === RegistrationStatus.CONFIRMED || reg.status === RegistrationStatus.COMPLETED;
+          // Débloquée dès l'acceptation : c'est à partir de là que HA envoie des documents
+          // (documents publiés, documents communs, assurance RC). Avant la confirmation, le devis
+          // n'y figure pas (cf. StepDocumentsComponent.visibleDocuments) : il se consulte depuis
+          // l'onglet Confirmation. Un document publié par HA avant l'acceptation ouvre aussi
+          // l'onglet, pour que le lien de l'email « document disponible » y mène.
+          // Ne suit PAS reg.readOnly : ce flag vaut true dès la soumission (SUBMITTED, WAITLISTED).
+          return (
+            reg.status === RegistrationStatus.ACCEPTED ||
+            reg.status === RegistrationStatus.CONFIRMED ||
+            reg.status === RegistrationStatus.COMPLETED ||
+            reg.documents.some((doc) => doc.kind !== 'quote' && doc.kind !== 'insurance')
+          );
         case RegistrationStep.PAYMENT:
           // Débloquée seulement après signature effective du devis (webhook Docuseal), pas dès la
           // simple confirmation — cf. spec 2026-08-12-docuseal-webhook-signature-design.md §7.2.
