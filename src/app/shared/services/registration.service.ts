@@ -94,6 +94,22 @@ export class RegistrationService {
     );
   }
 
+  uploadPartitionAttachment(id: string, file: File): Observable<ApiResponse<StructureAttachmentApiDto>> {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    return this.http.post<ApiResponse<StructureAttachmentApiDto>>(
+      `${environment.apiUrl}/${this.baseUrl}/${id}/partition/attachments`,
+      formData,
+    );
+  }
+
+  deletePartitionAttachment(id: string, attachmentId: string): Observable<void> {
+    return this.http.delete<void>(
+      `${environment.apiUrl}/${this.baseUrl}/${id}/partition/attachments/${attachmentId}`,
+    );
+  }
+
   submit(id: string): Observable<ApiResponse<{ status: string }>> {
     return this.http.post<ApiResponse<{ status: string }>>(
       `${environment.apiUrl}/${this.baseUrl}/${id}/submit`,

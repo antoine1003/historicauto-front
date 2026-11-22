@@ -210,6 +210,79 @@
                       [disabled]="formState.isReadOnly()"
                     ></textarea>
                   </div>
+
+                  <!-- Plan d'implantation facultatif (RegistrationPartitionAttachment). -->
+                  <div class="mt-4 flex flex-col gap-2">
+                    @if (!formState.isReadOnly()) {
+                      <p class="ef-help-text">
+                        Si vous souhaitez nous envoyer votre plan d'implantation des cloisons,
+                        téléchargez votre pièce jointe ici (plan ou photo : JPG, PNG, WebP ou PDF,
+                        10 Mo maximum par fichier, {{ partitionMaxAttachments }} fichiers au plus).
+                      </p>
+                    } @else {
+                      <p class="text-sm">Plan d'implantation des cloisons</p>
+                    }
+
+                    @if (partitionAttachments().length > 0) {
+                      <ul class="flex flex-col gap-2">
+                        @for (attachment of partitionAttachments(); track attachment.id) {
+                          <li class="flex items-center justify-between gap-3">
+                            <a
+                              [href]="attachment.url"
+                              target="_blank"
+                              rel="noopener"
+                              class="flex min-w-0 items-center gap-2 underline"
+                            >
+                              <i
+                                class="pi"
+                                [class.pi-file-pdf]="attachment.mimeType === 'application/pdf'"
+                                [class.pi-image]="attachment.mimeType !== 'application/pdf'"
+                                aria-hidden="true"
+                              ></i>
+                              <span class="truncate">{{ attachment.originalName }}</span>
+                            </a>
+                            <span class="flex shrink-0 items-center gap-2">
+                              <span class="ef-muted text-sm">{{ formatFileSize(attachment.fileSize) }}</span>
+                              @if (!formState.isReadOnly()) {
+                                <p-button
+                                  icon="pi pi-trash"
+                                  severity="danger"
+                                  size="small"
+                                  [text]="true"
+                                  [disabled]="formState.isRemovingPartitionAttachment(attachment.id)"
+                                  [ariaLabel]="'Retirer ' + attachment.originalName"
+                                  (onClick)="formState.removePartitionAttachment(attachment.id)"
+                                />
+                              }
+                            </span>
+                          </li>
+                        }
+                      </ul>
+                    } @else if (formState.isReadOnly()) {
+                      <p class="ef-muted">Aucun plan fourni.</p>
+                    }
+
+                    @if (!formState.isReadOnly() && partitionAttachments().length < partitionMaxAttachments) {
+                      <p-fileupload
+                        #partitionUploader
+                        mode="basic"
+                        chooseLabel="Ajouter un plan ou une photo"
+                        [multiple]="true"
+                        [accept]="structureAcceptedTypes"
+                        [auto]="true"
+                        [customUpload]="true"
+                        [disabled]="formState.partitionUploading()"
+                        (onSelect)="onPartitionSelect($event)"
+                        (uploadHandler)="onPartitionUpload($event, partitionUploader)"
+                      />
+                    }
+                    @if (formState.partitionUploading()) {
+                      <p class="ef-help-text">Envoi en cours…</p>
+                    }
+                    @for (error of formState.partitionUploadErrors(); track $index) {
+                      <p class="ef-field-error">{{ error }}</p>
+                    }
+                  </div>
                 }
 
                 @if (showErrors()) {

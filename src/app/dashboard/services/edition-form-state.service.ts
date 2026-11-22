@@ -20,6 +20,7 @@ import {
   StandManagerForm,
   StandStepPayload,
   StandStepState,
+  PARTITION_MAX_ATTACHMENTS,
   STRUCTURE_MAX_ATTACHMENTS,
   STRUCTURE_MAX_FILE_SIZE_BYTES,
   StructureAttachment,
@@ -87,6 +88,9 @@ export class EditionFormStateService {
   private readonly structureUploadErrorsSignal = signal<string[]>([]);
   /** Pièces jointes dont la suppression est en cours (évite le double envoi au double-clic). */
   private readonly structureRemovingIdsSignal = signal<ReadonlySet<string>>(new Set());
+  private readonly partitionUploadingSignal = signal(false);
+  private readonly partitionUploadErrorsSignal = signal<string[]>([]);
+  private readonly partitionRemovingIdsSignal = signal<ReadonlySet<string>>(new Set());
   private readonly checkoutInProgressSignal = signal(false);
   /**
    * Étape demandée à l'ouverture (`?step=…` d'un lien d'email, ou Paiement au retour de Stripe),
@@ -121,6 +125,8 @@ export class EditionFormStateService {
   readonly standAutosaveStatus = this.standAutosaveStatusSignal.asReadonly();
   readonly structureUploading = this.structureUploadingSignal.asReadonly();
   readonly structureUploadErrors = this.structureUploadErrorsSignal.asReadonly();
+  readonly partitionUploading = this.partitionUploadingSignal.asReadonly();
+  readonly partitionUploadErrors = this.partitionUploadErrorsSignal.asReadonly();
   readonly loading = this.loadingSignal.asReadonly();
   readonly loadError = this.loadErrorSignal.asReadonly();
   readonly submitStatus = this.submitStatusSignal.asReadonly();
@@ -282,6 +288,9 @@ export class EditionFormStateService {
     this.structureUploadingSignal.set(false);
     this.structureUploadErrorsSignal.set([]);
     this.structureRemovingIdsSignal.set(new Set());
+    this.partitionUploadingSignal.set(false);
+    this.partitionUploadErrorsSignal.set([]);
+    this.partitionRemovingIdsSignal.set(new Set());
 
     // Le cache du catalogue ne connaît pas le type d'exposant : un catalogue mis en cache avant un
     // changement de type (autre visite, autre compte) proposerait les packs de surface de l'autre type.
@@ -752,6 +761,110 @@ export class EditionFormStateService {
         ]);
       },
     );
+  }
+
+  // ---------------------------------------------------------------------------------------------
+  // Plans / photos des cloisons (facultatifs). Même circuit que le barnum : l'envoi attend que
+  // l'étape Stand soit enregistrée, car le serveur exige une ligne de cloison existante.
+  // ---------------------------------------------------------------------------------------------
+
+  reportRejectedPartitionFiles(names: string[]): void {
+    this.partitionUploadErrorsSignal.set(names.map((name) => `${name} : formats acceptés : JPG, PNG, WebP, PDF.`));
+  }
+
+  isRemovingPartitionAttachment(attachmentId: string): boolean {
+    return this.partitionRemovingIdsSignal().has(attachmentId);
+  }
+
+  /** Cloisons retirées : le serveur supprime leurs plans au prochain enregistrement du stand. */
+  clearPartitionAttachments(): void {
+    this.patchLocalState((reg) => ({ stand: { ...reg.stand, partitionAttachments: [] } }));
+    this.partitionUploadErrorsSignal.set([]);
+  }
+
+  uploadPartitionAttachments(allFiles: File[]): void {
+    const reg = this.state();
+    if (!reg || this.isReadOnly() || allFiles.length === 0 || this.partitionUploadingSignal()) {
+      return;
+    }
+    if (!this.isStandPayloadSendable(reg.stand)) {
+      this.partitionUploadErrorsSignal.update((errors) => [
+        ...errors,
+        "Complétez d'abord la disposition et les longueurs de vos cloisons : elles ne sont pas encore enregistrées.",
+      ]);
+
+      return;
+    }
+
+    const oversized = allFiles.filter((file) => file.size > STRUCTURE_MAX_FILE_SIZE_BYTES);
+    const files = allFiles.filter((file) => file.size <= STRUCTURE_MAX_FILE_SIZE_BYTES);
+    const remaining = Math.max(0, PARTITION_MAX_ATTACHMENTS - reg.stand.partitionAttachments.length);
+    const accepted = files.slice(0, remaining);
+    this.partitionUploadErrorsSignal.update((errors) => [
+      ...errors,
+      ...oversized.map((file) => `${file.name} : 10 Mo maximum.`),
+      ...files.slice(remaining).map((file) => `${file.name} : ${PARTITION_MAX_ATTACHMENTS} fichiers maximum.`),
+    ]);
+    if (accepted.length === 0) {
+      return;
+    }
+
+    this.partitionUploadingSignal.set(true);
+    this.whenStandSaved(
+      () => this.uploadPartitionFilesSequentially(reg.id, accepted),
+      () => {
+        this.partitionUploadingSignal.set(false);
+        this.partitionUploadErrorsSignal.update((errors) => [
+          ...errors,
+          "Vos options de stand n'ont pas pu être enregistrées : réessayez l'envoi.",
+        ]);
+      },
+    );
+  }
+
+  removePartitionAttachment(attachmentId: string): void {
+    const reg = this.state();
+    if (!reg || this.isReadOnly() || this.partitionRemovingIdsSignal().has(attachmentId)) {
+      return;
+    }
+
+    const registrationId = reg.id;
+    const setRemoving = (removing: boolean): void =>
+      this.partitionRemovingIdsSignal.update((ids) => {
+        const next = new Set(ids);
+        if (removing) {
+          next.add(attachmentId);
+        } else {
+          next.delete(attachmentId);
+        }
+
+        return next;
+      });
+    setRemoving(true);
+    this.registrationService.deletePartitionAttachment(registrationId, attachmentId).subscribe({
+      next: () => {
+        setRemoving(false);
+        this.state.update((current) =>
+          current && current.id === registrationId
+            ? {
+                ...current,
+                stand: {
+                  ...current.stand,
+                  partitionAttachments: current.stand.partitionAttachments.filter((a) => a.id !== attachmentId),
+                },
+              }
+            : current,
+        );
+      },
+      error: (err: HttpErrorResponse) => {
+        setRemoving(false);
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Échec',
+          detail: typeof err.error?.message === 'string' ? err.error.message : "Le fichier n'a pas pu être retiré.",
+        });
+      },
+    });
   }
 
   removeStructureAttachment(attachmentId: string): void {
@@ -1317,6 +1430,43 @@ export class EditionFormStateService {
       });
   }
 
+  /** Un fichier à la fois : un refus (format, taille) n'empêche pas l'envoi des suivants. */
+  private uploadPartitionFilesSequentially(registrationId: string, files: File[]): void {
+    from(files)
+      .pipe(
+        concatMap((file) =>
+          this.registrationService.uploadPartitionAttachment(registrationId, file).pipe(
+            map((response) => ({ file, attachment: this.toStructureAttachment(response.data), error: null as string | null })),
+            catchError((err: HttpErrorResponse) =>
+              of({
+                file,
+                attachment: null,
+                error: typeof err.error?.message === 'string' ? err.error.message : 'envoi impossible.',
+              }),
+            ),
+          ),
+        ),
+      )
+      .subscribe({
+        next: ({ file, attachment, error }) => {
+          if (attachment === null) {
+            this.partitionUploadErrorsSignal.update((errors) => [...errors, `${file.name} : ${error}`]);
+
+            return;
+          }
+          this.state.update((current) =>
+            current && current.id === registrationId
+              ? {
+                  ...current,
+                  stand: { ...current.stand, partitionAttachments: [...current.stand.partitionAttachments, attachment] },
+                }
+              : current,
+          );
+        },
+        complete: () => this.partitionUploadingSignal.set(false),
+      });
+  }
+
   /** Vrai si une option d'un groupe barnum / structure est cochée dans l'état local. */
   private isStructureSelected(stand: StandStepState): boolean {
     return this.optionGroups()
@@ -1421,6 +1571,7 @@ export class EditionFormStateService {
             attachments: dto.structure.attachments.map((attachment) => this.toStructureAttachment(attachment)),
           }
         : null,
+      partitionAttachments: (dto.partitionAttachments ?? []).map((attachment) => this.toStructureAttachment(attachment)),
       lines: dto.lines as StandStepState['lines'],
       totalTtc: dto.totalTtc,
       totalVat: dto.totalVat,

@@ -23,6 +23,7 @@ import {
   PartitionDetailForm,
   PartitionLayout,
   STAND_COMMENT_MAX_LENGTH,
+  PARTITION_MAX_ATTACHMENTS,
   STRUCTURE_ACCEPTED_MIME_TYPES,
   STRUCTURE_MAX_ATTACHMENTS,
   StructureDetailForm,
@@ -121,6 +122,11 @@ export class StepStandComponent implements ValidatableFormStep {
     return errors;
   });
 
+  protected readonly partitionMaxAttachments = PARTITION_MAX_ATTACHMENTS;
+  protected readonly partitionAttachments = computed(
+    () => this.formState.registration()?.stand.partitionAttachments ?? [],
+  );
+
   protected readonly structureMaxAttachments = STRUCTURE_MAX_ATTACHMENTS;
   protected readonly structureAcceptedTypes = STRUCTURE_ACCEPTED_MIME_TYPES;
 
@@ -163,6 +169,14 @@ export class StepStandComponent implements ValidatableFormStep {
       }
     });
 
+    // Cloisons retirées : leurs plans disparaissent de l'état local ; le serveur les supprime au
+    // prochain enregistrement du stand. Un simple changement de type de cloison les conserve.
+    effect(() => {
+      if (this.partitionGroup() !== null && !this.partitionSelected() && this.partitionAttachments().length > 0) {
+        this.formState.clearPartitionAttachments();
+      }
+    });
+
     // Décocher le barnum (après confirmation) vide l'état local ; le serveur supprime détail et
     // fichiers avec la ligne au prochain autosave.
     effect(() => {
@@ -202,6 +216,16 @@ export class StepStandComponent implements ValidatableFormStep {
   protected onStructureSelect(event: { files: File[] | FileList; currentFiles: File[] }): void {
     const rejected = Array.from(event.files).filter((file) => !event.currentFiles.includes(file));
     this.formState.reportRejectedStructureFiles(rejected.map((file) => file.name));
+  }
+
+  protected onPartitionSelect(event: { files: File[] | FileList; currentFiles: File[] }): void {
+    const rejected = Array.from(event.files).filter((file) => !event.currentFiles.includes(file));
+    this.formState.reportRejectedPartitionFiles(rejected.map((file) => file.name));
+  }
+
+  protected onPartitionUpload(event: { files: File[] }, uploader: FileUpload): void {
+    this.formState.uploadPartitionAttachments([...event.files]);
+    uploader.clear();
   }
 
   protected onStructureUpload(event: { files: File[] }, uploader: FileUpload): void {
@@ -296,6 +320,30 @@ export class StepStandComponent implements ValidatableFormStep {
           this.formState.toggleOption(optionId, false);
           // Envoi immédiat : un recochage dans le délai d'autosave ferait sinon disparaître la
           // suppression (les fichiers confirmés partis) de ce qui est envoyé au serveur.
+          this.formState.flushStandSave();
+        },
+        reject: () => checkbox.writeValue(true),
+      });
+
+      return;
+    }
+
+    // Dernière cloison décochée alors qu'un plan a été envoyé : le serveur supprimera ce plan.
+    const lastPartitionRemoved =
+      !selected &&
+      group.behaviour === OptionGroupBehaviour.PARTITION &&
+      !group.options.some((option) => option.id !== optionId && this.isSelected(option.id));
+    if (lastPartitionRemoved && this.partitionAttachments().length > 0) {
+      this.confirmationService.confirm({
+        header: 'Retirer les cloisons ?',
+        message: "Le plan d'implantation que vous avez envoyé sera supprimé.",
+        icon: 'pi pi-exclamation-triangle',
+        acceptLabel: 'Retirer',
+        rejectLabel: 'Annuler',
+        acceptButtonProps: { severity: 'danger' },
+        rejectButtonProps: { outlined: true },
+        accept: () => {
+          this.formState.toggleOption(optionId, false);
           this.formState.flushStandSave();
         },
         reject: () => checkbox.writeValue(true),

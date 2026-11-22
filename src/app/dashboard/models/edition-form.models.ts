@@ -191,6 +191,9 @@ export const STRUCTURE_MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024;
 /** Miroir de RegistrationStructureAttachment::ALLOWED_MIME_TYPES. */
 export const STRUCTURE_ACCEPTED_MIME_TYPES = 'image/jpeg,image/png,image/webp,application/pdf';
 
+/** Miroir de RegistrationPartitionAttachment::MAX_PER_REGISTRATION (mêmes formats et taille que le barnum). */
+export const PARTITION_MAX_ATTACHMENTS = 10;
+
 /** Ligne de commande déjà chiffrée par le serveur — le front n'effectue aucun calcul de prix. */
 export interface StandLine {
   optionId: string;
@@ -211,6 +214,11 @@ export interface StandStepState {
   partition: PartitionDetailForm | null;
   /** `null` tant que l'exposant n'a rien saisi pour le barnum, ou s'il ne l'a pas coché. */
   structure: StructureDetailForm | null;
+  /**
+   * Plans / photos des cloisons, facultatifs. Rattachés à l'inscription côté serveur : ils
+   * survivent à un changement de type de cloison, pas au retrait des cloisons.
+   */
+  partitionAttachments: StructureAttachment[];
   lines: StandLine[];
   totalTtc: number;
   totalVat: number;

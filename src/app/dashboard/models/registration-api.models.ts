@@ -70,6 +70,8 @@ export interface StandStepApiDto {
   selections: Record<string, number>;
   partition: PartitionDetailApiDto | null;
   structure: StructureDetailApiDto | null;
+  /** Même forme que les pièces jointes du barnum. */
+  partitionAttachments?: StructureAttachmentApiDto[];
   lines: StandLineApiDto[];
   totalTtc: number;
   totalVat: number;
