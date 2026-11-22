@@ -4,9 +4,10 @@
 
     <p-message
       severity="info"
-      text="Si vous souhaitez modifier vos options avant de confirmer définitivement votre participation, contactez-nous directement."
       class="w-full mb-5"
-    />
+    >
+      Si vous souhaitez modifier vos options avant de confirmer définitivement votre participation, contactez-nous directement.
+    </p-message>
 
     @if (quoteDocument(); as quote) {
       @if (quote.fileUrl) {
@@ -18,64 +19,77 @@
       }
     }
 
-    <div class="flex flex-col gap-3">
-      @for (item of checklistItems; track item.key) {
-        <div class="flex items-start gap-2">
-          <p-checkbox
-            [inputId]="item.key"
-            [binary]="true"
-            [ngModel]="registration.confirmation.checklist[item.key]"
-            (ngModelChange)="toggleItem(item.key, $event)"
+    @if (signedOffline()) {
+      <!-- Devis signé hors ligne (papier, scan) et enregistré par HA : l'étape en ligne n'a pas eu
+           lieu, la check-list et le signataire sont vides. Les afficher décochés serait trompeur. -->
+      <p-message
+        severity="success"
+        class="w-full"
+    >
+      Votre devis signé a bien été enregistré par l'équipe Historic Auto. Votre inscription est confirmée.
+    </p-message>
+    } @else {
+      <div class="flex flex-col gap-3">
+        @for (item of checklistItems; track item.key) {
+          <div class="flex items-start gap-2">
+            <p-checkbox
+              [inputId]="item.key"
+              [binary]="true"
+              [ngModel]="registration.confirmation.checklist[item.key]"
+              (ngModelChange)="toggleItem(item.key, $event)"
+              [disabled]="!formState.isConfirmationEditable()"
+            />
+            <label [for]="item.key" class="text-sm text-[#1A1714]">{{ item.text }}</label>
+          </div>
+        }
+      </div>
+
+      <div class="ef-grid-2 mt-6">
+        <div class="ef-field">
+          <label class="ef-label" for="signatoryName">Nom du signataire</label>
+          <input
+            pInputText
+            id="signatoryName"
+            class="w-full"
+            [ngModel]="registration.confirmation.signatoryName"
+            (ngModelChange)="updateSignatoryName($event)"
             [disabled]="!formState.isConfirmationEditable()"
           />
-          <label [for]="item.key" class="text-sm text-[#1A1714]">{{ item.text }}</label>
         </div>
+
+        <div class="ef-field">
+          <label class="ef-label" for="signatoryRole">Fonction du signataire</label>
+          <input
+            pInputText
+            id="signatoryRole"
+            class="w-full"
+            [ngModel]="registration.confirmation.signatoryRole"
+            (ngModelChange)="updateSignatoryRole($event)"
+            [disabled]="!formState.isConfirmationEditable()"
+          />
+        </div>
+      </div>
+
+      <p class="ef-help-text">
+        Date : {{ (registration.confirmation.confirmedAt ?? today) | date: 'dd/MM/yyyy' }}
+      </p>
+
+      @if (formState.isConfirmationEditable()) {
+        <div class="ef-actions-row">
+          <span></span>
+          <p-button
+            label="Confirmer votre inscription"
+            icon="pi pi-check"
+            [loading]="formState.confirmStatus() === 'submitting'"
+            [disabled]="!canConfirm() || formState.confirmStatus() === 'submitting'"
+            (onClick)="confirm()"
+          />
+        </div>
+      } @else if (registration.confirmation.confirmedAt) {
+        <p-message severity="success" class="w-full mt-4" >
+          Inscription confirmée.
+        </p-message>
       }
-    </div>
-
-    <div class="ef-grid-2 mt-6">
-      <div class="ef-field">
-        <label class="ef-label" for="signatoryName">Nom du signataire</label>
-        <input
-          pInputText
-          id="signatoryName"
-          class="w-full"
-          [ngModel]="registration.confirmation.signatoryName"
-          (ngModelChange)="updateSignatoryName($event)"
-          [disabled]="!formState.isConfirmationEditable()"
-        />
-      </div>
-
-      <div class="ef-field">
-        <label class="ef-label" for="signatoryRole">Fonction du signataire</label>
-        <input
-          pInputText
-          id="signatoryRole"
-          class="w-full"
-          [ngModel]="registration.confirmation.signatoryRole"
-          (ngModelChange)="updateSignatoryRole($event)"
-          [disabled]="!formState.isConfirmationEditable()"
-        />
-      </div>
-    </div>
-
-    <p class="ef-help-text">
-      Date : {{ (registration.confirmation.confirmedAt ?? today) | date: 'dd/MM/yyyy' }}
-    </p>
-
-    @if (formState.isConfirmationEditable()) {
-      <div class="ef-actions-row">
-        <span></span>
-        <p-button
-          label="Confirmer votre inscription"
-          icon="pi pi-check"
-          [loading]="formState.confirmStatus() === 'submitting'"
-          [disabled]="!canConfirm() || formState.confirmStatus() === 'submitting'"
-          (onClick)="confirm()"
-        />
-      </div>
-    } @else if (registration.confirmation.confirmedAt) {
-      <p-message severity="success" text="Inscription confirmée." class="w-full mt-4" />
     }
   </div>
 }

@@ -4,9 +4,10 @@
   @if (formState.catalogLoadFailed()) {
     <p-message
       severity="error"
-      text="Le catalogue des options n'a pas pu être chargé. Rechargez la page ou réessayez plus tard."
       class="w-full mb-4"
-    />
+    >
+      Le catalogue des options n'a pas pu être chargé. Rechargez la page ou réessayez plus tard.
+    </p-message>
   }
 
   @if (surfaceGroup(); as surface) {

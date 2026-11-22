@@ -43,6 +43,20 @@ export class StepConfirmationComponent {
     this.formState.registration()?.documents.find((doc) => doc.kind === 'quote') ?? null,
   );
 
+  /**
+   * Inscription confirmée sans passer par cette étape : HA a enregistré un devis signé hors ligne
+   * (DocumentActionController::markSigned côté back), donc ni check-list ni signataire.
+   */
+  protected readonly signedOffline = computed(() => {
+    const reg = this.formState.registration();
+    return (
+      !!reg &&
+      reg.confirmation.confirmedAt !== null &&
+      !reg.confirmation.signatoryName &&
+      reg.documents.some((doc) => doc.kind === 'quote' && doc.signatureStatus === 'signed')
+    );
+  });
+
   protected readonly canConfirm = computed(() => {
     const confirmation = this.formState.registration()?.confirmation;
     return Boolean(confirmation) && this.allChecked() && !!confirmation!.signatoryName && !!confirmation!.signatoryRole;
