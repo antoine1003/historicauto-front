@@ -8,7 +8,10 @@ export interface HomeContent {
   readonly heroEyebrow: string;
   readonly heroTitle: string;
   readonly heroLead: string;
-  /** URL absolue sur le back, ou null : la page garde alors `/images/hero.jpg`. */
+  /**
+   * Logo Historic Auto administré : affiché en haut de l'accueil ET dans l'en-tête de toutes les
+   * pages. URL absolue sur le back, ou null : on garde alors `DEFAULT_LOGO_URL`.
+   */
   readonly heroImageUrl: string | null;
   readonly heroImageAlt: string;
   readonly bandDate: string;
@@ -35,7 +38,7 @@ export const DEFAULT_HOME_CONTENT: HomeContent = {
   heroLead:
     'Historic Auto ouvre son espace en ligne aux exposants. Constituez votre dossier à votre rythme — entité, stand et options, devis, documents, paiement — et suivez son avancement à tout moment.',
   heroImageUrl: null,
-  heroImageAlt: 'Véhicules de collection exposés au salon Historic Auto',
+  heroImageAlt: 'Logo Historic Auto',
   bandDate: 'Février 2028',
   bandLocation: 'Nantes, Parc des Expositions',
   bandSubtitle: '6e édition du salon du véhicule de collection',
@@ -55,3 +58,6 @@ export const DEFAULT_HOME_CONTENT: HomeContent = {
     "La création de compte prend moins d'une minute. Vous pourrez ensuite commencer votre dossier et le compléter quand vous le souhaitez.",
   ctaTextMember: "Reprenez votre dossier là où vous l'avez laissé.",
 };
+
+/** Logo d'origine, livré avec le front : utilisé tant qu'aucun logo n'est administré. */
+export const DEFAULT_LOGO_URL = '/images/logo.webp';

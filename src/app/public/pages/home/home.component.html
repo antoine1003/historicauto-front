@@ -34,10 +34,11 @@
         [class.ha-skel-block]="isSkeleton()"
       ></div>
     } @else {
+      <!-- Logo : object-contain, pour ne jamais le rogner comme l'était la photo d'origine. -->
       <img
         [src]="heroImageUrl()"
         [alt]="content().heroImageAlt"
-        class="w-full aspect-[4/3] object-cover border border-[#D4C9A8] border-l-4 border-l-[#B8860B]"
+        class="w-full aspect-[4/3] object-contain p-8"
       />
     }
   </div>

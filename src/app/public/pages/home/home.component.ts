@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/c
 import { toSignal } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import { AuthService } from '@app/core/services/auth.service';
-import { DEFAULT_HOME_CONTENT } from '@app/public/models/home-content.model';
+import { DEFAULT_HOME_CONTENT, DEFAULT_LOGO_URL } from '@app/public/models/home-content.model';
 import { HomeContentService } from '@app/public/services/home-content.service';
 import { map, timer } from 'rxjs';
 
@@ -71,7 +71,8 @@ export class HomeComponent {
   protected readonly heroTitle = computed(() => withOrdinals(this.content().heroTitle));
   protected readonly bandSubtitle = computed(() => withOrdinals(this.content().bandSubtitle));
 
-  protected readonly heroImageUrl = computed(() => this.content().heroImageUrl ?? '/images/hero.jpg');
+  /** Le logo, partagé avec l'en-tête (cf. HomeContentService::logoUrl). */
+  protected readonly heroImageUrl = computed(() => this.content().heroImageUrl ?? DEFAULT_LOGO_URL);
   protected readonly salonImageUrl = computed(() => this.content().salonImageUrl ?? '/images/salon.jpg');
 
   /**
