@@ -25,6 +25,7 @@ export class StepConfirmationComponent {
   protected readonly today = new Date();
 
   protected readonly checklistItems: ChecklistItem[] = [
+    { key: 'consultCommonDocuments', text: "J'ai consulté les documents communs comme les CGV etc…" },
     { key: 'acknowledgedQuoteAndPricing', text: "J'ai pris connaissance de toutes les options commandées et des tarifs associés et modalités de paiement." },
     { key: 'acceptedGeneralTerms', text: "Je déclare avoir pris connaissance des conditions générales de vente et de participation et j'en accepte sans réserve toutes les clauses." },
     { key: 'noSublease', text: "J'interdis de céder, même à titre gracieux, ou sous-louer, de quelque manière que ce soit, mon emplacement." },

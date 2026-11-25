@@ -250,6 +250,7 @@ export interface StandStepState {
 export const STAND_COMMENT_MAX_LENGTH = 2000;
 
 export interface ConfirmationChecklistState {
+  consultCommonDocuments: boolean;
   acknowledgedQuoteAndPricing: boolean;
   acceptedGeneralTerms: boolean;
   noSublease: boolean;

@@ -81,6 +81,7 @@ export interface StandStepApiDto {
 
 export interface ConfirmationStepApiDto {
   checklist: {
+    consultCommonDocuments: boolean;
     acknowledgedQuoteAndPricing: boolean;
     acceptedGeneralTerms: boolean;
     noSublease: boolean;
