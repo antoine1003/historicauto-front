@@ -28,6 +28,7 @@ import {
   STRUCTURE_MAX_ATTACHMENTS,
   StructureDetailForm,
 } from '@app/dashboard/models/edition-form.models';
+import { safeReturnUrl } from '@app/core/guards/auth.guard';
 
 @Component({
   selector: 'app-step-stand',

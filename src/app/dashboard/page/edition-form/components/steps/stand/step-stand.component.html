@@ -392,10 +392,13 @@
     <div class="ef-notice mt-5" role="note">
       <i class="pi pi-comments ef-notice-icon" aria-hidden="true"></i>
       <p>
-        Pour toute demande complémentaire, vous pouvez l'indiquer dans le
-        <label for="standComment" class="auth-link cursor-pointer">commentaire ci-dessous</label>
-        ou nous écrire via le
-        <a href="/contact" class="auth-link" target="_blank" rel="noopener">formulaire de contact</a>.
+        @if (!formState.isReadOnly()) {
+          Pour toute demande complémentaire, vous pouvez l'indiquer
+          dans le <label for="standComment" class="auth-link cursor-pointer">commentaire ci-dessous</label>
+          ou nous écrire via le <a href="/contact" class="auth-link" target="_blank" rel="noopener">formulaire de contact</a>.
+        } @else {
+          Pour toute demande complémentaire, vous pouvez nous écrire via le <a href="/contact" class="auth-link" target="_blank" rel="noopener">formulaire de contact</a>.
+        }
       </p>
     </div>
 
